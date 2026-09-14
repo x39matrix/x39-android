@@ -33,6 +33,19 @@ App de mensajería post-cuántica para Android. El diseño parte de Paris v3 y s
 
 Límites honestos: no impide una foto con otro móvil ni la captura en móviles rooteados. Si el receptor no la abre, caduca a las 24 h sin mostrarse.
 
+## Función: wallet Bitcoin non-custodial
+1. **Las claves son del usuario:** la semilla (BIP39) se genera en el móvil y se guarda cifrada con StrongBox. Nunca pasa por el servidor, el HUB ni ningún canister. x39 no puede mover fondos de nadie.
+2. **Motor:** BDK (Bitcoin Dev Kit, Rust). Sin código de firma propio.
+3. **Pagar en el chat:** «💸 Pedir 0.001 BTC» o «Enviar a este contacto». La dirección y el importe viajan cifrados dentro del mensaje, y cada pago usa una dirección nueva.
+4. **Privacidad de consulta:** el saldo se consulta a un servidor Electrum propio o por Tor. Un servidor ajeno vería todas tus direcciones.
+5. **Compatibilidad con cold wallets:** PSBT por QR con Coldcard y Sparrow, las mismas que usa la guía de Paris.
+6. **Seguridad heredada de Paris:**
+   - pantalla de la semilla con `FLAG_SECURE` y verificación del respaldo en papel;
+   - **wallet de coacción:** el PIN falso abre una wallet con saldo pequeño.
+7. **Alcance:** solo BTC al principio. Cada cripto adicional se decide aparte.
+
+Límites honestos: si el usuario pierde la semilla, nadie puede recuperar los fondos. Las políticas de Google Play para wallets y la normativa (MiCA) deben revisarse antes de publicar.
+
 ## Fuera del núcleo (decisiones ya tomadas)
 - Identidad: par de claves local, no b3c6l.
 - Wallet: non-custodial en el móvil, nunca el HUB.
