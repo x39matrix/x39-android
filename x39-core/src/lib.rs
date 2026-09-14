@@ -10,6 +10,8 @@
 //! El handshake y el ratchet de la app se construyen encima en fases posteriores.
 #![forbid(unsafe_code)]
 
+pub mod share;
+
 use aes_gcm::Aes256Gcm;
 use aes_gcm::aead::{AeadInOut, KeyInit};
 use hkdf::Hkdf;
@@ -48,6 +50,8 @@ pub enum Error {
     Replay,
     Rng,
     InvalidKey,
+    /// Texto compartido corrupto, truncado o con prefijo equivocado.
+    Formato,
 }
 
 impl std::fmt::Display for Error {
@@ -61,6 +65,7 @@ impl std::fmt::Display for Error {
             Error::Replay => "replay detectado: cid ya consumido",
             Error::Rng => "fallo del generador aleatorio del sistema",
             Error::InvalidKey => "clave pública inválida",
+            Error::Formato => "texto corrupto o de otro tipo (revisa que se copió entero)",
         };
         f.write_str(s)
     }
