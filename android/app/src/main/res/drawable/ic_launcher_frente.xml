@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono x39 · opción A «Cristal» · triángulo con cristal de tres caras y núcleo cerrado.
+     Todo dentro de la zona segura (círculo de 66 dp centrado). Sin verde. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M54,27L80,72H28Z"
+        android:strokeColor="#FFE53935"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="27"
+                android:endX="54"
+                android:endY="72"
+                android:startColor="#FF2B2B31"
+                android:endColor="#FF141417" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M54,44L64.4,50L54,56L43.6,50Z" android:fillColor="#FFE53935" />
+    <path android:pathData="M43.6,50L54,56V68L43.6,62Z" android:fillColor="#FFF08A24" />
+    <path android:pathData="M54,56L64.4,50V62L54,68Z" android:fillColor="#FF7B4DFF" />
+    <path
+        android:pathData="M51.6,56a2.4,2.4 0,1 0,4.8 0a2.4,2.4 0,1 0,-4.8 0"
+        android:fillColor="#FF0D0D0D" />
+</vector>

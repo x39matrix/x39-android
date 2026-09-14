@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono x39 · capa monocroma para iconos temáticos (Android 13+). El sistema la tiñe. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M54,27L80,72H28Z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2.8"
+        android:strokeLineJoin="round" />
+    <path android:pathData="M54,44L64.4,50L54,56L43.6,50Z" android:fillColor="#FF000000" />
+    <path android:pathData="M43.6,50L54,56V68L43.6,62Z" android:fillColor="#FF000000" android:fillAlpha="0.6" />
+    <path android:pathData="M54,56L64.4,50V62L54,68Z" android:fillColor="#FF000000" android:fillAlpha="0.35" />
+</vector>
