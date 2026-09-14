@@ -1,11 +1,18 @@
 {
+  "pages": [
+    { "id": "page-1", "name": "Pantallas" },
+    { "id": "page-2", "name": "Icono" }
+  ],
   "artboards": [
     { "file": "Main.dc.html", "title": "Chats", "x": 0, "y": 0, "w": 390, "h": 844 },
     { "file": "Conversacion.dc.html", "title": "Conversación", "x": 490, "y": 0, "w": 390, "h": 844 },
     { "file": "Ubicacion.dc.html", "title": "Ubicación efímera", "x": 980, "y": 0, "w": 390, "h": 844 },
     { "file": "Wallet.dc.html", "title": "Wallet", "x": 0, "y": 984, "w": 390, "h": 844 },
     { "file": "Seguridad.dc.html", "title": "Seguridad", "x": 490, "y": 984, "w": 390, "h": 844 },
-    { "file": "Verificar.dc.html", "title": "Verificar contacto", "x": 980, "y": 984, "w": 390, "h": 844 }
+    { "file": "Verificar.dc.html", "title": "Verificar contacto", "x": 980, "y": 984, "w": 390, "h": 844 },
+    { "file": "IconoCristal.dc.html", "title": "Opción A · Cristal", "x": 0, "y": 0, "w": 580, "h": 640, "page": "page-2" },
+    { "file": "IconoSello.dc.html", "title": "Opción B · Sello", "x": 680, "y": 0, "w": 580, "h": 640, "page": "page-2" },
+    { "file": "IconoPrisma.dc.html", "title": "Opción C · Prisma", "x": 1360, "y": 0, "w": 580, "h": 640, "page": "page-2" }
   ],
   "annotations": [
     {
@@ -13,6 +20,7 @@
       "x": 1470,
       "y": 0,
       "w": 340,
+      "page": "page-1",
       "text": "Mejoras sobre el mockup\n\n· La app se llama x39: «Wallet» pasa a su propia pestaña.\n· Llamada y videollamada van en la cabecera de cada chat, no sueltas en la lista.\n· Sin interruptor de ubicación continua: ubicación efímera de 5/10/30 s dentro del chat.\n· Avatares con iniciales, no fotos reales.\n· «Privacidad activa» se convierte en Seguridad: estados comprobables y lo que aún NO está cubierto.\n· Verificación de contactos con huella de 60 dígitos y QR.\n· Sin barra de estado falsa de iPhone: es Android.\n· Paleta de la APK v0.1: #0D0D0D, #1A1A1A, rojo #E53935. Cero verde."
     },
     {
@@ -20,8 +28,17 @@
       "x": 1470,
       "y": 984,
       "w": 340,
+      "page": "page-1",
       "text": "Datos de ejemplo\n\nNombres, saldos BTC, coordenadas y huellas son valores de muestra. «[valor en EUR]» queda pendiente de definir."
+    },
+    {
+      "id": "icono-mejoras",
+      "x": 0,
+      "y": -200,
+      "w": 560,
+      "page": "page-2",
+      "text": "Qué cambia respecto a tu imagen\n\n· Sin texto «x39» dentro: no se lee a 48 px y Android ya escribe el nombre debajo.\n· Sin vidrio fotorrealista ni chip/wallet dibujados: se empastan en pequeño.\n· Forma dentro de la zona segura del icono adaptativo (Android lo recorta en círculo, squircle o cuadrado).\n· Versión monocroma para los iconos temáticos de Android 13+.\n· Rojo, naranja y violeta de tu imagen. Cero verde."
     }
   ],
-  "launch": { "view": "canvas" }
+  "launch": { "view": "canvas", "page": "page-2" }
 }

@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap">
+  <style>
+    body { margin: 0; background: #0D0D0D; color: #F2F2F2; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #E53935; } a:hover { color: #FF6B66; }
+  </style>
+</helmet>
+<div style="width: 580px; height: 640px; padding: 32px; background: #0D0D0D; display: flex; flex-direction: column; gap: 24px; position: relative; overflow: hidden;">
+  <svg width="0" height="0" style="position: absolute;">
+    <defs>
+      <linearGradient id="bHex" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0443F"></stop><stop offset="1" stop-color="#A3231F"></stop></linearGradient>
+      <symbol id="b" viewBox="0 0 108 108">
+        <rect width="108" height="108" fill="#0D0D0D"></rect>
+        <path d="M54 26L78.2 40V68L54 82L29.8 68V40Z" fill="url(#bHex)"></path>
+        <path d="M54 26L78.2 40L54 54L29.8 40Z" fill="#FFFFFF" opacity="0.1"></path>
+        <circle cx="54" cy="50" r="7" fill="#0D0D0D"></circle>
+        <path d="M50.2 53.5h7.6l2.4 14.5H47.8z" fill="#0D0D0D"></path>
+      </symbol>
+      <symbol id="bm" viewBox="0 0 108 108">
+        <path d="M54 26L78.2 40V68L54 82L29.8 68V40Z" fill="currentColor"></path>
+        <circle cx="54" cy="50" r="7" fill="#F7D9D5"></circle>
+        <path d="M50.2 53.5h7.6l2.4 14.5H47.8z" fill="#F7D9D5"></path>
+      </symbol>
+      <clipPath id="bC240"><circle cx="54" cy="54" r="36"></circle></clipPath>
+      <clipPath id="bS96"><rect x="18" y="18" width="72" height="72" rx="26"></rect></clipPath>
+      <clipPath id="bR96"><rect x="18" y="18" width="72" height="72" rx="12"></rect></clipPath>
+      <clipPath id="bC48"><circle cx="54" cy="54" r="36"></circle></clipPath>
+      <clipPath id="bC32"><circle cx="54" cy="54" r="36"></circle></clipPath>
+      <clipPath id="bC24"><circle cx="54" cy="54" r="36"></circle></clipPath>
+      <clipPath id="bL64"><rect x="18" y="18" width="72" height="72" rx="26"></rect></clipPath>
+    </defs>
+  </svg>
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-size: 22px; font-weight: 700;">Opción B · Sello</span>
+    <span style="font-size: 14px; line-height: 1.5; color: #B5B5BA; text-wrap: pretty;">El hexágono rojo de la app con una cerradura: se entiende «privado» de un vistazo, incluso a 24 px.</span>
+    <span style="font-size: 13px; line-height: 1.5; color: #7A7A80; text-wrap: pretty;">A favor: la más legible y la que mejor casa con las pantallas. En contra: pierde el triángulo y los tres colores de tu imagen, y la cerradura es un símbolo muy usado.</span>
+  </div>
+
+  <div style="display: flex; align-items: flex-end; gap: 28px;">
+    <svg width="220" height="220" viewBox="18 18 72 72"><g clip-path="url(#bC240)"><use href="#b" x="0" y="0" width="108" height="108"></use></g></svg>
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; gap: 16px; align-items: flex-end;">
+        <svg width="96" height="96" viewBox="18 18 72 72"><g clip-path="url(#bS96)"><use href="#b" x="0" y="0" width="108" height="108"></use></g></svg>
+        <svg width="96" height="96" viewBox="18 18 72 72"><g clip-path="url(#bR96)"><use href="#b" x="0" y="0" width="108" height="108"></use></g></svg>
+      </div>
+      <div style="display: flex; gap: 16px; align-items: flex-end;">
+        <svg width="48" height="48" viewBox="18 18 72 72"><g clip-path="url(#bC48)"><use href="#b" x="0" y="0" width="108" height="108"></use></g></svg>
+        <svg width="32" height="32" viewBox="18 18 72 72"><g clip-path="url(#bC32)"><use href="#b" x="0" y="0" width="108" height="108"></use></g></svg>
+        <svg width="24" height="24" viewBox="18 18 72 72"><g clip-path="url(#bC24)"><use href="#b" x="0" y="0" width="108" height="108"></use></g></svg>
+        <span style="font-size: 12px; color: #7A7A80;">48 · 32 · 24 px</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+    <div style="padding: 16px; border-radius: 18px; background: #EFE6E3; display: flex; align-items: center; gap: 14px;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: #F7D9D5; color: #6A1F1B; display: flex; align-items: center; justify-content: center;">
+        <svg width="64" height="64" viewBox="18 18 72 72"><use href="#bm" x="0" y="0" width="108" height="108"></use></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 14px; font-weight: 600; color: #2A1A18;">Monocromo</span>
+        <span style="font-size: 12px; color: #6A5A57;">Iconos temáticos</span>
+      </div>
+    </div>
+    <div style="padding: 16px; border-radius: 18px; background: #D8D2CC; display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <svg width="64" height="64" viewBox="18 18 72 72"><g clip-path="url(#bL64)"><use href="#b" x="0" y="0" width="108" height="108"></use></g></svg>
+        <span style="font-size: 12px; color: #2A2A2A;">x39</span>
+      </div>
+      <span style="font-size: 12px; color: #4A4A4A;">Fondo de pantalla claro</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
