@@ -19,5 +19,15 @@
         <item name="android:textColorPrimary">@color/x39_texto</item>
         <item name="android:textColorSecondary">@color/x39_texto_suave</item>
         <item name="android:textColorHighlight">@color/x39_rojo_oscuro</item>
+        <item name="android:alertDialogTheme">@style/Tema.X39.Dialogo</item>
+        <item name="android:colorControlNormal">@color/x39_texto_suave</item>
+    </style>
+
+    <!-- Diálogos con el acento rojo (el tema Material por defecto usa un acento verdoso). -->
+    <style name="Tema.X39.Dialogo" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/x39_rojo</item>
+        <item name="android:colorBackground">@color/x39_superficie</item>
+        <item name="android:textColorPrimary">@color/x39_texto</item>
+        <item name="android:textColorSecondary">@color/x39_texto_suave</item>
     </style>
 </resources>

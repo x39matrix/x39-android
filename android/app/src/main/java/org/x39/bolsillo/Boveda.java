@@ -1,7 +1,9 @@
 package org.x39.bolsillo;
 
 import android.content.Context;
+import android.os.Build;
 import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyInfo;
 import android.security.keystore.KeyProperties;
 import android.security.keystore.StrongBoxUnavailableException;
 
@@ -18,12 +20,13 @@ import java.util.Set;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
 
 /**
  * Guarda las claves del usuario dentro de la app.
- * La clave secreta ML-KEM se cifra con una clave AES-256 que vive en Android Keystore
- * (en el chip StrongBox si el móvil lo tiene) y nunca sale del hardware.
+ * Una clave AES-256 que vive en Android Keystore (en el chip StrongBox si el móvil lo tiene)
+ * cifra la clave secreta ML-KEM y el almacén de contactos y mensajes. Esa clave nunca sale del hardware.
  */
 final class Boveda {
     private static final String ALIAS = "x39_bolsillo_envoltura_v1";
@@ -32,7 +35,6 @@ final class Boveda {
     private static final String SEEN_FILE = "cids_abiertos.txt";
 
     private final File dir;
-    private boolean strongBox;
 
     Boveda(Context context) {
         dir = context.getFilesDir();
@@ -42,24 +44,13 @@ final class Boveda {
         return new File(dir, PK_FILE).exists() && new File(dir, SK_FILE).exists();
     }
 
-    boolean usaStrongBox() {
-        return strongBox;
-    }
-
     void crearClaves() throws Exception {
         byte[] ambas = X39Core.generateKeypair();
         byte[] pk = Arrays.copyOfRange(ambas, 0, X39Core.PK_LEN);
         byte[] sk = Arrays.copyOfRange(ambas, X39Core.PK_LEN, ambas.length);
         Arrays.fill(ambas, (byte) 0);
         try {
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, claveEnvoltura());
-            byte[] iv = cipher.getIV();
-            byte[] cifrada = cipher.doFinal(sk);
-            byte[] salida = new byte[iv.length + cifrada.length];
-            System.arraycopy(iv, 0, salida, 0, iv.length);
-            System.arraycopy(cifrada, 0, salida, iv.length, cifrada.length);
-            escribir(SK_FILE, salida);
+            escribir(SK_FILE, cifrarDatos(sk));
             escribir(PK_FILE, pk);
         } finally {
             Arrays.fill(sk, (byte) 0);
@@ -72,27 +63,77 @@ final class Boveda {
 
     /** El llamante DEBE borrar el array con Arrays.fill al terminar. */
     byte[] claveSecreta() throws Exception {
-        byte[] datos = Files.readAllBytes(new File(dir, SK_FILE).toPath());
+        return descifrarDatos(Files.readAllBytes(new File(dir, SK_FILE).toPath()));
+    }
+
+    /** AES-256-GCM con la clave de Keystore. Formato: iv(12) || cifrado+etiqueta. */
+    byte[] cifrarDatos(byte[] plano) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, claveEnvoltura());
+        byte[] iv = cipher.getIV();
+        byte[] cifrado = cipher.doFinal(plano);
+        byte[] salida = new byte[iv.length + cifrado.length];
+        System.arraycopy(iv, 0, salida, 0, iv.length);
+        System.arraycopy(cifrado, 0, salida, iv.length, cifrado.length);
+        return salida;
+    }
+
+    byte[] descifrarDatos(byte[] datos) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, claveEnvoltura(), new GCMParameterSpec(128, datos, 0, 12));
         return cipher.doFinal(datos, 12, datos.length - 12);
     }
 
+    /** Dónde vive realmente la clave de envoltura, según el propio Keystore. */
+    String nivelHardware() {
+        try {
+            SecretKey k = claveEnvoltura();
+            SecretKeyFactory f = SecretKeyFactory.getInstance(k.getAlgorithm(), "AndroidKeyStore");
+            KeyInfo info = (KeyInfo) f.getKeySpec(k, KeyInfo.class);
+            if (Build.VERSION.SDK_INT >= 31) {
+                int nivel = info.getSecurityLevel();
+                if (nivel == KeyProperties.SECURITY_LEVEL_STRONGBOX) return "StrongBox";
+                if (nivel == KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT) return "Entorno seguro (TEE)";
+                return "Software";
+            }
+            @SuppressWarnings("deprecation")
+            boolean hw = info.isInsideSecureHardware();
+            return hw ? "Hardware seguro" : "Software";
+        } catch (Exception e) {
+            return "Desconocido";
+        }
+    }
+
     /** Anti-replay: devuelve false si ese mensaje ya se abrió antes. */
     synchronized boolean registrarApertura(byte[] cid) throws IOException {
         String hex = aHex(cid);
-        File f = new File(dir, SEEN_FILE);
-        Set<String> vistos = new HashSet<>();
-        if (f.exists()) {
-            vistos.addAll(Arrays.asList(new String(Files.readAllBytes(f.toPath()), StandardCharsets.US_ASCII).split("\n")));
-        }
+        Set<String> vistos = leerVistos();
         if (vistos.contains(hex)) {
             return false;
         }
-        try (FileOutputStream out = new FileOutputStream(f, true)) {
+        try (FileOutputStream out = new FileOutputStream(new File(dir, SEEN_FILE), true)) {
             out.write((hex + "\n").getBytes(StandardCharsets.US_ASCII));
         }
         return true;
+    }
+
+    synchronized int aperturasRegistradas() {
+        try {
+            return leerVistos().size();
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    private Set<String> leerVistos() throws IOException {
+        File f = new File(dir, SEEN_FILE);
+        Set<String> vistos = new HashSet<>();
+        if (f.exists()) {
+            for (String l : new String(Files.readAllBytes(f.toPath()), StandardCharsets.US_ASCII).split("\n")) {
+                if (!l.isEmpty()) vistos.add(l);
+            }
+        }
+        return vistos;
     }
 
     private SecretKey claveEnvoltura() throws Exception {
@@ -102,11 +143,8 @@ final class Boveda {
             return (SecretKey) ks.getKey(ALIAS, null);
         }
         try {
-            SecretKey k = generar(true);
-            strongBox = true;
-            return k;
+            return generar(true);
         } catch (StrongBoxUnavailableException e) {
-            strongBox = false;
             return generar(false);
         }
     }
