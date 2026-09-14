@@ -13,7 +13,7 @@ find android/app/src/main/jniLibs -name '*.so' -exec ls -la {} \;
 echo "### 2. APK"
 cd android
 [ -f gradlew ] || gradle wrapper --gradle-version 8.10.2 -q
-./gradlew --no-daemon -q assembleDebug 2>&1 | grep -vE '^\s*$' | tail -30
+./gradlew --no-daemon -q assembleDebug 2>&1 | { grep -vE '^\s*$' || true; } | tail -30
 APK=app/build/outputs/apk/debug/app-debug.apk
 ls -la "$APK"
 sha256sum "$APK"
