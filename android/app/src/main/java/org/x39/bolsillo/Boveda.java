@@ -26,12 +26,15 @@ import javax.crypto.spec.GCMParameterSpec;
 /**
  * Guarda las claves del usuario dentro de la app.
  * Una clave AES-256 que vive en Android Keystore (en el chip StrongBox si el móvil lo tiene)
- * cifra la clave secreta ML-KEM y el almacén de contactos y mensajes. Esa clave nunca sale del hardware.
+ * cifra la clave secreta ML-KEM, la semilla de firma ML-DSA-87 y el almacén de contactos y mensajes.
+ * Esa clave nunca sale del hardware.
  */
 final class Boveda {
     private static final String ALIAS = "x39_bolsillo_envoltura_v1";
     private static final String PK_FILE = "clave_publica.bin";
     private static final String SK_FILE = "clave_secreta.enc";
+    private static final String FIRMA_PK_FILE = "firma_publica.bin";
+    private static final String FIRMA_SEMILLA_FILE = "firma_semilla.enc";
     private static final String SEEN_FILE = "cids_abiertos.txt";
 
     private final File dir;
@@ -64,6 +67,31 @@ final class Boveda {
     /** El llamante DEBE borrar el array con Arrays.fill al terminar. */
     byte[] claveSecreta() throws Exception {
         return descifrarDatos(Files.readAllBytes(new File(dir, SK_FILE).toPath()));
+    }
+
+    boolean tieneFirma() {
+        return new File(dir, FIRMA_PK_FILE).exists() && new File(dir, FIRMA_SEMILLA_FILE).exists();
+    }
+
+    /** Crea la identidad de firma ML-DSA-87. Quien venía de x39 0.2 la recibe al abrir la 0.3. */
+    void crearFirma() throws Exception {
+        byte[] semilla = X39Core.generateSigningSeed();
+        try {
+            byte[] pk = X39Core.signingPublicKey(semilla);
+            escribir(FIRMA_SEMILLA_FILE, cifrarDatos(semilla));
+            escribir(FIRMA_PK_FILE, pk);
+        } finally {
+            Arrays.fill(semilla, (byte) 0);
+        }
+    }
+
+    byte[] clavePublicaFirma() throws IOException {
+        return Files.readAllBytes(new File(dir, FIRMA_PK_FILE).toPath());
+    }
+
+    /** El llamante DEBE borrar el array con Arrays.fill al terminar. */
+    byte[] semillaFirma() throws Exception {
+        return descifrarDatos(Files.readAllBytes(new File(dir, FIRMA_SEMILLA_FILE).toPath()));
     }
 
     /** AES-256-GCM con la clave de Keystore. Formato: iv(12) || cifrado+etiqueta. */

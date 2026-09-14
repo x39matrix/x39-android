@@ -7,7 +7,8 @@ import java.nio.charset.StandardCharsets;
 /**
  * Contenido de un mensaje dentro de la cápsula cifrada.
  * v1: {"v":1, "de": id del remitente (declarado), "t": texto, "ts": hora de envío}.
- * El campo «de» no está firmado todavía: la firma ML-DSA-87 del remitente llega en la v0.3.
+ * Desde la v0.3 la carga va firmada con ML-DSA-87 (0x02 || firma || carga) y el campo «de» solo se
+ * acepta si la firma corresponde a ese contacto; ver MainActivity.procesarTexto.
  */
 final class Carga {
     private Carga() {}

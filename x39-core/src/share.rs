@@ -2,21 +2,26 @@
 //!
 //! ```text
 //! clave pública: "X39PK1:"  + base64url(pk      || check)
+//! identidad:     "X39ID1:"  + base64url(pk ML-KEM(1568) || pk ML-DSA-87(2592) || check)
 //! mensaje:       "X39MSG1:" + base64url(cápsula || check)
 //! check = SHA-256(prefijo || datos)[..4]   (detecta errores de copia; NO es seguridad)
 //! ```
 //! La seguridad la da la criptografía de la cápsula; el check solo evita pegar algo corrupto.
+//! `X39PK1` (solo cifrado, x39 0.2) se sigue aceptando; `X39ID1` añade la clave de firma y no cabe en un QR.
 
+use crate::firma::DSA_PK_LEN;
 use crate::{Error, MIN_LEN, PK_LEN};
 use libcrux_ml_kem::mlkem1024;
 use sha2::{Digest, Sha256, Sha512};
 
 pub const PREFIX_PK: &str = "X39PK1:";
+pub const PREFIX_ID: &str = "X39ID1:";
 pub const PREFIX_MSG: &str = "X39MSG1:";
 /// Capacidad máxima de un QR versión 40 con corrección de errores L en modo byte.
 pub const QR_MAX_BYTES: usize = 2953;
 const CHECK_LEN: usize = 4;
 const FINGERPRINT_CTX: &[u8] = b"x39-fingerprint-v1";
+const FINGERPRINT_ID_CTX: &[u8] = b"x39-fingerprint-v2";
 
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
@@ -105,13 +110,32 @@ pub fn encode_public_key(pk: &[u8; PK_LEN]) -> String {
     encode(PREFIX_PK, pk)
 }
 
-pub fn decode_public_key(text: &str) -> Result<[u8; PK_LEN], Error> {
-    let data = decode(PREFIX_PK, text)?;
-    let pk: [u8; PK_LEN] = data.try_into().map_err(|_| Error::Formato)?;
+fn validated_kem(pk: [u8; PK_LEN]) -> Result<[u8; PK_LEN], Error> {
     if !mlkem1024::validate_public_key(&mlkem1024::MlKem1024PublicKey::from(&pk)) {
         return Err(Error::InvalidKey);
     }
     Ok(pk)
+}
+
+pub fn decode_public_key(text: &str) -> Result<[u8; PK_LEN], Error> {
+    let data = decode(PREFIX_PK, text)?;
+    validated_kem(data.try_into().map_err(|_| Error::Formato)?)
+}
+
+pub fn encode_identity(kem_pk: &[u8; PK_LEN], dsa_pk: &[u8; DSA_PK_LEN]) -> String {
+    let mut data = Vec::with_capacity(PK_LEN + DSA_PK_LEN);
+    data.extend_from_slice(kem_pk);
+    data.extend_from_slice(dsa_pk);
+    encode(PREFIX_ID, &data)
+}
+
+pub fn decode_identity(text: &str) -> Result<([u8; PK_LEN], [u8; DSA_PK_LEN]), Error> {
+    let data = decode(PREFIX_ID, text)?;
+    if data.len() != PK_LEN + DSA_PK_LEN {
+        return Err(Error::Formato);
+    }
+    let kem = validated_kem(data[..PK_LEN].try_into().expect("1568 bytes"))?;
+    Ok((kem, data[PK_LEN..].try_into().expect("2592 bytes")))
 }
 
 pub fn encode_capsule(capsule: &[u8]) -> String {
@@ -138,9 +162,20 @@ pub fn max_plaintext_for_qr() -> usize {
 /// Huella de seguridad de una clave pública: 12 grupos de 5 dígitos, estilo número de seguridad de Signal.
 /// Dos personas la comparan en persona o por llamada para descartar un intermediario.
 pub fn fingerprint(pk: &[u8; PK_LEN]) -> String {
+    digits(FINGERPRINT_CTX, &[pk])
+}
+
+/// Huella de una identidad completa: cubre la clave de cifrado y la de firma.
+pub fn fingerprint_identity(kem_pk: &[u8; PK_LEN], dsa_pk: &[u8; DSA_PK_LEN]) -> String {
+    digits(FINGERPRINT_ID_CTX, &[kem_pk, dsa_pk])
+}
+
+fn digits(ctx: &[u8], parts: &[&[u8]]) -> String {
     let mut h = Sha512::new();
-    h.update(FINGERPRINT_CTX);
-    h.update(pk);
+    h.update(ctx);
+    for p in parts {
+        h.update(p);
+    }
     let digest = h.finalize();
     digest
         .chunks(5)

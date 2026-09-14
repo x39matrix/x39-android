@@ -36,21 +36,22 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * x39 v0.2 · mensajería poscuántica sin servidor.
- * Chats, contactos con huella, conversaciones cifradas en el móvil, seguridad comprobada y wallet desactivada.
- * El transporte es manual (se comparte el texto X39MSG1 por cualquier app); el relé llega en la v0.3.
+ * x39 v0.3 · mensajería poscuántica sin servidor.
+ * Mensajes cifrados con ML-KEM-1024 y firmados con ML-DSA-87; contactos con huella; seguridad comprobada.
+ * El transporte es manual (se comparte el texto X39MSG1 por cualquier app); el relé llega más adelante.
  */
 public class MainActivity extends Activity {
     private static final long TTL_SEGUNDOS = 7L * 24 * 3600;
     private static final int REQ_DESBLOQUEO = 39;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.2.0";
+    private static final String VERSION = "0.3.0";
 
     private enum Pestana { CHATS, CONTACTOS, WALLET, SEGURIDAD }
 
     private Boveda boveda;
     private Almacen almacen;
     private byte[] clavePublica;
+    private byte[] claveFirma;
     private String miId;
     private String errorInicio;
 
@@ -85,6 +86,10 @@ public class MainActivity extends Activity {
                 boveda.crearClaves();
             }
             clavePublica = boveda.clavePublica();
+            if (!boveda.tieneFirma()) {
+                boveda.crearFirma();
+            }
+            claveFirma = boveda.clavePublicaFirma();
             miId = Almacen.idDeClave(clavePublica);
             almacen.cargar();
         } catch (Exception e) {
@@ -323,7 +328,7 @@ public class MainActivity extends Activity {
         LinearLayout textos = Ui.columna(this);
         textos.setPadding(Ui.dp(this, 12), 0, 0, 0);
         textos.addView(Ui.texto(this, "Protección activa", 14, Ui.TEXTO, true));
-        textos.addView(Ui.texto(this, "Poscuántico · sin internet · sin capturas", 12, Ui.SUAVE, false));
+        textos.addView(Ui.texto(this, "Cifrado y firmado poscuántico · sin internet", 12, Ui.SUAVE, false));
         f.addView(textos, Ui.peso(1));
         f.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18));
         f.setOnClickListener(v -> mostrarPestana(Pestana.SEGURIDAD));
@@ -339,7 +344,7 @@ public class MainActivity extends Activity {
         TextView d = Ui.texto(this, "Comparte tu clave con alguien de confianza y añade la suya. Después comparad la huella de seguridad en persona.", 14, Ui.SUAVE, false);
         d.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 16));
         col.addView(d);
-        col.addView(Ui.boton(this, "Compartir mi clave", true, v -> compartir(X39Core.publicKeyToText(clavePublica), "Compartir mi clave x39")));
+        col.addView(Ui.boton(this, "Compartir mi clave", true, v -> compartir(miIdentidad(), "Compartir mi clave x39")));
         View esp = new View(this);
         col.addView(esp, new LinearLayout.LayoutParams(1, Ui.dp(this, 10)));
         col.addView(Ui.boton(this, "Añadir un contacto", false, v -> abrirAgregar("")));
@@ -405,7 +410,11 @@ public class MainActivity extends Activity {
         LinearLayout textos = Ui.columna(this);
         textos.setPadding(Ui.dp(this, 10), 0, 0, 0);
         textos.addView(Ui.texto(this, c.nombre, 16, Ui.TEXTO, true));
-        TextView sub = Ui.texto(this, c.verificado ? "Verificado · poscuántico" : "Sin verificar · toca para comparar la huella", 12, c.verificado ? Ui.SUAVE : Ui.ROJO, false);
+        String subTexto;
+        if (c.claveFirma == null) subTexto = "Clave antigua sin firma · toca para ver";
+        else subTexto = c.verificado ? "Verificado · cifrado y firmado" : "Sin verificar · toca para comparar la huella";
+        boolean subBien = c.claveFirma != null && c.verificado;
+        TextView sub = Ui.texto(this, subTexto, 12, subBien ? Ui.SUAVE : Ui.ROJO, false);
         textos.addView(sub);
         textos.setOnClickListener(v -> abrirVerificar(c));
         Ui.clicable(textos);
@@ -418,7 +427,7 @@ public class MainActivity extends Activity {
         LinearLayout hilo = Ui.columna(this);
         hilo.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
 
-        TextView aviso = Ui.texto(this, "Cifrado ML-KEM-1024 en este móvil. Envías compartiendo el texto cifrado por la app que elijas; recibes abriéndolo aquí.", 12, Ui.SUAVE, false);
+        TextView aviso = Ui.texto(this, "Cifrado ML-KEM-1024 y firmado ML-DSA-87 en este móvil. Envías compartiendo el texto cifrado por la app que elijas; recibes abriéndolo aquí.", 12, Ui.SUAVE, false);
         aviso.setGravity(Gravity.CENTER);
         aviso.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 8));
         aviso.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 14));
@@ -467,12 +476,12 @@ public class MainActivity extends Activity {
         t.setMaxWidth(anchoMax - Ui.dp(this, 28));
         t.setTextIsSelectable(true);
         b.addView(t);
-        String pie = Ui.hora(m.ts) + (m.saliente ? " · compartido cifrado" : "");
+        String pie = Ui.hora(m.ts) + (m.saliente ? " · firmado y cifrado" : (m.remitenteDeclarado ? "" : " · firma verificada"));
         TextView h = Ui.texto(this, pie, 11, m.saliente ? 0xA6FFFFFF : 0xFF7A7A80, false);
         h.setGravity(Gravity.END);
         b.addView(h, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        if (m.remitenteDeclarado) {
-            TextView d = Ui.texto(this, "Remitente declarado, aún sin firma", 11, 0xFF7A7A80, false);
+        if (!m.saliente && m.remitenteDeclarado) {
+            TextView d = Ui.texto(this, "Remitente declarado, sin firma comprobada", 11, 0xFF7A7A80, false);
             d.setGravity(Gravity.END);
             b.addView(d, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         }
@@ -491,13 +500,13 @@ public class MainActivity extends Activity {
 
         LinearLayout mia = tarjeta(col, "Mi clave");
         mia.addView(Ui.texto(this, "Tu huella de seguridad. Tus contactos deben ver estos mismos 60 dígitos.", 13, Ui.SUAVE, false));
-        View huella = Ui.huella(this, X39Core.fingerprint(clavePublica), 17);
+        View huella = Ui.huella(this, miHuella(), 17);
         huella.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
         mia.addView(huella);
         LinearLayout botones = Ui.fila(this);
-        TextView compartir = Ui.boton(this, "Compartir", true, v -> compartir(X39Core.publicKeyToText(clavePublica), "Compartir mi clave x39"));
+        TextView compartir = Ui.boton(this, "Compartir", true, v -> compartir(miIdentidad(), "Compartir mi clave x39"));
         botones.addView(compartir, Ui.peso(1));
-        TextView copiar = Ui.boton(this, "Copiar", false, v -> copiar("Clave x39", X39Core.publicKeyToText(clavePublica), false));
+        TextView copiar = Ui.boton(this, "Copiar", false, v -> copiar("Clave x39", miIdentidad(), false));
         LinearLayout.LayoutParams lpc = Ui.peso(1);
         lpc.setMargins(Ui.dp(this, 10), 0, 0, 0);
         botones.addView(copiar, lpc);
@@ -523,7 +532,8 @@ public class MainActivity extends Activity {
             LinearLayout t = Ui.columna(this);
             t.setPadding(Ui.dp(this, 12), 0, 0, 0);
             t.addView(Ui.texto(this, c.nombre, 16, Ui.TEXTO, true));
-            t.addView(Ui.texto(this, c.verificado ? "Verificado" : "Sin verificar", 13, c.verificado ? Ui.SUAVE : Ui.ROJO, false));
+            String estadoContacto = c.claveFirma == null ? "Clave antigua sin firma" : (c.verificado ? "Verificado" : "Sin verificar");
+            t.addView(Ui.texto(this, estadoContacto, 13, c.claveFirma != null && c.verificado ? Ui.SUAVE : Ui.ROJO, false));
             f.addView(t, Ui.peso(1));
             f.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18));
             f.setOnClickListener(v -> abrirVerificar(c));
@@ -549,7 +559,7 @@ public class MainActivity extends Activity {
         EditText nombre = Ui.campo(this, "Cómo quieres llamarle", 1, false);
         col.addView(nombre, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 16));
 
-        col.addView(Ui.texto(this, "Su clave (X39PK1)", 13, Ui.SUAVE, true));
+        col.addView(Ui.texto(this, "Su clave (X39ID1)", 13, Ui.SUAVE, true));
         EditText clave = Ui.campo(this, "Pega aquí la clave que te ha compartido", 4, true);
         clave.setTextSize(13);
         if (!TextUtils.isEmpty(claveInicial)) clave.setText(claveInicial);
@@ -566,15 +576,20 @@ public class MainActivity extends Activity {
             String t = clave.getText().toString().trim();
             if (t.isEmpty()) { estado.setText(""); return; }
             try {
-                byte[] pk = X39Core.publicKeyFromText(t);
-                if (Arrays.equals(pk, clavePublica)) {
+                Almacen.Contacto leido = Almacen.leerTexto(t);
+                if (Arrays.equals(leido.clave, clavePublica)) {
                     estado.setTextColor(Ui.ROJO);
                     estado.setText("⚠ Esa es tu propia clave.");
                     return;
                 }
-                estado.setTextColor(Ui.SUAVE);
-                estado.setText("Clave válida. Su huella de seguridad:");
-                huellaVista[0] = Ui.huella(this, X39Core.fingerprint(pk), 16);
+                if (leido.claveFirma == null) {
+                    estado.setTextColor(Ui.ROJO);
+                    estado.setText("⚠ Clave antigua de x39 0.2, sin firma: podrás escribirle, pero no comprobar que sus mensajes son suyos. Pídele que actualice y te comparta su clave nueva. Su huella:");
+                } else {
+                    estado.setTextColor(Ui.SUAVE);
+                    estado.setText("Clave válida con firma ML-DSA-87. Su huella de seguridad:");
+                }
+                huellaVista[0] = Ui.huella(this, leido.huella(), 16);
                 huellaCaja.addView(huellaVista[0]);
             } catch (RuntimeException e) {
                 estado.setTextColor(Ui.ROJO);
@@ -595,9 +610,8 @@ public class MainActivity extends Activity {
             String t = clave.getText().toString().trim();
             if (n.isEmpty()) { aviso("Escribe un nombre para el contacto."); return; }
             try {
-                byte[] pk = X39Core.publicKeyFromText(t);
-                if (Arrays.equals(pk, clavePublica)) { aviso("No puedes añadir tu propia clave como contacto."); return; }
-                Almacen.Contacto c = almacen.agregar(n, t, pk);
+                if (Arrays.equals(Almacen.leerTexto(t).clave, clavePublica)) { aviso("No puedes añadir tu propia clave como contacto."); return; }
+                Almacen.Contacto c = almacen.agregar(n, t);
                 almacen.guardar();
                 abrirVerificar(c);
             } catch (Exception e) {
@@ -620,8 +634,14 @@ public class MainActivity extends Activity {
         LinearLayout caja = Ui.columna(this);
         caja.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
         caja.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
-        caja.addView(Ui.huella(this, X39Core.fingerprint(c.clave), 20));
+        caja.addView(Ui.huella(this, c.huella(), 20));
         col.addView(caja, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 18, 0, 18));
+
+        if (c.claveFirma == null) {
+            TextView antigua = Ui.texto(this, "⚠ Tienes su clave antigua de x39 0.2, sin firma. Puedes escribirle, pero sus mensajes llegarán como «remitente declarado». "
+                    + "Pídele que actualice x39 y te comparta su clave nueva: al pegarla se conserva la conversación.", 14, Ui.ROJO, false);
+            col.addView(antigua, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 14));
+        }
 
         TextView estado = Ui.texto(this, c.verificado ? "Marcado como verificado." : "Todavía sin verificar.", 14, c.verificado ? Ui.SUAVE : Ui.ROJO, false);
         col.addView(estado, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 14));
@@ -653,7 +673,7 @@ public class MainActivity extends Activity {
         TextView d = Ui.texto(this,
                 "La wallet será no custodial: la semilla se generará y quedará solo en este móvil. "
                         + "Ni x39 ni ningún administrador podrán mover tus fondos.\n\n"
-                        + "Llegará después de la mensajería con relé y firma del remitente. "
+                        + "Llegará después del relé de mensajes. "
                         + "En el piloto institucional permanece desactivada.", 14, Ui.TEXTO_2, false);
         d.setPadding(0, Ui.dp(this, 10), 0, 0);
         t.addView(d);
@@ -677,7 +697,13 @@ public class MainActivity extends Activity {
         String hw = boveda.nivelHardware();
 
         LinearLayout lista = tarjeta(col, null);
+        int conFirma = 0;
+        for (Almacen.Contacto c : almacen.contactos) {
+            if (c.claveFirma != null) conFirma++;
+        }
         filaEstado(lista, "Cifrado", "ML-KEM-1024 + AES-256-GCM", true);
+        filaEstado(lista, "Firma del remitente", "ML-DSA-87", true);
+        filaEstado(lista, "Contactos con firma", conFirma + " de " + almacen.contactos.size(), conFirma == almacen.contactos.size());
         filaEstado(lista, "Claves en hardware", hw, !"Software".equals(hw) && !"Desconocido".equals(hw));
         filaEstado(lista, "Capturas de pantalla", "Bloqueadas", true);
         filaEstado(lista, "Acceso a internet", internet ? "Permitido" : "Sin permiso", !internet);
@@ -687,7 +713,7 @@ public class MainActivity extends Activity {
         filaEstado(lista, "Mensajes abiertos", boveda.aperturasRegistradas() + " (anti-replay)", true);
 
         LinearLayout huella = tarjeta(col, "Tu huella de seguridad");
-        huella.addView(Ui.huella(this, X39Core.fingerprint(clavePublica), 17));
+        huella.addView(Ui.huella(this, miHuella(), 17));
 
         LinearLayout aviso = Ui.columna(this);
         aviso.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
@@ -703,8 +729,9 @@ public class MainActivity extends Activity {
         avTit.addView(avT);
         aviso.addView(avTit);
         TextView avD = Ui.texto(this,
-                "El remitente de un mensaje es declarado, no probado: la firma ML-DSA-87 llega en la v0.3. "
-                        + "Tampoco hay todavía forward secrecy, relé automático ni auditoría externa del protocolo.", 13, Ui.TEXTO_2, false);
+                "Aún no hay forward secrecy: si alguien robara tu clave secreta, podría leer los mensajes cifrados antiguos que hubiera guardado. "
+                        + "Tampoco hay relé automático ni auditoría externa del protocolo. "
+                        + "Los contactos con clave antigua sin firma no pueden probar que sus mensajes son suyos.", 13, Ui.TEXTO_2, false);
         avD.setPadding(0, Ui.dp(this, 6), 0, 0);
         aviso.addView(avD);
         col.addView(aviso, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
@@ -767,14 +794,25 @@ public class MainActivity extends Activity {
 
     // ------------------------------------------------------------------ acciones
 
+    /** Mi identidad para compartir: X39ID1 = clave de cifrado + clave de firma. */
+    private String miIdentidad() {
+        return X39Core.identityToText(clavePublica, claveFirma);
+    }
+
+    private String miHuella() {
+        return X39Core.identityFingerprint(clavePublica, claveFirma);
+    }
+
     private void enviar(Almacen.Contacto c, EditText et) {
         String texto = et.getText().toString().trim();
         if (texto.isEmpty()) return;
         byte[] carga = null;
+        byte[] semilla = null;
         try {
             long ahoraMs = System.currentTimeMillis();
             carga = Carga.crear(miId, texto, ahoraMs);
-            String capsula = X39Core.seal(c.clave, carga, ahoraMs / 1000L);
+            semilla = boveda.semillaFirma();
+            String capsula = X39Core.sealSigned(c.clave, semilla, carga, ahoraMs / 1000L);
             c.mensajes.add(new Almacen.Mensaje(true, texto, ahoraMs, false));
             almacen.guardar();
             et.setText("");
@@ -783,6 +821,7 @@ public class MainActivity extends Activity {
             aviso(Ui.mensaje(e));
         } finally {
             if (carga != null) Arrays.fill(carga, (byte) 0);
+            if (semilla != null) Arrays.fill(semilla, (byte) 0);
         }
     }
 
@@ -805,7 +844,7 @@ public class MainActivity extends Activity {
             return;
         }
         String s = texto.trim();
-        if (s.startsWith("X39PK1:")) {
+        if (s.startsWith("X39ID1:") || s.startsWith("X39PK1:")) {
             abrirAgregar(s);
             return;
         }
@@ -825,19 +864,37 @@ public class MainActivity extends Activity {
                 return;
             }
             cuerpo = Arrays.copyOfRange(salida, X39Core.CID_LEN, salida.length);
-            JSONObject j = Carga.leer(cuerpo);
-            String de = j.optString("de", "");
-            String contenido = j.optString("t", "");
-            Almacen.Contacto c = almacen.porId(de);
+            boolean firmado = X39Core.estaFirmado(cuerpo);
+            // Solo sirve para saber quién DICE enviarlo; lo que se guarda sale de la carga verificada.
+            JSONObject declarado = Carga.leer(firmado ? X39Core.unverifiedPayload(cuerpo) : cuerpo);
+            Almacen.Contacto c = almacen.porId(declarado.optString("de", ""));
             if (c == null) {
                 new AlertDialog.Builder(this)
                         .setTitle("Mensaje de alguien que no está en tus contactos")
-                        .setMessage(contenido + "\n\nAñade a esa persona con su clave para guardar la conversación.")
+                        .setMessage(declarado.optString("t", "") + "\n\nNo se puede comprobar quién lo envía. Añade a esa persona con su clave para guardar la conversación.")
                         .setPositiveButton("Entendido", null)
                         .show();
                 return;
             }
-            c.mensajes.add(new Almacen.Mensaje(false, contenido, System.currentTimeMillis(), true));
+            String contenido = declarado.optString("t", "");
+            boolean firmaVerificada = false;
+            if (c.claveFirma != null) {
+                if (!firmado) {
+                    aviso("Mensaje descartado: dice venir de " + c.nombre + ", pero no lleva firma y su clave sí firma. Podría ser una suplantación.");
+                    return;
+                }
+                byte[] cargaVerificada;
+                try {
+                    cargaVerificada = X39Core.verifySigned(c.claveFirma, clavePublica, cuerpo);
+                } catch (RuntimeException e) {
+                    aviso("Mensaje descartado: la firma no es de " + c.nombre + " o el mensaje se ha manipulado.");
+                    return;
+                }
+                contenido = Carga.leer(cargaVerificada).optString("t", "");
+                Arrays.fill(cargaVerificada, (byte) 0);
+                firmaVerificada = true;
+            }
+            c.mensajes.add(new Almacen.Mensaje(false, contenido, System.currentTimeMillis(), !firmaVerificada));
             almacen.guardar();
             abrirConversacion(c);
         } catch (Exception e) {

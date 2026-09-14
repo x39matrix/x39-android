@@ -10,6 +10,7 @@
 //! El handshake y el ratchet de la app se construyen encima en fases posteriores.
 #![forbid(unsafe_code)]
 
+pub mod firma;
 pub mod share;
 
 use aes_gcm::Aes256Gcm;
@@ -52,6 +53,8 @@ pub enum Error {
     InvalidKey,
     /// Texto compartido corrupto, truncado o con prefijo equivocado.
     Formato,
+    /// Firma del remitente ausente, manipulada, de otra persona o dirigida a otro destinatario.
+    Firma,
 }
 
 impl std::fmt::Display for Error {
@@ -66,6 +69,7 @@ impl std::fmt::Display for Error {
             Error::Rng => "fallo del generador aleatorio del sistema",
             Error::InvalidKey => "clave pública inválida",
             Error::Formato => "texto corrupto o de otro tipo (revisa que se copió entero)",
+            Error::Firma => "la firma del remitente no es válida",
         };
         f.write_str(s)
     }

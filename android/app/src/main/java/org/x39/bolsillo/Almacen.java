@@ -24,7 +24,7 @@ final class Almacen {
         final boolean saliente;
         final String texto;
         final long ts;
-        /** Recibido: el remitente es declarado dentro del mensaje, todavía sin firma. */
+        /** Recibido: true = remitente solo declarado (sin firma comprobada); false = firma ML-DSA-87 verificada. */
         final boolean remitenteDeclarado;
 
         Mensaje(boolean saliente, String texto, long ts, boolean remitenteDeclarado) {
@@ -39,7 +39,10 @@ final class Almacen {
         String id;
         String nombre;
         String claveTexto;
+        /** Clave ML-KEM-1024 para cifrarle. */
         byte[] clave;
+        /** Clave ML-DSA-87 para comprobar sus mensajes. null = clave antigua X39PK1 de x39 0.2. */
+        byte[] claveFirma;
         boolean verificado;
         long creado;
         final List<Mensaje> mensajes = new ArrayList<>();
@@ -47,6 +50,25 @@ final class Almacen {
         long ultimaActividad() {
             return mensajes.isEmpty() ? creado : mensajes.get(mensajes.size() - 1).ts;
         }
+
+        String huella() {
+            return claveFirma != null ? X39Core.identityFingerprint(clave, claveFirma) : X39Core.fingerprint(clave);
+        }
+    }
+
+    /** Lee un texto X39ID1 (cifrado + firma) o X39PK1 (solo cifrado). Lanza RuntimeException si no es válido. */
+    static Contacto leerTexto(String texto) {
+        Contacto c = new Contacto();
+        String t = texto.trim();
+        if (t.startsWith("X39ID1:")) {
+            byte[] ambas = X39Core.identityFromText(t);
+            c.clave = Arrays.copyOfRange(ambas, 0, X39Core.PK_LEN);
+            c.claveFirma = Arrays.copyOfRange(ambas, X39Core.PK_LEN, ambas.length);
+        } else {
+            c.clave = X39Core.publicKeyFromText(t);
+        }
+        c.claveTexto = t;
+        return c;
     }
 
     private static final int MAX_MENSAJES = 500;
@@ -84,8 +106,10 @@ final class Almacen {
                 Contacto c = new Contacto();
                 c.id = o.getString("id");
                 c.nombre = o.getString("nombre");
-                c.claveTexto = o.getString("clave");
-                c.clave = X39Core.publicKeyFromText(c.claveTexto);
+                Contacto leido = leerTexto(o.getString("clave"));
+                c.claveTexto = leido.claveTexto;
+                c.clave = leido.clave;
+                c.claveFirma = leido.claveFirma;
                 c.verificado = o.optBoolean("verificado", false);
                 c.creado = o.optLong("creado", System.currentTimeMillis());
                 JSONArray ms = o.optJSONArray("mensajes");
@@ -141,19 +165,31 @@ final class Almacen {
         return null;
     }
 
-    /** Añade o actualiza un contacto por su clave pública. */
-    Contacto agregar(String nombre, String claveTexto, byte[] clave) {
-        String id = idDeClave(clave);
+    /**
+     * Añade o actualiza un contacto por su clave de cifrado. Si cambia su clave de firma, la verificación
+     * se pierde y hay que volver a comparar la huella. No se acepta sustituir una clave con firma por una antigua.
+     */
+    Contacto agregar(String nombre, String claveTexto) {
+        Contacto leido = leerTexto(claveTexto);
+        String id = idDeClave(leido.clave);
         Contacto c = porId(id);
         if (c == null) {
-            c = new Contacto();
+            c = leido;
             c.id = id;
             c.creado = System.currentTimeMillis();
             contactos.add(c);
+        } else {
+            if (c.claveFirma != null && leido.claveFirma == null) {
+                throw new IllegalArgumentException("Ya tienes su clave con firma. Una clave antigua sin firma no la sustituye.");
+            }
+            if (!Arrays.equals(c.claveFirma, leido.claveFirma)) {
+                c.verificado = false;
+            }
+            c.claveTexto = leido.claveTexto;
+            c.clave = leido.clave;
+            c.claveFirma = leido.claveFirma;
         }
         c.nombre = nombre;
-        c.claveTexto = claveTexto.trim();
-        c.clave = clave;
         return c;
     }
 

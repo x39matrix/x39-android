@@ -30,6 +30,15 @@ App Android sin servidor: generar claves, compartir la clave pública (QR o text
 - **Google 0 en la app:** sin Play Services, Firebase, FCM, Google Maps ni analítica. El SDK/NDK de Google solo se usa para compilar en el PC.
 - **Diseño:** tema oscuro con **rojo** como acento. **Prohibido el verde** en cualquier elemento. Como el rojo se asocia a «error», los errores se marcan con icono y texto, no solo con color.
 
+## APK v0.3 · firma del remitente (2026-09-15)
+Cada mensaje va firmado con **ML-DSA-87** (FIPS 204, crate `ml-dsa` 0.1.1, la misma que el canister Joseph) y la firma viaja dentro de la cápsula cifrada.
+- **Formato:** `0x02 | firma(4627) | carga`; se firma `SHA-256(clave ML-KEM del destinatario) || carga` con contexto `x39-msg-v1`. Atar la firma al destinatario impide reenviar a un tercero un mensaje firmado para otro.
+- **Identidad `X39ID1:`** = clave ML-KEM-1024 + clave ML-DSA-87 (≈5,6 kB de texto; ya no cabe en un QR). Huella v2 de 60 dígitos sobre ambas claves.
+- **Semilla de firma** de 32 bytes cifrada con la clave de Android Keystore, igual que la secreta ML-KEM. Quien actualiza desde la 0.2 recibe su identidad de firma al abrir la app; su huella cambia y sus contactos deben volver a compararla.
+- **Al recibir:** si el contacto tiene clave de firma, un mensaje sin firma o con firma inválida se **descarta** (anti-suplantación y anti-degradación). Los contactos con clave antigua `X39PK1` siguen funcionando, marcados como «remitente declarado, sin firma comprobada». No se acepta sustituir una clave con firma por una antigua.
+- **Tests:** `tests/firma.rs` (extremo a extremo, suplantación, reenvío a otro destinatario, bit cambiado, mensajes 0.2) y un test que demuestra que el prefijo FIPS 204 coincide con la librería.
+- **Pendiente:** forward secrecy, relé, auditoría externa. Probado en el PC con tests; en móvil falta la prueba manual entre dos teléfonos.
+
 ## Función: ubicación efímera (5 / 10 / 30 s)
 1. El emisor elige 5, 10 o 30 s. La ubicación se toma una sola vez (nunca en segundo plano) y viaja cifrada como un mensaje más.
 2. El receptor ve «📍 Ubicación · 10 s», toca para abrirla y **la cuenta atrás empieza al abrir** (se ve una sola vez).

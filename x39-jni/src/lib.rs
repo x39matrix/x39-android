@@ -7,6 +7,7 @@ use jni::EnvUnowned;
 use jni::errors::ThrowRuntimeExAndDefault;
 use jni::objects::{JByteArray, JClass, JString};
 use jni::sys::{jint, jlong};
+use x39_core::firma::{self, DSA_PK_LEN, DSA_SEED_LEN};
 use x39_core::{CID_LEN, PK_LEN, SK_LEN, TtlPolicy, share};
 use zeroize::Zeroizing;
 
@@ -57,6 +58,22 @@ fn secret_key_from(env: &jni::Env, array: &JByteArray) -> Res<Zeroizing<[u8; SK_
     let mut sk = Zeroizing::new([0u8; SK_LEN]);
     sk.copy_from_slice(&raw);
     Ok(sk)
+}
+
+fn signing_public_key_from(env: &jni::Env, array: &JByteArray) -> Res<[u8; DSA_PK_LEN]> {
+    env.convert_byte_array(array)?
+        .try_into()
+        .map_err(|_| PuenteError::Datos("clave de firma con longitud incorrecta"))
+}
+
+fn seed_from(env: &jni::Env, array: &JByteArray) -> Res<Zeroizing<[u8; DSA_SEED_LEN]>> {
+    let raw = Zeroizing::new(env.convert_byte_array(array)?);
+    if raw.len() != DSA_SEED_LEN {
+        return Err(PuenteError::Datos("semilla de firma con longitud incorrecta"));
+    }
+    let mut seed = Zeroizing::new([0u8; DSA_SEED_LEN]);
+    seed.copy_from_slice(&raw);
+    Ok(seed)
 }
 
 fn seconds(value: jlong, what: &'static str) -> Res<u64> {
@@ -167,6 +184,143 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_open<'c>(
             out.extend_from_slice(&header.cid);
             out.extend_from_slice(&pt);
             Ok(env.byte_array_from_slice(&out)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Semilla ML-DSA-87 de 32 bytes. Kotlin la cifra con Android Keystore; la clave se deriva al firmar.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_generateSigningSeed<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let seed = firma::generate_seed()?;
+            Ok(env.byte_array_from_slice(seed.as_slice())?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_signingPublicKey<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    seed: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let seed = seed_from(env, &seed)?;
+            Ok(env.byte_array_from_slice(&firma::public_key(&seed))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_identityToText<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    kem_public_key: JByteArray<'c>,
+    signing_public_key: JByteArray<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let kem = public_key_from(env, &kem_public_key)?;
+            let dsa = signing_public_key_from(env, &signing_public_key)?;
+            Ok(env.new_string(share::encode_identity(&kem, &dsa))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Devuelve `clave_ml_kem(1568) || clave_ml_dsa(2592)`.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_identityFromText<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    text: JString<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let (kem, dsa) = share::decode_identity(&text.to_string())?;
+            let mut out = Vec::with_capacity(PK_LEN + DSA_PK_LEN);
+            out.extend_from_slice(&kem);
+            out.extend_from_slice(&dsa);
+            Ok(env.byte_array_from_slice(&out)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_identityFingerprint<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    kem_public_key: JByteArray<'c>,
+    signing_public_key: JByteArray<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let kem = public_key_from(env, &kem_public_key)?;
+            let dsa = signing_public_key_from(env, &signing_public_key)?;
+            Ok(env.new_string(share::fingerprint_identity(&kem, &dsa))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Firma `payload` con ML-DSA-87 para el destinatario, lo sella y devuelve el texto `X39MSG1:…`.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_sealSigned<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    recipient_public_key: JByteArray<'c>,
+    seed: JByteArray<'c>,
+    payload: JByteArray<'c>,
+    now_secs: jlong,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = public_key_from(env, &recipient_public_key)?;
+            let seed = seed_from(env, &seed)?;
+            let payload = Zeroizing::new(env.convert_byte_array(&payload)?);
+            let now = seconds(now_secs, "hora del sistema inválida")?;
+            let body = firma::sign_for(&seed, &pk, &payload)?;
+            let capsule = x39_core::seal(&pk, &body, b"", None, now)?;
+            Ok(env.new_string(share::encode_capsule(&capsule))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Carga de un cuerpo firmado SIN verificar, para leer el remitente declarado. Lanza si no está firmado.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_unverifiedPayload<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    body: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let body = Zeroizing::new(env.convert_byte_array(&body)?);
+            let payload = firma::unverified_payload(&body).ok_or(PuenteError::Datos("mensaje sin firma"))?;
+            Ok(env.byte_array_from_slice(payload)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Verifica la firma del remitente sobre un cuerpo abierto y devuelve la carga. Lanza si no es válida.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_verifySigned<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    sender_signing_key: JByteArray<'c>,
+    my_public_key: JByteArray<'c>,
+    body: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let sender = signing_public_key_from(env, &sender_signing_key)?;
+            let mine = public_key_from(env, &my_public_key)?;
+            let body = Zeroizing::new(env.convert_byte_array(&body)?);
+            let payload = firma::verify_from(&sender, &mine, &body)?;
+            Ok(env.byte_array_from_slice(payload)?)
         })
         .resolve::<ThrowRuntimeExAndDefault>()
 }
