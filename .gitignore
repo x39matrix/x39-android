@@ -7,3 +7,4 @@ android/app/src/main/jniLibs/
 android/local.properties
 vectores/rust_sealed.json
 __pycache__/
+diseno/*.htmln

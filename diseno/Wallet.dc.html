@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #0D0D0D; color: #F2F2F2; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #E53935; } a:hover { color: #FF6B66; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #0D0D0D; position: relative; overflow: hidden;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 12px;">
+    <span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -0.02em;">Wallet</span>
+    <div style="display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: #17171A; font-size: 12px; color: #B5B5BA;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 018 0v3"></path></svg>
+      <span>Claves solo en este móvil</span>
+    </div>
+  </div>
+
+  <div style="margin: 0 16px; padding: 22px 20px 20px; border-radius: 24px; background: radial-gradient(120% 90% at 100% 0%, rgba(229, 57, 53, 0.22), rgba(229, 57, 53, 0) 60%), #17171A; display: flex; flex-direction: column; gap: 6px;">
+    <span style="font-size: 13px; color: #9E9E9E;">Saldo</span>
+    <div style="display: flex; align-items: baseline; gap: 8px;">
+      <span style="font-family: 'Sora', sans-serif; font-size: 36px; font-weight: 700; letter-spacing: -0.03em;">0,04821</span>
+      <span style="font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 600; color: #B5B5BA;">BTC</span>
+    </div>
+    <span style="font-size: 13px; color: #9E9E9E;">≈ [valor en EUR]</span>
+    <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #9E9E9E;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"></path></svg>
+      <span>Bitcoin · tu servidor Electrum vía Tor</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 14px 16px 0;">
+    <div style="height: 76px; border-radius: 18px; background: #17171A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 9v8h8"></path></svg>
+      <span style="font-size: 13px; font-weight: 500;">Recibir</span>
+    </div>
+    <div style="height: 76px; border-radius: 18px; background: #E53935; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"></path></svg>
+      <span style="font-size: 13px; font-weight: 600;">Enviar</span>
+    </div>
+    <div style="height: 76px; border-radius: 18px; background: #17171A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 19h2M19 14v2"></path></svg>
+      <span style="font-size: 13px; font-weight: 500;">Escanear</span>
+    </div>
+  </div>
+
+  <div style="margin: 14px 16px 0; border-radius: 18px; background: #17171A; display: flex; flex-direction: column;">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 14px; min-height: 64px;">
+      <div style="width: 36px; height: 36px; border-radius: 11px; background: #222226; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"></circle><path d="M11 12l9-9M17 6l3 3"></path></svg></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+        <span style="font-size: 14px; font-weight: 600;">Semilla respaldada</span>
+        <span style="font-size: 12px; color: #9E9E9E;">Copia en papel comprobada</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6B70" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+    </div>
+    <div style="height: 1px; margin-left: 62px; background: rgba(255, 255, 255, 0.06);"></div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 14px; min-height: 64px;">
+      <div style="width: 36px; height: 36px; border-radius: 11px; background: #222226; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"></path><path d="M12 9v4M12 16h.01"></path></svg></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+        <span style="font-size: 14px; font-weight: 600;">Wallet de coacción</span>
+        <span style="font-size: 12px; color: #9E9E9E;">Un PIN alternativo abre un saldo pequeño</span>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6B70" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 20px 20px 4px;">
+    <span style="font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 600;">Actividad</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; flex-grow: 1;">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 60px;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #222226; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B5B5BA" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"></path></svg></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+        <span style="font-size: 15px; font-weight: 500;">Pago a Ana</span>
+        <span style="font-size: 12px; color: #9E9E9E;">Desde el chat · hoy</span>
+      </div>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #B5B5BA;">−0,0021</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 60px;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(229, 57, 53, 0.14); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 9v8h8"></path></svg></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+        <span style="font-size: 15px; font-weight: 500;">Recibido de Martín</span>
+        <span style="font-size: 12px; color: #9E9E9E;">Desde el chat · ayer</span>
+      </div>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #F2F2F2; font-weight: 500;">+0,0150</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 60px;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #222226; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B5B5BA" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><path d="M14 14h2v2h-2zM18 18h2v2h-2z"></path></svg></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+        <span style="font-size: 15px; font-weight: 500;">Firmado con Coldcard</span>
+        <span style="font-size: 12px; color: #9E9E9E;">PSBT por QR · 10 sep</span>
+      </div>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #B5B5BA;">−0,0300</span>
+    </div>
+  </div>
+
+  <div style="height: 72px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid rgba(255, 255, 255, 0.06); background: #0D0D0D;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4V5z"></path></svg></div>
+      <span style="font-size: 12px; color: #8A8A90;">Chats</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2 .8 3 3 3 6"></path></svg></div>
+      <span style="font-size: 12px; color: #8A8A90;">Contactos</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; border-radius: 14px; background: rgba(229, 57, 53, 0.16); display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"></rect><path d="M3 10h18M16 15h2"></path></svg></div>
+      <span style="font-size: 12px; color: #E53935; font-weight: 600;">Wallet</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"></path></svg></div>
+      <span style="font-size: 12px; color: #8A8A90;">Seguridad</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

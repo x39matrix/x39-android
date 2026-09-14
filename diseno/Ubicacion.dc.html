@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #0D0D0D; color: #F2F2F2; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #E53935; } a:hover { color: #FF6B66; }
+    @keyframes pulso { 0% { transform: scale(0.6); opacity: 0.55; } 100% { transform: scale(2.4); opacity: 0; } }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #101012;">
+
+  <svg width="390" height="844" viewBox="0 0 390 844" style="position: absolute; left: 0; top: 0;">
+    <rect width="390" height="844" fill="#101012"></rect>
+    <path d="M30 120h120v90H30zM180 90h170v130H180zM20 250h140v160H20zM200 260h160v110H200zM40 460h110v120H40zM190 420h180v150H190zM20 630h150v140H20zM210 610h150v170H210z" fill="#151518"></path>
+    <path d="M-20 230L420 200M-20 430L420 395M-20 600L420 590M170 -20L185 870M-20 800L420 740" stroke="#232327" stroke-width="16" fill="none"></path>
+    <path d="M-20 90L200 330L430 520M60 -20L20 900M370 -20L330 900" stroke="#1D1D21" stroke-width="8" fill="none"></path>
+    <path d="M250 -20C230 180 320 280 290 470S120 640 140 880" stroke="#2A1816" stroke-width="22" fill="none" opacity="0.8"></path>
+  </svg>
+
+  <div style="position: absolute; left: 0; top: 0; width: 390px; display: flex; align-items: center; gap: 8px; padding: 14px 16px; background: linear-gradient(#0D0D0D 55%, rgba(13, 13, 13, 0));">
+    <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(23, 23, 26, 0.9); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1; padding-left: 4px;">
+      <span style="font-size: 16px; font-weight: 600;">Ubicación de Ana</span>
+      <span style="font-size: 12px; color: #9E9E9E;">Se ve una sola vez</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: rgba(23, 23, 26, 0.9); font-size: 12px; color: #F2F2F2;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"></path><path d="M9.5 5H15l1.5 2H20a1 1 0 011 1v9M17 19H4a1 1 0 01-1-1V8a1 1 0 011-1h2"></path></svg>
+      <span>Sin capturas</span>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 171px; top: 318px; width: 48px; height: 48px;">
+    <div style="position: absolute; left: 12px; top: 26px; width: 24px; height: 24px; border-radius: 50%; background: #E53935; animation: pulso 1.8s ease-out infinite;"></div>
+    <svg width="48" height="48" viewBox="0 0 24 24" style="position: absolute; left: 0; top: 0;"><path d="M12 22s-7-6.2-7-12a7 7 0 0114 0c0 5.8-7 12-7 12z" fill="#E53935"></path><circle cx="12" cy="10" r="2.8" fill="#0D0D0D"></circle></svg>
+  </div>
+
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; padding: 20px; border-radius: 26px; background: rgba(23, 23, 26, 0.94); border: 1px solid rgba(255, 255, 255, 0.06); display: flex; flex-direction: column; align-items: center; gap: 16px;">
+    <div style="position: relative; width: 132px; height: 132px; display: flex; align-items: center; justify-content: center;">
+      <svg width="132" height="132" viewBox="0 0 132 132" style="position: absolute; left: 0; top: 0; transform: rotate(-90deg);">
+        <circle cx="66" cy="66" r="58" stroke="#2A2A2F" stroke-width="8" fill="none"></circle>
+        <circle cx="66" cy="66" r="58" stroke="#E53935" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="364.4" stroke-dashoffset="109.3"></circle>
+      </svg>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <span style="font-family: 'Sora', sans-serif; font-size: 46px; font-weight: 700; line-height: 1; letter-spacing: -0.03em;">7</span>
+        <span style="font-size: 12px; color: #9E9E9E; margin-top: 4px;">segundos</span>
+      </div>
+    </div>
+    <span style="font-family: 'IBM Plex Mono', 'Consolas', monospace; font-size: 14px; color: #B5B5BA;">37.3886, −5.9823</span>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: #222226; font-size: 12px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l-5 2v14l5-2 6 2 5-2V4l-5 2-6-2zM9 4v14M15 6v14"></path></svg>
+        <span>Mapa offline</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: #222226; font-size: 12px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2M9 2h6"></path></svg>
+        <span>Se destruye en ambos móviles</span>
+      </div>
+    </div>
+    <span style="font-size: 11px; line-height: 1.45; color: #6B6B70; text-align: center; text-wrap: pretty;">x39 bloquea capturas y grabación de pantalla, pero no puede impedir una foto hecha con otro dispositivo.</span>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

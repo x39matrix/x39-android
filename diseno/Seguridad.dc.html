@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #0D0D0D; color: #F2F2F2; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #E53935; } a:hover { color: #FF6B66; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #0D0D0D; position: relative; overflow: hidden;">
+
+  <div style="display: flex; flex-direction: column; gap: 4px; padding: 20px 20px 14px;">
+    <span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -0.02em;">Seguridad</span>
+    <span style="font-size: 13px; color: #9E9E9E;">Lo que x39 hace en este móvil, comprobado ahora.</span>
+  </div>
+
+  <div style="margin: 0 16px; border-radius: 18px; background: #17171A; display: flex; flex-direction: column; padding: 4px 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: 44px;">
+      <span style="font-size: 14px; color: #B5B5BA;">Cifrado</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px;">ML-KEM-1024 + X25519</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: 44px;">
+      <span style="font-size: 14px; color: #B5B5BA;">Claves en hardware</span>
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg><span>StrongBox</span></div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: 44px;">
+      <span style="font-size: 14px; color: #B5B5BA;">Capturas de pantalla</span>
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg><span>Bloqueadas</span></div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: 44px;">
+      <span style="font-size: 14px; color: #B5B5BA;">Servicios de Google</span>
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg><span>Ninguno</span></div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: 44px;">
+      <span style="font-size: 14px; color: #B5B5BA;">Copias en la nube</span>
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg><span>Desactivadas</span></div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: 44px;">
+      <span style="font-size: 14px; color: #B5B5BA;">Bloqueo de la app</span>
+      <span style="font-size: 14px;">Huella + clave</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: 44px;">
+      <span style="font-size: 14px; color: #B5B5BA;">PIN de coacción</span>
+      <span style="font-size: 14px;">Configurado</span>
+    </div>
+  </div>
+
+  <div style="margin: 14px 16px 0; padding: 16px; border-radius: 18px; background: #17171A; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 600;">Tu huella de seguridad</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><path d="M14 14h2v2h-2zM18 18h2v2h-2z"></path></svg>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 6px; font-family: 'IBM Plex Mono', 'Consolas', monospace; font-size: 16px; letter-spacing: 0.02em;">
+      <span>56325</span><span>94410</span><span>98804</span><span>88759</span>
+      <span>28123</span><span>42972</span><span>06988</span><span>32331</span>
+      <span>50442</span><span>59545</span><span>66757</span><span>31127</span>
+    </div>
+    <span style="font-size: 12px; color: #9E9E9E;">Compárala en persona con cada contacto.</span>
+  </div>
+
+  <div style="margin: 14px 16px 0; padding: 14px 16px; border-radius: 18px; border: 1px solid rgba(229, 57, 53, 0.35); background: rgba(229, 57, 53, 0.06); display: flex; gap: 12px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 3l10 18H2L12 3z"></path><path d="M12 10v5M12 18h.01"></path></svg>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 14px; font-weight: 600;">Lo que aún no está cubierto</span>
+      <span style="font-size: 12px; line-height: 1.5; color: #B5B5BA; text-wrap: pretty;">El protocolo x39 no ha pasado una auditoría externa. La ocultación de metadatos de red está en desarrollo.</span>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="height: 72px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid rgba(255, 255, 255, 0.06); background: #0D0D0D;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4V5z"></path></svg></div>
+      <span style="font-size: 12px; color: #8A8A90;">Chats</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2 .8 3 3 3 6"></path></svg></div>
+      <span style="font-size: 12px; color: #8A8A90;">Contactos</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"></rect><path d="M3 10h18M16 15h2"></path></svg></div>
+      <span style="font-size: 12px; color: #8A8A90;">Wallet</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+      <div style="padding: 4px 18px; border-radius: 14px; background: rgba(229, 57, 53, 0.16); display: flex;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"></path></svg></div>
+      <span style="font-size: 12px; color: #E53935; font-weight: 600;">Seguridad</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
