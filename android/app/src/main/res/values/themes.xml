@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paleta x39: fondo oscuro y acento rojo. Regla del proyecto: NINGÚN verde. -->
+<resources>
+    <color name="x39_fondo">#0D0D0D</color>
+    <color name="x39_superficie">#1A1A1A</color>
+    <color name="x39_rojo">#E53935</color>
+    <color name="x39_rojo_oscuro">#8E1B18</color>
+    <color name="x39_texto">#F2F2F2</color>
+    <color name="x39_texto_suave">#9E9E9E</color>
+
+    <style name="Tema.X39" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/x39_fondo</item>
+        <item name="android:colorPrimaryDark">@color/x39_fondo</item>
+        <item name="android:colorAccent">@color/x39_rojo</item>
+        <item name="android:colorControlActivated">@color/x39_rojo</item>
+        <item name="android:windowBackground">@color/x39_fondo</item>
+        <item name="android:statusBarColor">@color/x39_fondo</item>
+        <item name="android:navigationBarColor">@color/x39_fondo</item>
+        <item name="android:textColorPrimary">@color/x39_texto</item>
+        <item name="android:textColorSecondary">@color/x39_texto_suave</item>
+        <item name="android:textColorHighlight">@color/x39_rojo_oscuro</item>
+    </style>
+</resources>

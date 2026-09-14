@@ -1,0 +1,4 @@
+// Solo el plugin de compilación de Android. La app no declara ninguna dependencia.
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}

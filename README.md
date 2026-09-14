@@ -27,7 +27,8 @@ App de mensajería post-cuántica para Android. El diseño parte de Paris v3 y s
 ## APK v0.1 · «Paris de bolsillo»
 App Android sin servidor: generar claves, compartir la clave pública (QR o texto `X39PK1:`), cifrar para otra persona, abrir mensajes `X39MSG1:` (con TTL y anti-replay), huella de seguridad de 60 dígitos y `FLAG_SECURE` en toda la app.
 - Motor listo en `x39-core` (`share.rs`: formatos de texto, huella y límite de QR).
-- **Pendiente:** permiso para descargar las herramientas Android (JDK, SDK/NDK, Gradle, ~3,5 GB) y aceptar las licencias del SDK.
+- **Google 0 en la app:** sin Play Services, Firebase, FCM, Google Maps ni analítica. El SDK/NDK de Google solo se usa para compilar en el PC.
+- **Diseño:** tema oscuro con **rojo** como acento. **Prohibido el verde** en cualquier elemento. Como el rojo se asocia a «error», los errores se marcan con icono y texto, no solo con color.
 
 ## Función: ubicación efímera (5 / 10 / 30 s)
 1. El emisor elige 5, 10 o 30 s. La ubicación se toma una sola vez (nunca en segundo plano) y viaja cifrada como un mensaje más.

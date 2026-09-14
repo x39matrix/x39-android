@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'org.x39.bolsillo'
+    compileSdk 35
+    ndkVersion '27.2.12479018'
+
+    defaultConfig {
+        applicationId 'org.x39.bolsillo'
+        minSdk 28          // StrongBox disponible desde Android 9
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Sin el bloque de metadatos de dependencias firmado por Google (requisito F-Droid).
+    dependenciesInfo {
+        includeInApk false
+        includeInBundle false
+    }
+}
+
+// Google 0: la app no tiene dependencias. Solo Android framework + libx39jni.so (Rust).
+dependencies {
+}
