@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.6.0";
+    private static final String VERSION = "0.6.1";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -83,7 +83,8 @@ public class MainActivity extends Activity {
     private String errorRegistro;
 
     private FrameLayout raiz;
-    private Pestana pestana = Pestana.INICIO;
+    /** La primera página, también para el personal, es Plenos: la misma que sevilla.x39matrix.org. */
+    private Pestana pestana = Pestana.PLENOS;
     private Runnable pantallaSecundaria;
     private boolean desbloqueado;
     private boolean esperandoDesbloqueo;
@@ -502,7 +503,7 @@ public class MainActivity extends Activity {
         raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         TextView entrar = Ui.boton(this, "Entrar", true, v -> {
             enBienvenida = false;
-            mostrarPestana(Pestana.INICIO);
+            mostrarPestana(Pestana.PLENOS);
             procesarPendiente();
         });
         raizCol.addView(entrar, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 24, 8, 24, 20));
