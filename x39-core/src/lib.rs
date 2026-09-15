@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 
 pub mod firma;
+pub mod ots;
 pub mod share;
 
 use aes_gcm::Aes256Gcm;
@@ -55,6 +56,8 @@ pub enum Error {
     Formato,
     /// Firma del remitente ausente, manipulada, de otra persona o dirigida a otro destinatario.
     Firma,
+    /// Prueba OpenTimestamps (.ots) o respuesta de calendario mal formada.
+    Ots,
 }
 
 impl std::fmt::Display for Error {
@@ -70,6 +73,7 @@ impl std::fmt::Display for Error {
             Error::InvalidKey => "clave pública inválida",
             Error::Formato => "texto corrupto o de otro tipo (revisa que se copió entero)",
             Error::Firma => "la firma del remitente no es válida",
+            Error::Ots => "prueba OpenTimestamps no válida",
         };
         f.write_str(s)
     }
