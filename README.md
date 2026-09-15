@@ -30,6 +30,15 @@ App Android sin servidor: generar claves, compartir la clave pública (QR o text
 - **Google 0 en la app:** sin Play Services, Firebase, FCM, Google Maps ni analítica. El SDK/NDK de Google solo se usa para compilar en el PC.
 - **Diseño:** tema oscuro con **rojo** como acento. **Prohibido el verde** en cualquier elemento. Como el rojo se asocia a «error», los errores se marcan con icono y texto, no solo con color.
 
+## APK v0.4 · Plenos y modo ciudadano (2026-09-15)
+Versión para el Ayuntamiento de Sevilla. **Sin wallet** y sin ninguna mención a dinero.
+- **Portada con dos entradas:** «Ver plenos y comprobar documentos» (ciudadano: sin clave, sin cuenta, sin desbloqueo) y «Soy personal del Ayuntamiento» (crea ML-KEM-1024 + ML-DSA-87). El ciudadano puede activar el acceso de personal más tarde desde Plenos.
+- **Plenos:** las 28 áreas del portal agrupadas (gobierno y contratación, 11 distritos, organismos y servicios, empresas municipales) con sus documentos anclados. Tocar uno abre el PDF congelado en el navegador; la app sigue sin permiso de internet.
+- **Registro incluido en la app** (`assets/registro.json`): `scripts/actualizar_registro.sh` lo descarga de `https://api.x39matrix.org/registro/registro.json` en cada compilación, descarta entradas con huella inválida o ruta de PDF fuera de `actas/` y conserva la copia anterior si no hay conexión.
+- **Comprobar un documento:** SHA-256 calculado en el móvil y comparado con el registro incluido. No sustituye la verificación completa de los sellos, que se hace con las herramientas del portal.
+- **Roles:** los ciudadanos solo consultan y comprueban. Chats y grupos son para el personal. Anclar actas nunca se hace desde la app ni desde la web: se prepara en el ordenador de Secretaría y la autorización la firma el móvil del responsable (pendiente).
+- `scripts/comprobar_pdfs_registro.sh` descarga cada PDF del registro y confirma que existe en el portal y que su huella coincide.
+
 ## APK v0.3 · firma del remitente (2026-09-15)
 Cada mensaje va firmado con **ML-DSA-87** (FIPS 204, crate `ml-dsa` 0.1.1, la misma que el canister Joseph) y la firma viaja dentro de la cápsula cifrada.
 - **Formato:** `0x02 | firma(4627) | carga`; se firma `SHA-256(clave ML-KEM del destinatario) || carga` con contexto `x39-msg-v1`. Atar la firma al destinatario impide reenviar a un tercero un mensaje firmado para otro.
