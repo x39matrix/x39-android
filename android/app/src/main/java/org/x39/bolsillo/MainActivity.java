@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.6.1";
+    private static final String VERSION = "0.6.2";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -293,7 +293,10 @@ public class MainActivity extends Activity {
         LinearLayout col = Ui.columna(this);
         LinearLayout barra = Ui.fila(this);
         barra.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), 0);
-        barra.addView(new View(this), Ui.peso(1));
+        // «x39» a la derecha por gravedad. Antes se empujaba con un View vacío de peso 1: un View sin
+        // contenido mide TODA la altura disponible, la barra se estiraba a pantalla completa y el contenido
+        // de la pestaña se quedaba sin sitio (pantallas vacías con «x39» en el centro, 0.5.0 y 0.6.x).
+        barra.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
         barra.addView(Ui.marca(this));
         col.addView(barra);
         col.addView(contenido, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
