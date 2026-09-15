@@ -44,7 +44,7 @@ public class MainActivity extends Activity {
     private static final long TTL_SEGUNDOS = 7L * 24 * 3600;
     private static final int REQ_DESBLOQUEO = 39;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.3.1";
+    private static final String VERSION = "0.3.2";
     /** Portal público de transparencia verificable. Se abre en el navegador: x39 sigue sin permiso de internet. */
     private static final String URL_TRANSPARENCIA = "https://sevilla.x39matrix.org";
 
@@ -476,7 +476,9 @@ public class MainActivity extends Activity {
         b.setBackground(fondo);
         TextView t = Ui.texto(this, m.texto, 15, Ui.TEXTO, false);
         t.setMaxWidth(anchoMax - Ui.dp(this, 28));
-        t.setTextIsSelectable(true);
+        // Sin selección ni copia del texto descifrado: no hay forma de reenviarlo desde la app.
+        t.setTextIsSelectable(false);
+        t.setLongClickable(false);
         b.addView(t);
         String pie = Ui.hora(m.ts) + (m.saliente ? " · firmado y cifrado" : (m.remitenteDeclarado ? "" : " · firma verificada"));
         TextView h = Ui.texto(this, pie, 11, m.saliente ? 0xA6FFFFFF : 0xFF7A7A80, false);
@@ -750,6 +752,7 @@ public class MainActivity extends Activity {
         filaEstado(lista, "Contactos con firma", conFirma + " de " + almacen.contactos.size(), conFirma == almacen.contactos.size());
         filaEstado(lista, "Claves en hardware", hw, !"Software".equals(hw) && !"Desconocido".equals(hw));
         filaEstado(lista, "Capturas de pantalla", "Bloqueadas", true);
+        filaEstado(lista, "Copiar o reenviar mensajes", "No disponible", true);
         filaEstado(lista, "Acceso a internet", internet ? "Permitido" : "Sin permiso", !internet);
         filaEstado(lista, "Servicios de Google", "Ninguno", true);
         filaEstado(lista, "Copias en la nube", copias ? "Activadas" : "Desactivadas", !copias);
