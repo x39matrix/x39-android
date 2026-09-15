@@ -55,7 +55,8 @@ const MIN_DIR: usize = 16;
 /// Fichas por respuesta de /agenda (unos 31 000 caracteres cada una con acreditación).
 const LOTE_AGENDA: usize = 10;
 const MAX_SALAS: usize = 500;
-const MAX_SOBRE: usize = 8_000;
+/// Un sobre real (cápsula ML-KEM con cuerpo firmado ML-DSA-87 de ~6,4 kB) ronda los 8 500 caracteres.
+const MAX_SOBRE: usize = 12_000;
 const MAX_FIRMA: usize = 7_000;
 const LOTE_SALA: usize = 30;
 
@@ -792,8 +793,13 @@ mod tests {
         let cuerpo = serde_json::json!({"sala":"amate","epoca":0,"de":ana_dir,"msg":m,"firma":f}).to_string();
         assert_eq!(sala_mensaje_en(&mut s, cuerpo.as_bytes(), 10).status_code, 409);
 
-        // Ana se entrega la clave a sí misma: nace la época 0.
-        let sobre = "X39MSG1:AAAA".to_string();
+        // Ana se entrega la clave a sí misma: nace la época 0. El sobre es uno REAL (cápsula con cuerpo
+        // firmado), para que el límite de tamaño del canister se compruebe con el tamaño verdadero.
+        let carga = format!("{{\"sala\":\"amate\",\"epoca\":0,\"clave\":\"{}\"}}", "A".repeat(44));
+        let cuerpo = firma::sign_for(&ana, &ana_kem.public, carga.as_bytes()).unwrap();
+        let capsula = x39_core::seal(&ana_kem.public, &cuerpo, b"", None, 1).unwrap();
+        let sobre = x39_core::share::encode_capsule(&capsula);
+        assert!(sobre.len() > 8_000 && sobre.len() <= MAX_SOBRE, "sobre real de {} caracteres", sobre.len());
         let fs = sala::firmar(&ana, "amate", 0, &sala::accion_sobre(&ana_dir, &sobre)).unwrap();
         let cs = serde_json::json!({"sala":"amate","epoca":0,"para":ana_dir,"de":ana_dir,"sobre":sobre,"firma":fs}).to_string();
         assert_eq!(sala_sobre_en(&mut s, cs.as_bytes(), 11).status_code, 200);
