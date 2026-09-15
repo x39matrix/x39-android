@@ -50,7 +50,15 @@ final class Almacen {
         /** Nombre acreditado por el Ayuntamiento y último día de validez (AAAA-MM-DD), solo si la acreditación verificó. */
         String acreditadoNombre;
         String acreditadoHasta;
+        /** La autoridad revocó su acreditación (revocación firmada, comprobada aquí): fuera de agenda y salas. */
+        boolean revocado;
+        String revocadoMotivo;
         final List<Mensaje> mensajes = new ArrayList<>();
+
+        /** Acreditado y no revocado: lo que cuenta para agenda y salas. */
+        boolean acreditadoVigente() {
+            return acreditadoNombre != null && !revocado;
+        }
 
         /** La invitación lleva «Nombre Apellidos · Cargo · Área»; esto es solo el nombre (o todo, si no hay más). */
         String acreditadoSoloNombre() {
@@ -118,9 +126,12 @@ final class Almacen {
     static final class Sala {
         String id;
         String nombre;
-        /** -1 = todavía sin clave. */
+        /** Época vigente según el canister; -1 = todavía sin clave. */
         int epoca = -1;
+        /** Clave de la época vigente (copia de claves.get(epoca)), o null. */
         byte[] clave;
+        /** Claves de todas las épocas que este móvil ha recibido: lo antiguo se sigue leyendo tras una rotación. */
+        final java.util.Map<Integer, byte[]> claves = new java.util.HashMap<>();
         long ultimoSeq;
         String ultimoHash = "";
         /** Direcciones añadidas a mano por otros miembros (el canister las guarda; aquí, copia). */
@@ -133,6 +144,14 @@ final class Almacen {
 
         boolean conClave() {
             return epoca >= 0 && clave != null;
+        }
+
+        void ponerClave(int epoca, byte[] clave) {
+            claves.put(epoca, clave);
+            if (epoca >= this.epoca) {
+                this.epoca = epoca;
+                this.clave = clave;
+            }
         }
     }
 
@@ -218,6 +237,14 @@ final class Almacen {
                 s.epoca = o.optInt("epoca", -1);
                 String clave = o.optString("clave", "");
                 s.clave = clave.isEmpty() ? null : android.util.Base64.decode(clave, android.util.Base64.NO_WRAP);
+                JSONObject cl = o.optJSONArray("claves") == null ? o.optJSONObject("claves") : null;
+                if (cl != null) {
+                    for (java.util.Iterator<String> it = cl.keys(); it.hasNext(); ) {
+                        String k = it.next();
+                        s.claves.put(Integer.parseInt(k), android.util.Base64.decode(cl.optString(k), android.util.Base64.NO_WRAP));
+                    }
+                }
+                if (s.clave != null && s.epoca >= 0) s.claves.put(s.epoca, s.clave);
                 s.ultimoSeq = o.optLong("ultimo_seq", 0);
                 s.ultimoHash = o.optString("ultimo_hash", "");
                 JSONArray me = o.optJSONArray("miembros_extra");
@@ -245,6 +272,8 @@ final class Almacen {
                 c.acreditacionTexto = o.has("acr") ? o.optString("acr") : null;
                 c.acreditadoNombre = o.has("acr_nombre") ? o.optString("acr_nombre") : null;
                 c.acreditadoHasta = o.has("acr_hasta") ? o.optString("acr_hasta") : null;
+                c.revocado = o.optBoolean("rev", false);
+                c.revocadoMotivo = o.has("rev_motivo") ? o.optString("rev_motivo") : null;
                 JSONArray ms = o.optJSONArray("mensajes");
                 if (ms != null) {
                     for (int k = 0; k < ms.length(); k++) {
@@ -277,6 +306,8 @@ final class Almacen {
                     .put("acr", c.acreditacionTexto == null ? JSONObject.NULL : c.acreditacionTexto)
                     .put("acr_nombre", c.acreditadoNombre == null ? JSONObject.NULL : c.acreditadoNombre)
                     .put("acr_hasta", c.acreditadoHasta == null ? JSONObject.NULL : c.acreditadoHasta)
+                    .put("rev", c.revocado)
+                    .put("rev_motivo", c.revocadoMotivo == null ? JSONObject.NULL : c.revocadoMotivo)
                     .put("mensajes", ms));
         }
         JSONArray ss = new JSONArray();
@@ -288,11 +319,16 @@ final class Almacen {
                 ms.put(new JSONObject().put("seq", m.seq).put("de", m.de).put("a", m.autor).put("t", m.texto).put("ts", m.ts)
                         .put("p", m.propio).put("f", m.firmaOk).put("c", m.cadenaOk));
             }
+            JSONObject cl = new JSONObject();
+            for (java.util.Map.Entry<Integer, byte[]> e : s.claves.entrySet()) {
+                cl.put(String.valueOf(e.getKey()), android.util.Base64.encodeToString(e.getValue(), android.util.Base64.NO_WRAP));
+            }
             ss.put(new JSONObject()
                     .put("id", s.id)
                     .put("nombre", s.nombre)
                     .put("epoca", s.epoca)
                     .put("clave", s.clave == null ? "" : android.util.Base64.encodeToString(s.clave, android.util.Base64.NO_WRAP))
+                    .put("claves", cl)
                     .put("ultimo_seq", s.ultimoSeq)
                     .put("ultimo_hash", s.ultimoHash)
                     .put("miembros_extra", new JSONArray(s.miembrosExtra))

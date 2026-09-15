@@ -33,6 +33,24 @@ fn acepta_saltos_de_linea_de_los_chats() {
 }
 
 #[test]
+fn revocacion_firmada_por_la_autoridad() {
+    let (seed, pk) = autoridad();
+    let titular = firma::generate_seed().unwrap();
+    let codigo = x39_core::directorio::codigo(&firma::public_key(&titular));
+    let visible = x39_core::directorio::codigo_visible(&codigo);
+    let texto = invitacion::revocar(&seed, &visible.to_lowercase(), "2026-09-16", "Cese en el cargo").unwrap();
+    assert!(texto.starts_with(invitacion::PREFIX_REV));
+    let r = invitacion::verificar_revocacion(&pk, &texto).unwrap();
+    assert_eq!(r.codigo, codigo, "se guarda el código canónico");
+    assert_eq!(r.fecha, "2026-09-16");
+    assert_eq!(r.motivo, "Cese en el cargo");
+    let (_, otra) = autoridad();
+    assert_eq!(invitacion::verificar_revocacion(&otra, &texto).unwrap_err(), Error::Firma);
+    assert_eq!(invitacion::revocar(&seed, "hola", "2026-09-16", "x").unwrap_err(), Error::Formato);
+    assert_eq!(invitacion::revocar(&seed, &visible, "2026-09-16", "a|b").unwrap_err(), Error::Formato);
+}
+
+#[test]
 fn caducada() {
     let (seed, pk) = autoridad();
     let texto = invitacion::emitir(&seed, "2026-09-14", "Alguien").unwrap();

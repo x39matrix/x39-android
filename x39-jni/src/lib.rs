@@ -451,6 +451,24 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_invitationVerify<'c>(
         .resolve::<ThrowRuntimeExAndDefault>()
 }
 
+/// Verifica una revocación «X39REV1:…» firmada por la autoridad. Devuelve "codigo|fecha|motivo"
+/// (código canónico de 12 símbolos) o lanza.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_revocationVerify<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    authority_key: JByteArray<'c>,
+    text: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = signing_public_key_from(env, &authority_key)?;
+            let r = invitacion::verificar_revocacion(&pk, &text.to_string())?;
+            Ok(env.new_string(format!("{}|{}|{}", r.codigo, r.fecha, r.motivo))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
 /// Acreditación: firma la invitación con la semilla ML-DSA-87 del titular. Devuelve «X39ACR1:…».
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_org_x39_bolsillo_X39Core_accreditationCreate<'c>(

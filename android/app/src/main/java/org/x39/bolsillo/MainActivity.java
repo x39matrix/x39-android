@@ -68,7 +68,11 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.12.0";
+    private static final String VERSION = "0.13.0";
+    /** Marca de tiempo del buzón hasta la que ya se leyeron las revocaciones. */
+    private static final String PREF_REVOCADAS_DESDE = "revocadas_desde";
+    /** Motivo con el que la autoridad revocó MI acreditación (si ocurrió). */
+    private static final String PREF_MI_REVOCACION = "mi_revocacion";
     /** Salas a las que me añadieron a mano (JSON de ids), según /sala/mias. */
     private static final String PREF_SALAS_EXTRA = "salas_extra";
     /** Un sobre (clave de sala) se puede abrir aunque lleve años publicado: quien entra tarde lee lo anterior. */
@@ -137,12 +141,15 @@ public class MainActivity extends Activity {
     private boolean sincronizandoSalas;
     private long ultimoIntentoMias;
     private String estadoSalas = "Todavía no consultadas.";
+    private long ultimoIntentoRevocaciones;
+    private boolean sincronizandoRevocaciones;
     private final Runnable sondeo = new Runnable() {
         @Override
         public void run() {
             if (!sondeando) return;
             if (!directorioPublicado && System.currentTimeMillis() - ultimoIntentoDirectorio > REINTENTO_DIRECTORIO_MS) publicarEnDirectorio();
             if (System.currentTimeMillis() - ultimoIntentoAgenda > INTERVALO_AGENDA_MS) sincronizarAgenda();
+            if (System.currentTimeMillis() - ultimoIntentoRevocaciones > INTERVALO_AGENDA_MS) sincronizarRevocaciones();
             sincronizarSalas();
             sincronizarBuzon();
             // Con una conversación o Chats delante se pregunta más a menudo; el resto del tiempo, menos.
@@ -977,6 +984,7 @@ public class MainActivity extends Activity {
                         acreditarContacto(leido);
                         if (leido.acreditadoNombre == null) continue;
                         Almacen.Contacto existente = almacen.porId(Almacen.idDeClave(leido.clave));
+                        if (existente != null && existente.revocado) continue;
                         if (existente == null) {
                             Almacen.Contacto c = almacen.agregar(leido.acreditadoSoloNombre(), t);
                             acreditarContacto(c);
@@ -996,7 +1004,7 @@ public class MainActivity extends Activity {
                 }
                 int acreditados = 0;
                 for (Almacen.Contacto c : almacen.contactos) {
-                    if (c.acreditadoNombre != null) acreditados++;
+                    if (c.acreditadoVigente()) acreditados++;
                 }
                 estadoAgenda = acreditados + (acreditados == 1 ? " persona acreditada" : " personas acreditadas") + " · consultada a las " + Ui.hora(System.currentTimeMillis());
                 if (nuevos > 0) {
@@ -1010,6 +1018,77 @@ public class MainActivity extends Activity {
                 }
             });
         }, "x39-agenda").start();
+    }
+
+    // ------------------------------------------------------------------ revocaciones
+
+    /**
+     * Revocaciones firmadas por la autoridad: cada una se comprueba aquí con la clave del Ayuntamiento (el
+     * buzón no puede inventarlas). El contacto revocado sale de agenda y salas; si soy yo, pierdo la acreditación.
+     */
+    private void sincronizarRevocaciones() {
+        if (clavePublica == null || sincronizandoRevocaciones || !buzon.activo() || autoridad() == null) return;
+        sincronizandoRevocaciones = true;
+        ultimoIntentoRevocaciones = System.currentTimeMillis();
+        final long desde = prefs().getLong(PREF_REVOCADAS_DESDE, 0);
+        final byte[] pkAutoridad = autoridad();
+        new Thread(() -> {
+            JSONObject r;
+            try {
+                r = buzon.revocadas(desde);
+            } catch (Exception e) {
+                runOnUiThread(() -> sincronizandoRevocaciones = false);
+                return;
+            }
+            // Solo cuentan las que verifican con la clave de la autoridad.
+            final List<String> codigos = new ArrayList<>();
+            final List<String> motivos = new ArrayList<>();
+            org.json.JSONArray a = r.optJSONArray("revocaciones");
+            for (int i = 0; a != null && i < a.length(); i++) {
+                JSONObject x = a.optJSONObject(i);
+                if (x == null) continue;
+                try {
+                    String v = X39Core.revocationVerify(pkAutoridad, x.optString("texto"));
+                    String[] p = v.split("\\|", 3);
+                    codigos.add(p[0]);
+                    motivos.add(p.length > 2 ? p[2] : "");
+                } catch (RuntimeException ignorada) {
+                    // Revocación que no firma la autoridad: se ignora.
+                }
+            }
+            final long hasta = r.optLong("hasta", desde);
+            runOnUiThread(() -> {
+                sincronizandoRevocaciones = false;
+                if (isFinishing() || isDestroyed()) return;
+                boolean cambio = false;
+                String miCodigo = claveFirma == null ? "" : X39Core.directoryNormalizeCode(miCodigo());
+                for (int i = 0; i < codigos.size(); i++) {
+                    String cod = codigos.get(i);
+                    if (cod.equals(miCodigo) && miAcreditacion() != null) {
+                        prefs().edit().remove(PREF_ACREDITACION).putString(PREF_MI_REVOCACION, motivos.get(i)).apply();
+                        cambio = true;
+                        continue;
+                    }
+                    for (Almacen.Contacto c : almacen.contactos) {
+                        if (c.claveFirma != null && !c.revocado && cod.equals(X39Core.directoryNormalizeCode(X39Core.directoryCode(c.claveFirma)))) {
+                            c.revocado = true;
+                            c.revocadoMotivo = motivos.get(i);
+                            cambio = true;
+                        }
+                    }
+                }
+                prefs().edit().putLong(PREF_REVOCADAS_DESDE, hasta).apply();
+                if (cambio) {
+                    try {
+                        almacen.guardar();
+                    } catch (Exception ignorada) {
+                        // Se vuelve a aplicar en la siguiente pasada.
+                    }
+                    if (pantallaSecundaria != null) pantallaSecundaria.run();
+                    else mostrarPestana(pestana);
+                }
+            });
+        }, "x39-revocaciones").start();
     }
 
     // ------------------------------------------------------------------ salas por departamento
@@ -1097,7 +1176,7 @@ public class MainActivity extends Activity {
 
     /** ¿Está el contacto en la sala? Por su área, por ser el alcalde, o porque un miembro le añadió. */
     private boolean esMiembro(Almacen.Contacto c, String salaId) {
-        if (c.acreditadoNombre == null || c.claveFirma == null) return false;
+        if (!c.acreditadoVigente() || c.claveFirma == null) return false;
         if ("general".equals(salaId)) return true;
         if (esAlcaldia(c.acreditadoArea(), c.acreditadoCargo())) return true;
         String a = c.acreditadoArea();
@@ -1124,16 +1203,14 @@ public class MainActivity extends Activity {
     /** Estado de una sala tomado en el hilo de pantalla para trabajar con él en segundo plano. */
     private static final class FotoSala {
         final String id;
-        final int epoca;
-        final byte[] clave;
+        final java.util.Map<Integer, byte[]> claves;
         final long ultimoSeq;
         final String ultimoHash;
         final List<Almacen.Contacto> miembros;
 
         FotoSala(Almacen.Sala s, List<Almacen.Contacto> miembros) {
             id = s.id;
-            epoca = s.epoca;
-            clave = s.clave;
+            claves = new java.util.HashMap<>(s.claves);
             ultimoSeq = s.ultimoSeq;
             ultimoHash = s.ultimoHash;
             this.miembros = miembros;
@@ -1188,49 +1265,61 @@ public class MainActivity extends Activity {
         final String id = foto.id;
         JSONObject estado = buzon.salaEstado(id);
         int epocaSala = estado.isNull("epoca") ? -1 : estado.optInt("epoca", -1);
-        byte[] clave = foto.clave;
-        int epoca = foto.epoca;
-        boolean claveNueva = false;
+        final java.util.Map<Integer, byte[]> claves = new java.util.HashMap<>(foto.claves);
+        final java.util.Map<Integer, byte[]> nuevas = new java.util.HashMap<>();
+        java.util.Set<String> conSobre = new java.util.HashSet<>();
+        org.json.JSONArray cs = estado.optJSONArray("con_sobre");
+        for (int i = 0; cs != null && i < cs.length(); i++) conSobre.add(cs.optString(i));
         if (epocaSala < 0) {
             // Nadie ha creado la clave: la creo y me la entrego. Si alguien se adelanta, el canister dice 409.
             byte[] k = X39Core.roomNewKey();
             try {
                 entregarClave(id, 0, k, miDir, clavePublica, miDir);
-                clave = k;
-                epoca = 0;
+                claves.put(0, k);
+                nuevas.put(0, k);
                 epocaSala = 0;
-                claveNueva = true;
+                conSobre.add(miDir);
             } catch (Buzon.OtraEpoca e) {
                 estado = buzon.salaEstado(id);
                 epocaSala = estado.isNull("epoca") ? -1 : estado.optInt("epoca", -1);
             }
         }
-        if (epocaSala >= 0 && (epoca != epocaSala || clave == null)) {
+        if (epocaSala >= 0 && !claves.containsKey(epocaSala)) {
             org.json.JSONArray sobres = buzon.salaSobres(id, miDir);
             for (int i = 0; i < sobres.length(); i++) {
                 JSONObject sobre = sobres.optJSONObject(i);
                 if (sobre == null || sobre.optInt("epoca", -1) != epocaSala) continue;
                 try {
-                    clave = abrirSobre(id, epocaSala, sobre, miDir, porDir);
-                    epoca = epocaSala;
-                    claveNueva = true;
+                    byte[] k = abrirSobre(id, epocaSala, sobre, miDir, porDir);
+                    claves.put(epocaSala, k);
+                    nuevas.put(epocaSala, k);
                     break;
                 } catch (Exception ignorada) {
                     // Sobre que no verifica o no es para esta clave: se prueba el siguiente.
                 }
             }
+            if (!claves.containsKey(epocaSala) && conSobre.isEmpty()) {
+                // La sala cambió de época (alguien fue revocado) y nadie tiene aún la clave nueva: la creo yo.
+                // Si otro miembro se adelanta, el canister responde 403 y la recibiré por mi sobre.
+                byte[] k = X39Core.roomNewKey();
+                try {
+                    entregarClave(id, epocaSala, k, miDir, clavePublica, miDir);
+                    claves.put(epocaSala, k);
+                    nuevas.put(epocaSala, k);
+                    conSobre.add(miDir);
+                } catch (Exception ignorada) {
+                    // Otro miembro la creó primero.
+                }
+            }
         }
-        if (clave != null && epoca == epocaSala) {
-            java.util.Set<String> conSobre = new java.util.HashSet<>();
-            org.json.JSONArray cs = estado.optJSONArray("con_sobre");
-            for (int i = 0; cs != null && i < cs.length(); i++) conSobre.add(cs.optString(i));
+        if (epocaSala >= 0 && claves.containsKey(epocaSala)) {
             int entregados = 0;
             for (Almacen.Contacto c : foto.miembros) {
                 if (entregados >= SOBRES_POR_PASADA) break;
                 String d = Buzon.direccion(c.clave);
                 if (conSobre.contains(d)) continue;
                 try {
-                    entregarClave(id, epoca, clave, d, c.clave, miDir);
+                    entregarClave(id, epocaSala, claves.get(epocaSala), d, c.clave, miDir);
                     entregados++;
                 } catch (Exception ignorada) {
                     // Se reintenta en la siguiente pasada.
@@ -1282,9 +1371,10 @@ public class MainActivity extends Activity {
                     }
                 }
                 String texto;
-                if (clave != null && mepoca == epoca) {
+                byte[] claveMsg = claves.get(mepoca);
+                if (claveMsg != null) {
                     try {
-                        texto = new String(X39Core.roomDecrypt(clave, id, mepoca, msg), java.nio.charset.StandardCharsets.UTF_8);
+                        texto = new String(X39Core.roomDecrypt(claveMsg, id, mepoca, msg), java.nio.charset.StandardCharsets.UTF_8);
                     } catch (RuntimeException e) {
                         texto = "(no se pudo descifrar este mensaje)";
                     }
@@ -1298,19 +1388,20 @@ public class MainActivity extends Activity {
             if (lote.length() < LOTE_SALA) break;
         }
 
-        final byte[] claveFinal = clave;
-        final int epocaFinal = epoca;
-        final boolean guardarClave = claveNueva;
+        final int epocaFinal = epocaSala;
         final long seqFinal = seq;
         final String hashFinal = hash;
         runOnUiThread(() -> {
             if (isFinishing() || isDestroyed()) return;
             Almacen.Sala s = almacen.sala(id);
             if (s == null) return;
+            boolean guardarClave = !nuevas.isEmpty() || (epocaFinal >= 0 && epocaFinal != s.epoca);
             boolean cambio = guardarClave || !nuevos.isEmpty() || !s.miembrosExtra.equals(extra);
-            if (guardarClave) {
-                s.clave = claveFinal;
+            for (java.util.Map.Entry<Integer, byte[]> e : nuevas.entrySet()) s.ponerClave(e.getKey(), e.getValue());
+            if (epocaFinal >= 0) {
+                // La época vigente la dicta el canister; si aún no tengo su clave, la sala queda «esperando».
                 s.epoca = epocaFinal;
+                s.clave = s.claves.get(epocaFinal);
             }
             s.miembrosExtra.clear();
             s.miembrosExtra.addAll(extra);
@@ -1383,7 +1474,7 @@ public class MainActivity extends Activity {
 
     /** Versión de esMiembro para hilos de fondo (no toca el almacén de salas). */
     private boolean esMiembroSeguro(Almacen.Contacto c, String salaId) {
-        if (c.acreditadoNombre == null) return false;
+        if (!c.acreditadoVigente()) return false;
         if ("general".equals(salaId) || esAlcaldia(c.acreditadoArea(), c.acreditadoCargo())) return true;
         String a = c.acreditadoArea();
         return a != null && slug(a).equals(salaId) || salasExtraContiene(salaId, Buzon.direccion(c.clave));
@@ -1585,7 +1676,7 @@ public class MainActivity extends Activity {
         }
         final List<Almacen.Contacto> candidatos = new ArrayList<>();
         for (Almacen.Contacto c : almacen.contactos) {
-            if (c.acreditadoNombre != null && c.claveFirma != null && !esMiembro(c, s.id)) candidatos.add(c);
+            if (c.acreditadoVigente() && c.claveFirma != null && !esMiembro(c, s.id)) candidatos.add(c);
         }
         if (candidatos.isEmpty()) {
             aviso("Todo el personal acreditado de la agenda está ya en esta sala.");
@@ -1998,12 +2089,12 @@ public class MainActivity extends Activity {
         textos.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 8), 0);
         LinearLayout nombre = Ui.fila(this);
         nombre.addView(Ui.texto(this, c.nombre, 16, Ui.TEXTO, true));
-        if (c.verificado || c.acreditadoNombre != null) {
+        if (!c.revocado && (c.verificado || c.acreditadoNombre != null)) {
             ImageView ok = Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.SUAVE, 14);
             ((LinearLayout.LayoutParams) ok.getLayoutParams()).setMargins(Ui.dp(this, 6), 0, 0, 0);
             nombre.addView(ok);
         } else {
-            TextView chip = Ui.texto(this, "Sin acreditar", 11, Ui.AVISO, false);
+            TextView chip = Ui.texto(this, c.revocado ? "Revocado" : "Sin acreditar", 11, Ui.AVISO, false);
             chip.setPadding(Ui.dp(this, 6), Ui.dp(this, 1), Ui.dp(this, 6), Ui.dp(this, 1));
             android.graphics.drawable.GradientDrawable borde = new android.graphics.drawable.GradientDrawable();
             borde.setCornerRadius(Ui.dp(this, 6));
@@ -2167,6 +2258,13 @@ public class MainActivity extends Activity {
         botones.addView(copiar, lpc);
         mia.addView(botones);
         String acrNombre = prefs().getString(PREF_INV_NOMBRE, null);
+        String miRevocacion = prefs().getString(PREF_MI_REVOCACION, null);
+        if (miAcreditacion() == null && miRevocacion != null) {
+            TextView rev = Ui.texto(this, "⚠ El Ayuntamiento ha revocado tu acreditación" + (miRevocacion.isEmpty() ? "." : ": " + miRevocacion + ".")
+                    + " Sigues pudiendo leer lo anterior; para volver a la agenda y a las salas hace falta una invitación nueva.", 13, Ui.AVISO, false);
+            rev.setPadding(0, Ui.dp(this, 12), 0, 0);
+            mia.addView(rev);
+        }
         if (miAcreditacion() != null && acrNombre != null) {
             TextView acr = Ui.texto(this, "Acreditado por el Ayuntamiento como " + acrNombre + " · hasta el "
                     + fechaVisible(prefs().getString(PREF_INV_CADUCA, "")) + ". La acreditación viaja con tu clave al compartirla.", 13, Ui.SUAVE, false);
@@ -2205,7 +2303,10 @@ public class MainActivity extends Activity {
             if (c.acreditadoCargo() != null) t.addView(Ui.texto(this, c.acreditadoCargo(), 14, Ui.TEXTO_2, false));
             String estadoContacto;
             int colorEstado;
-            if (c.claveFirma == null) {
+            if (c.revocado) {
+                estadoContacto = "Acreditación revocada por el Ayuntamiento" + (c.revocadoMotivo == null || c.revocadoMotivo.isEmpty() ? "" : " · " + c.revocadoMotivo);
+                colorEstado = Ui.AVISO;
+            } else if (c.claveFirma == null) {
                 estadoContacto = "Clave antigua sin firma";
                 colorEstado = Ui.AVISO;
             } else if (c.acreditadoNombre != null) {

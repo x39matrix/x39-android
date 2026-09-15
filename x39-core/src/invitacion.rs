@@ -101,6 +101,57 @@ pub fn verificar_acreditacion(
     verificar(pk_autoridad, inv, hoy)
 }
 
+pub const PREFIX_REV: &str = "X39REV1:";
+pub const REV_CTX: &[u8] = b"x39-revocacion-v1";
+const REV_PREFIJO: &str = "X39-REV-v1|";
+pub const MAX_MOTIVO: usize = 120;
+
+/// Revocación firmada por la autoridad: la persona con ese código de contacto deja de estar acreditada.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Revocacion {
+    /// Código canónico (12 símbolos) de la clave de firma revocada.
+    pub codigo: String,
+    /// Fecha de la revocación, AAAA-MM-DD.
+    pub fecha: String,
+    pub motivo: String,
+}
+
+/// `"X39REV1:" + base64url(firma_autoridad(4627) || "X39-REV-v1|codigo|fecha|motivo" || check)`.
+/// Se publica en el canister (POST /revocar), que la comprueba con la misma clave pública que la app.
+pub fn revocar(seed: &[u8; DSA_SEED_LEN], codigo: &str, fecha: &str, motivo: &str) -> Result<String, Error> {
+    let codigo = crate::directorio::normalizar_codigo(codigo)?;
+    validar_fecha(fecha)?;
+    if motivo.chars().count() > MAX_MOTIVO || motivo.contains('|') || motivo.chars().any(char::is_control) {
+        return Err(Error::Formato);
+    }
+    let carga = format!("{REV_PREFIJO}{codigo}|{fecha}|{motivo}");
+    let sig = firma::sign(seed, carga.as_bytes(), REV_CTX)?;
+    let mut datos = Vec::with_capacity(SIG_LEN + carga.len());
+    datos.extend_from_slice(&sig);
+    datos.extend_from_slice(carga.as_bytes());
+    Ok(share::encode(PREFIX_REV, &datos))
+}
+
+pub fn verificar_revocacion(pk: &[u8; DSA_PK_LEN], texto: &str) -> Result<Revocacion, Error> {
+    let datos = share::decode(PREFIX_REV, texto)?;
+    if datos.len() <= SIG_LEN {
+        return Err(Error::Formato);
+    }
+    let (sig, carga) = datos.split_at(SIG_LEN);
+    if !firma::verify(pk, carga, REV_CTX, sig) {
+        return Err(Error::Firma);
+    }
+    let carga = std::str::from_utf8(carga).map_err(|_| Error::Formato)?;
+    let resto = carga.strip_prefix(REV_PREFIJO).ok_or(Error::Formato)?;
+    let mut partes = resto.splitn(3, '|');
+    let codigo = partes.next().ok_or(Error::Formato)?;
+    let fecha = partes.next().ok_or(Error::Formato)?;
+    let motivo = partes.next().unwrap_or("");
+    let codigo = crate::directorio::normalizar_codigo(codigo)?;
+    validar_fecha(fecha)?;
+    Ok(Revocacion { codigo, fecha: fecha.to_string(), motivo: motivo.to_string() })
+}
+
 fn validar_fecha(f: &str) -> Result<(), Error> {
     let b = f.as_bytes();
     if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {

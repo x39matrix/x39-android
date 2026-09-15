@@ -165,6 +165,11 @@ final class Buzon {
         return a;
     }
 
+    /** Revocaciones publicadas después de `desde`: [{codigo, ts, motivo, texto}] y «hasta». */
+    JSONObject revocadas(long desde) throws IOException {
+        return pedir("GET", url() + "/revocadas?desde=" + desde, null);
+    }
+
     // ---- Salas por departamento (canister /sala/*)
 
     JSONObject salaEstado(String sala) throws IOException {

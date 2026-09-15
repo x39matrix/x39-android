@@ -30,13 +30,23 @@ case "${1:-}" in
     [ -n "$6" ] || { echo "el área no puede estar vacía (o «Alcaldía» para entrar en todas las salas)"; exit 2; }
     cargo run -q --example invitacion -- emitir "$SEMILLA" "$2" "$3 $4 · $5 · $6"
     ;;
+  revocar)
+    # Revoca la acreditación de un código de contacto: firma la revocación y la publica en el buzón.
+    [ $# -eq 3 ] || { echo "uso: $0 revocar XXXX-XXXX-XXXX 'motivo'"; exit 2; }
+    [ -f "$SEMILLA" ] || { echo "no existe $SEMILLA: primero '$0 crear'"; exit 1; }
+    URL="${X39_BUZON:-https://gx4ic-yqaaa-aaaah-qu43a-cai.raw.icp0.io}"
+    TEXTO=$(cargo run -q --example invitacion -- revocar "$SEMILLA" "$2" "$(date +%F)" "$3")
+    python3 -c 'import json,sys; json.dump({"revocacion": sys.argv[1]}, open("/tmp/x39_rev.json","w"))' "$TEXTO"
+    curl -s --compressed -X POST "$URL/revocar" -H 'Content-Type: application/json' --data-binary @/tmp/x39_rev.json; echo
+    rm -f /tmp/x39_rev.json
+    ;;
   verificar)
     [ $# -eq 2 ] || { echo "uso: $0 verificar 'X39INV1:...'"; exit 2; }
     [ -f "$PK_APP" ] || { echo "no existe $PK_APP: primero '$0 crear'"; exit 1; }
     cargo run -q --example invitacion -- verificar "$PK_APP" "$(date +%F)" "$2"
     ;;
   *)
-    echo "uso: $0 crear | emitir AAAA-MM-DD 'Nombre' 'Apellidos' 'Cargo' 'Área' | verificar 'X39INV1:...'"
+    echo "uso: $0 crear | emitir AAAA-MM-DD 'Nombre' 'Apellidos' 'Cargo' 'Área' | verificar 'X39INV1:...' | revocar XXXX-XXXX-XXXX 'motivo'"
     exit 2
     ;;
 esac

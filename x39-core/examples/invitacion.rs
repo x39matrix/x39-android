@@ -15,7 +15,7 @@ use x39_core::firma::{self, DSA_PK_LEN, DSA_SEED_LEN};
 use x39_core::invitacion;
 use zeroize::Zeroizing;
 
-const USO: &str = "uso:\n  invitacion nueva-autoridad <semilla.bin>\n  invitacion emitir <semilla.bin> <AAAA-MM-DD> <nombre o cargo>\n  invitacion verificar <clave.pk> <AAAA-MM-DD hoy> <texto X39INV1:...>";
+const USO: &str = "uso:\n  invitacion nueva-autoridad <semilla.bin>\n  invitacion emitir <semilla.bin> <AAAA-MM-DD> <nombre o cargo>\n  invitacion verificar <clave.pk> <AAAA-MM-DD hoy> <texto X39INV1:...>\n  invitacion revocar <semilla.bin> <XXXX-XXXX-XXXX> <AAAA-MM-DD> <motivo>";
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -24,6 +24,7 @@ fn main() {
         [_, "nueva-autoridad", semilla] => nueva_autoridad(semilla),
         [_, "emitir", semilla, caduca, nombre] => emitir(semilla, caduca, nombre),
         [_, "verificar", clave, hoy, texto] => verificar(clave, hoy, texto),
+        [_, "revocar", semilla, codigo, fecha, motivo] => revocar(semilla, codigo, fecha, motivo),
         _ => {
             eprintln!("{USO}");
             process::exit(2);
@@ -71,6 +72,12 @@ fn leer_semilla(ruta: &str) -> Zeroizing<[u8; DSA_SEED_LEN]> {
 fn emitir(semilla: &str, caduca: &str, nombre: &str) {
     let seed = leer_semilla(semilla);
     let texto = invitacion::emitir(&seed, caduca, nombre).unwrap_or_else(|e| fallo(e.to_string()));
+    println!("{texto}");
+}
+
+fn revocar(semilla: &str, codigo: &str, fecha: &str, motivo: &str) {
+    let seed = leer_semilla(semilla);
+    let texto = invitacion::revocar(&seed, codigo, fecha, motivo).unwrap_or_else(|e| fallo(e.to_string()));
     println!("{texto}");
 }
 

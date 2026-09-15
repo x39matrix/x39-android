@@ -11,8 +11,8 @@ android {
         applicationId 'org.x39.bolsillo'
         minSdk 28          // StrongBox disponible desde Android 9
         targetSdk 35
-        versionCode 22
-        versionName '0.12.0'
+        versionCode 23
+        versionName '0.13.0'
     }
 
     buildTypes {

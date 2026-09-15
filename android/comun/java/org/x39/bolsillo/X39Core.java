@@ -71,6 +71,9 @@ final class X39Core {
      */
     static native String invitationVerify(byte[] authorityKey, String text, String today);
 
+    /** Revocación «X39REV1:…» firmada por la autoridad. Devuelve "codigo|fecha|motivo" (código canónico) o lanza. */
+    static native String revocationVerify(byte[] authorityKey, String text);
+
     /** Acreditación: la invitación firmada con la semilla ML-DSA-87 del titular («X39ACR1:…»). */
     static native String accreditationCreate(byte[] seed, String invitation);
 

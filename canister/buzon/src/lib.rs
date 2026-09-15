@@ -29,6 +29,14 @@
 //!   POST /sala/sobre    {sala,epoca,para,de,sobre,firma}   entrega la clave a un miembro (la época 0 la crea el primero)
 //!   POST /sala/mensaje  {sala,epoca,de,msg,firma}          → {"seq","hash"}
 //!   POST /sala/miembro  {sala,direccion,de,firma}          añade a alguien de otra área
+//!
+//! Revocación (desde 0.13): la autoridad (clave pública en autoridad.pk, la misma que lleva la app) firma
+//! «X39REV1:…» con el código de contacto; la ficha se conserva marcada como revocada, sale de la agenda,
+//! sus publicaciones se rechazan y las salas en las que tenía clave pasan a la época siguiente.
+//!   POST /revocar {revocacion}                          → {"codigo","fichas","salas_rotadas"}
+//!   GET  /revocadas?desde=<ts>                          → {"revocaciones":[{"codigo","ts","motivo","texto"}],"hasta"}
+//! Cambio de clave de una sala: un miembro con la clave de la época N puede abrir la N+1 entregando el
+//! primer sobre; en cada época solo entrega sobres quien ya tiene esa clave (una sola clave por época).
 //! Límites: 40 000 caracteres por entrada, 2 000 entradas, 365 días sin renovar. Lo que revela: claves
 //! públicas y acreditación (nombre, fecha) de quien publica, a quien sepa su código o su dirección.
 //! No hay control de quién escribe: cualquiera con la URL puede dejar mensajes (la app descarta los que no
@@ -40,7 +48,25 @@ use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use std::cell::RefCell;
 use x39_core::directorio;
+use x39_core::invitacion;
 use x39_core::sala;
+
+/// Clave pública de la autoridad (el Ayuntamiento): la misma que lleva la app en assets/autoridad.pk.
+/// Con ella el canister comprueba las revocaciones firmadas por el alcalde.
+const AUTORIDAD: &[u8; 2592] = include_bytes!("../autoridad.pk");
+
+#[cfg(test)]
+thread_local! {
+    static AUTORIDAD_PRUEBA: RefCell<Option<[u8; 2592]>> = const { RefCell::new(None) };
+}
+
+fn autoridad_pk() -> [u8; 2592] {
+    #[cfg(test)]
+    if let Some(pk) = AUTORIDAD_PRUEBA.with(|a| *a.borrow()) {
+        return pk;
+    }
+    *AUTORIDAD
+}
 
 const MAX_MSG: usize = 16_000;
 const MAX_POR_DESTINO: usize = 300;
@@ -93,6 +119,17 @@ struct Ficha {
     ts: u64,
     /// Lleva acreditación (X39ACR1). `opt` por las fichas guardadas antes de existir el campo.
     acreditada: Option<bool>,
+    /// Momento en que la autoridad revocó esta acreditación (la ficha se conserva, pero deja de valer).
+    revocada: Option<u64>,
+}
+
+/// Revocación firmada por la autoridad, tal como se publicó (la app vuelve a comprobar la firma).
+#[derive(Clone, Serialize, Deserialize, CandidType)]
+struct Revocacion {
+    codigo: String,
+    ts: u64,
+    motivo: String,
+    texto: String,
 }
 
 /// Un mensaje de sala: cifrado con la clave de la sala, firmado por su autor, encadenado por hash.
@@ -143,6 +180,8 @@ struct Estado {
     directorio: Option<Vec<Ficha>>,
     /// Salas por departamento (desde 0.12). Nada se borra nunca de aquí.
     salas: Option<std::collections::BTreeMap<String, Sala>>,
+    /// Revocaciones de acreditación (desde 0.13), en orden de llegada.
+    revocaciones: Option<Vec<Revocacion>>,
 }
 
 thread_local! {
@@ -226,7 +265,7 @@ fn agenda_en(s: &Estado, consulta: &str) -> HttpResponse {
     let desde: u64 = parametro(consulta, "desde").and_then(|d| d.parse().ok()).unwrap_or(0);
     let vacio = Vec::new();
     let d = s.directorio.as_ref().unwrap_or(&vacio);
-    let mut fichas: Vec<&Ficha> = d.iter().filter(|f| f.ts > desde && f.acreditada != Some(false)).collect();
+    let mut fichas: Vec<&Ficha> = d.iter().filter(|f| f.ts > desde && f.acreditada != Some(false) && f.revocada.is_none()).collect();
     fichas.sort_by_key(|f| f.ts);
     let quedan = fichas.len() > LOTE_AGENDA;
     fichas.truncate(LOTE_AGENDA);
@@ -267,7 +306,9 @@ fn buscar_en(s: &Estado, consulta: &str) -> HttpResponse {
     let vacio = Vec::new();
     let d = s.directorio.as_ref().unwrap_or(&vacio);
     let hallada = d.iter().rev().find(|f| {
-        codigo.as_deref().is_none_or(|c| f.codigo == c) && por_dir.as_deref().is_none_or(|p| f.direccion.starts_with(p))
+        f.revocada.is_none()
+            && codigo.as_deref().is_none_or(|c| f.codigo == c)
+            && por_dir.as_deref().is_none_or(|p| f.direccion.starts_with(p))
     });
     match hallada {
         Some(f) => json(200, ficha_json(f)),
@@ -370,7 +411,7 @@ fn sala_mias_en(s: &Estado, consulta: &str) -> HttpResponse {
 
 /// Clave de firma de un remitente acreditado del directorio. None si no está o no está acreditado.
 fn clave_firma_de(s: &Estado, de: &str) -> Option<[u8; 2592]> {
-    let ficha = s.directorio.as_ref()?.iter().rev().find(|f| f.direccion == de && f.acreditada != Some(false))?;
+    let ficha = s.directorio.as_ref()?.iter().rev().find(|f| f.direccion == de && f.acreditada != Some(false) && f.revocada.is_none())?;
     let e = directorio::leer(&ficha.entrada).ok()?;
     e.acreditacion.as_ref()?;
     Some(e.dsa_pk)
@@ -429,12 +470,20 @@ fn sala_sobre_en(s: &mut Estado, cuerpo: &[u8], ahora: u64) -> HttpResponse {
         Ok(x) => x,
         Err(e) => return e,
     };
+    let tiene_sobre = |sala: &Sala, epoca: u32, quien: &str| sala.sobres.iter().any(|x| x.epoca == epoca && x.para == quien);
     match sala.epoca {
         // La primera clave la fija quien llega primero; los demás la reciben por su sobre.
         None if p.epoca == 0 => sala.epoca = Some(0),
         None => return error(409, "la sala aun no tiene clave: la primera epoca es la 0"),
-        Some(actual) if actual != p.epoca => return error(409, &format!("la sala va por la epoca {actual}")),
-        Some(_) => {}
+        Some(actual) if actual == p.epoca => {
+            // Una sola clave por época: solo quien ya la tiene puede entregarla (el primero la crea).
+            if sala.sobres.iter().any(|x| x.epoca == actual) && !tiene_sobre(sala, actual, &p.de) {
+                return error(403, "solo quien ya tiene la clave de esta epoca puede entregarla");
+            }
+        }
+        // Cambio de clave voluntario: un miembro con la clave actual abre la época siguiente.
+        Some(actual) if p.epoca == actual + 1 && tiene_sobre(sala, actual, &p.de) => sala.epoca = Some(p.epoca),
+        Some(actual) => return error(409, &format!("la sala va por la epoca {actual}")),
     }
     // Un sobre por destinatario y época; el más reciente sustituye al anterior.
     sala.sobres.retain(|x| !(x.epoca == p.epoca && x.para == p.para));
@@ -528,7 +577,8 @@ fn http_request(req: HttpRequest) -> HttpResponse {
             let fichas = s.directorio.as_ref().map_or(0, Vec::len);
             let salas = s.salas.as_ref().map_or(0, |m| m.len());
             let en_salas: usize = s.salas.as_ref().map_or(0, |m| m.values().map(|x| x.mensajes.len()).sum());
-            json(200, format!("{{\"mensajes\":{},\"ultimo\":{},\"directorio\":{},\"salas\":{},\"mensajes_en_salas\":{}}}", s.entradas.len(), s.ultimo, fichas, salas, en_salas))
+            let revocadas = s.revocaciones.as_ref().map_or(0, Vec::len);
+            json(200, format!("{{\"mensajes\":{},\"ultimo\":{},\"directorio\":{},\"salas\":{},\"mensajes_en_salas\":{},\"revocadas\":{}}}", s.entradas.len(), s.ultimo, fichas, salas, en_salas, revocadas))
         }),
         ("GET", "/recoger") => {
             let Some(para) = parametro(consulta, "para") else {
@@ -557,6 +607,7 @@ fn http_request(req: HttpRequest) -> HttpResponse {
         ("GET", "/sala/sobres") => ESTADO.with(|s| sala_sobres_en(&s.borrow(), consulta)),
         ("GET", "/sala/mensajes") => ESTADO.with(|s| sala_mensajes_en(&s.borrow(), consulta)),
         ("GET", "/sala/mias") => ESTADO.with(|s| sala_mias_en(&s.borrow(), consulta)),
+        ("GET", "/revocadas") => ESTADO.with(|s| revocadas_en(&s.borrow(), consulta)),
         _ => error(404, "no existe"),
     }
 }
@@ -615,9 +666,13 @@ fn publicar_en(s: &mut Estado, cuerpo: &[u8], ahora: u64) -> HttpResponse {
         entrada: p.entrada,
         ts: ahora,
         acreditada: Some(e.acreditacion.is_some()),
+        revocada: None,
     };
     purgar(s, ahora);
     let d = s.directorio.get_or_insert_with(Vec::new);
+    if d.iter().any(|f| f.codigo == ficha.codigo && f.revocada.is_some()) {
+        return error(403, "acreditacion revocada por la autoridad");
+    }
     // Una entrada nueva del mismo titular sustituye a la anterior (renovación o acreditación nueva).
     d.retain(|f| f.codigo != ficha.codigo);
     let respuesta = format!(
@@ -629,6 +684,80 @@ fn publicar_en(s: &mut Estado, cuerpo: &[u8], ahora: u64) -> HttpResponse {
     json(200, respuesta)
 }
 
+#[derive(Deserialize)]
+struct PeticionRevocacion {
+    revocacion: String,
+}
+
+/// Revocación firmada por la autoridad: la ficha deja de valer (agenda, búsqueda, publicaciones) y todas
+/// las salas en las que esa persona tenía la clave pasan a la época siguiente: lo nuevo ya no lo lee.
+fn revocar_en(s: &mut Estado, cuerpo: &[u8], ahora: u64) -> HttpResponse {
+    let p: PeticionRevocacion = match serde_json::from_slice(cuerpo) {
+        Ok(p) => p,
+        Err(_) => return error(400, "cuerpo JSON invalido"),
+    };
+    if p.revocacion.len() > MAX_FIRMA || p.revocacion.chars().any(char::is_whitespace) {
+        return error(400, "revocacion invalida");
+    }
+    let r = match invitacion::verificar_revocacion(&autoridad_pk(), &p.revocacion) {
+        Ok(r) => r,
+        Err(e) => return error(403, &format!("revocacion no valida: {e}")),
+    };
+    // Repetir una revocación ya aplicada no cambia nada (ni vuelve a rotar las salas).
+    let ya = s.revocaciones.as_ref().is_some_and(|l| l.iter().any(|x| x.codigo == r.codigo));
+    let mut direcciones = Vec::new();
+    let mut salas_rotadas = 0;
+    if !ya {
+        if let Some(d) = s.directorio.as_mut() {
+            for f in d.iter_mut().filter(|f| f.codigo == r.codigo) {
+                f.revocada = Some(ahora);
+                direcciones.push(f.direccion.clone());
+            }
+        }
+        if let Some(m) = s.salas.as_mut() {
+            for sala in m.values_mut() {
+                let estaba = sala.sobres.iter().any(|x| direcciones.contains(&x.para));
+                if estaba {
+                    if let Some(e) = sala.epoca {
+                        sala.epoca = Some(e + 1);
+                        salas_rotadas += 1;
+                    }
+                }
+            }
+        }
+        s.revocaciones.get_or_insert_with(Vec::new).push(Revocacion {
+            codigo: r.codigo.clone(),
+            ts: ahora,
+            motivo: r.motivo.clone(),
+            texto: p.revocacion,
+        });
+    }
+    json(
+        200,
+        serde_json::json!({
+            "codigo": directorio::codigo_visible(&r.codigo),
+            "fichas": direcciones.len(),
+            "salas_rotadas": salas_rotadas,
+        })
+        .to_string(),
+    )
+}
+
+fn revocadas_en(s: &Estado, consulta: &str) -> HttpResponse {
+    let desde: u64 = parametro(consulta, "desde").and_then(|d| d.parse().ok()).unwrap_or(0);
+    let vacio = Vec::new();
+    let lista: Vec<serde_json::Value> = s
+        .revocaciones
+        .as_ref()
+        .unwrap_or(&vacio)
+        .iter()
+        .filter(|r| r.ts > desde)
+        .map(|r| serde_json::json!({ "codigo": directorio::codigo_visible(&r.codigo), "ts": r.ts, "motivo": r.motivo, "texto": r.texto }))
+        .collect();
+    let hasta = s.revocaciones.as_ref().and_then(|l| l.last()).map_or(desde, |r| r.ts.max(desde));
+    json(200, serde_json::json!({ "revocaciones": lista, "hasta": hasta }).to_string())
+}
+
 #[ic_cdk::update]
 fn http_request_update(req: HttpRequest) -> HttpResponse {
     let (ruta, _) = ruta_y_consulta(&req.url);
@@ -637,6 +766,7 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
         match (req.method.as_str(), ruta) {
             ("POST", "/poner") => poner_en(&mut s, &req.body, time()),
             ("POST", "/publicar") => publicar_en(&mut s, &req.body, time()),
+            ("POST", "/revocar") => revocar_en(&mut s, &req.body, time()),
             ("POST", "/sala/sobre") => sala_sobre_en(&mut s, &req.body, time()),
             ("POST", "/sala/mensaje") => sala_mensaje_en(&mut s, &req.body, time()),
             ("POST", "/sala/miembro") => sala_miembro_en(&mut s, &req.body, time()),
@@ -803,10 +933,11 @@ mod tests {
         let fs = sala::firmar(&ana, "amate", 0, &sala::accion_sobre(&ana_dir, &sobre)).unwrap();
         let cs = serde_json::json!({"sala":"amate","epoca":0,"para":ana_dir,"de":ana_dir,"sobre":sobre,"firma":fs}).to_string();
         assert_eq!(sala_sobre_en(&mut s, cs.as_bytes(), 11).status_code, 200);
-        // Un sobre de época 1 no vale mientras la sala va por la 0.
-        let fs1 = sala::firmar(&ana, "amate", 1, &sala::accion_sobre(&ana_dir, &sobre)).unwrap();
-        let cs1 = serde_json::json!({"sala":"amate","epoca":1,"para":ana_dir,"de":ana_dir,"sobre":sobre,"firma":fs1}).to_string();
-        assert_eq!(sala_sobre_en(&mut s, cs1.as_bytes(), 12).status_code, 409);
+        // Saltarse una época (la 2 cuando la sala va por la 0) no vale; abrir la siguiente (1) sí lo puede hacer
+        // quien tiene la clave actual, pero aquí no se hace para seguir probando la 0.
+        let fs2 = sala::firmar(&ana, "amate", 2, &sala::accion_sobre(&ana_dir, &sobre)).unwrap();
+        let cs2 = serde_json::json!({"sala":"amate","epoca":2,"para":ana_dir,"de":ana_dir,"sobre":sobre,"firma":fs2}).to_string();
+        assert_eq!(sala_sobre_en(&mut s, cs2.as_bytes(), 12).status_code, 409);
 
         // Ahora sí: dos mensajes encadenados.
         let r = sala_mensaje_en(&mut s, cuerpo.as_bytes(), 13);
@@ -849,6 +980,85 @@ mod tests {
 
     fn cuerpo_de(r: &HttpResponse) -> String {
         cuerpo(r)
+    }
+
+    #[test]
+    fn revocar_saca_de_la_agenda_rechaza_publicaciones_y_rota_las_salas() {
+        let autoridad = firma::generate_seed().unwrap();
+        AUTORIDAD_PRUEBA.with(|a| *a.borrow_mut() = Some(firma::public_key(&autoridad)));
+        let inv = x39_core::invitacion::emitir(&autoridad, "2027-12-31", "Ana Ruiz · Técnica · Amate").unwrap();
+        let mut s = Estado::default();
+        let mut personas = Vec::new();
+        for _ in 0..2 {
+            let seed = firma::generate_seed().unwrap();
+            let kem = x39_core::generate_keypair().unwrap();
+            let acr = x39_core::invitacion::acreditar(&seed, &inv).unwrap();
+            let e = directorio::publicar(&seed, &kem.public, Some(&acr)).unwrap();
+            assert_eq!(publicar_en(&mut s, &publicacion(&e), 1).status_code, 200);
+            let dir = directorio::direccion(&kem.public);
+            let cod = directorio::codigo(&firma::public_key(&seed));
+            personas.push((seed, kem, dir, cod));
+        }
+        let (ana, _, ana_dir, _) = &personas[0];
+        let (beto, beto_kem, beto_dir, _) = &personas[1];
+        // Sala con clave de Ana entregada a Beto (época 0).
+        let sobre = |de: &[u8; 32], para: &str, kem: &[u8; 1568], epoca: u32| {
+            let cuerpo = firma::sign_for(de, kem, b"{}").unwrap();
+            let c = x39_core::share::encode_capsule(&x39_core::seal(kem, &cuerpo, b"", None, 1).unwrap());
+            let f = sala::firmar(de, "amate", epoca, &sala::accion_sobre(para, &c)).unwrap();
+            (c, f)
+        };
+        let (c, f) = sobre(ana, ana_dir, &personas[0].1.public, 0);
+        let cs = serde_json::json!({"sala":"amate","epoca":0,"para":ana_dir,"de":ana_dir,"sobre":c,"firma":f}).to_string();
+        assert_eq!(sala_sobre_en(&mut s, cs.as_bytes(), 2).status_code, 200);
+        // Beto, sin la clave, no puede entregar sobres de la época 0 (una sola clave por época).
+        let (c, f) = sobre(beto, beto_dir, &beto_kem.public, 0);
+        let cb = serde_json::json!({"sala":"amate","epoca":0,"para":beto_dir,"de":beto_dir,"sobre":c,"firma":f}).to_string();
+        assert_eq!(sala_sobre_en(&mut s, cb.as_bytes(), 3).status_code, 403);
+        let (c, f) = sobre(ana, beto_dir, &beto_kem.public, 0);
+        let cab = serde_json::json!({"sala":"amate","epoca":0,"para":beto_dir,"de":ana_dir,"sobre":c,"firma":f}).to_string();
+        assert_eq!(sala_sobre_en(&mut s, cab.as_bytes(), 4).status_code, 200);
+
+        // Revocación de Beto firmada por la autoridad; una firmada por otro no vale.
+        let otra = firma::generate_seed().unwrap();
+        let falsa = x39_core::invitacion::revocar(&otra, &personas[1].3, "2026-09-16", "x").unwrap();
+        let cf = serde_json::json!({ "revocacion": falsa }).to_string();
+        assert_eq!(revocar_en(&mut s, cf.as_bytes(), 5).status_code, 403);
+        let rev = x39_core::invitacion::revocar(&autoridad, &personas[1].3, "2026-09-16", "Cese").unwrap();
+        let cr = serde_json::json!({ "revocacion": rev }).to_string();
+        let r = revocar_en(&mut s, cr.as_bytes(), 6);
+        assert_eq!(r.status_code, 200, "{}", cuerpo(&r));
+        assert!(cuerpo(&r).contains("\"salas_rotadas\":1"));
+        assert_eq!(revocar_en(&mut s, cr.as_bytes(), 7).status_code, 200, "repetir es inocuo");
+        assert_eq!(s.revocaciones.as_ref().unwrap().len(), 1);
+
+        // Fuera de la agenda y de la búsqueda; no puede publicar ni escribir; Ana sí.
+        let r: serde_json::Value = serde_json::from_str(&cuerpo(&agenda_en(&s, ""))).unwrap();
+        assert_eq!(r["fichas"].as_array().unwrap().len(), 1);
+        assert_eq!(buscar_en(&s, &format!("dir={}", &beto_dir[..16])).status_code, 404);
+        let e = directorio::publicar(beto, &beto_kem.public, None).unwrap();
+        assert_eq!(publicar_en(&mut s, &publicacion(&e), 8).status_code, 403);
+        assert_eq!(s.salas.as_ref().unwrap()["amate"].epoca, Some(1), "la sala pasó a la época 1");
+        let clave = sala::nueva_clave().unwrap();
+        let m = sala::cifrar(&clave, "amate", 0, b"tarde").unwrap();
+        let fm = sala::firmar(beto, "amate", 0, &m).unwrap();
+        let cm = serde_json::json!({"sala":"amate","epoca":0,"de":beto_dir,"msg":m,"firma":fm}).to_string();
+        assert_eq!(sala_mensaje_en(&mut s, cm.as_bytes(), 9).status_code, 403);
+        // Ana, que tenía la clave de la época 0, abre la época 1 y ya puede escribir en ella.
+        let (c, f) = sobre(ana, ana_dir, &personas[0].1.public, 1);
+        let c1 = serde_json::json!({"sala":"amate","epoca":1,"para":ana_dir,"de":ana_dir,"sobre":c,"firma":f}).to_string();
+        assert_eq!(sala_sobre_en(&mut s, c1.as_bytes(), 10).status_code, 200);
+        let m1 = sala::cifrar(&clave, "amate", 1, b"nueva epoca").unwrap();
+        let f1 = sala::firmar(ana, "amate", 1, &m1).unwrap();
+        let cm1 = serde_json::json!({"sala":"amate","epoca":1,"de":ana_dir,"msg":m1,"firma":f1}).to_string();
+        assert_eq!(sala_mensaje_en(&mut s, cm1.as_bytes(), 11).status_code, 200);
+        let r: serde_json::Value = serde_json::from_str(&cuerpo(&revocadas_en(&s, "desde=0"))).unwrap();
+        assert_eq!(r["revocaciones"].as_array().unwrap().len(), 1);
+        assert_eq!(r["revocaciones"][0]["motivo"], "Cese");
+        assert_eq!(revocadas_en(&s, "desde=6").status_code, 200);
+        let r: serde_json::Value = serde_json::from_str(&cuerpo(&revocadas_en(&s, "desde=6"))).unwrap();
+        assert_eq!(r["revocaciones"].as_array().unwrap().len(), 0);
+        AUTORIDAD_PRUEBA.with(|a| *a.borrow_mut() = None);
     }
 
     #[test]

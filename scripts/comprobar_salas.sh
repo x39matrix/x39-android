@@ -25,15 +25,21 @@ if [ "$EPOCA" -lt 0 ]; then
 elif [ ! -f "$A/sala-$SALA-$EPOCA.key" ]; then
   echo "### A no tiene la clave de la época $EPOCA: la busca en sus sobres"
   curl -s --compressed "$URL/sala/sobres?sala=$SALA&para=$DA" > "$TMP/sobres_a.json"
-  python3 - "$TMP/sobres_a.json" "$EPOCA" "$TMP/sobre_a_recibido.json" <<'PY'
+  if python3 - "$TMP/sobres_a.json" "$EPOCA" "$TMP/sobre_a_recibido.json" <<'PY'
 import json, sys
 r = json.load(open(sys.argv[1])); ep = int(sys.argv[2])
 s = [x for x in r["sobres"] if x["epoca"] == ep]
 if not s: print("A no tiene sobre para esta época"); sys.exit(1)
 json.dump(s[-1], open(sys.argv[3], "w")); print("remitente del sobre:", s[-1]["de"][:16])
 PY
-  echo "(el remitente tiene que ser B u otro miembro; aquí se acepta el de B)"
-  $CLI "$A" abrir "$SALA" "$EPOCA" "$TMP/sobre_a_recibido.json" "$B/dsa.pk"
+  then
+    echo "(el remitente tiene que ser B u otro miembro; aquí se acepta el de B)"
+    $CLI "$A" abrir "$SALA" "$EPOCA" "$TMP/sobre_a_recibido.json" "$B/dsa.pk"
+  else
+    echo "### nadie tiene aún la clave de la época $EPOCA (la sala rotó): A la crea y se la entrega a sí mismo"
+    $CLI "$A" sobre "$SALA" "$EPOCA" "$A/kem.pk" "$DA" > "$TMP/sobre_a.json"
+    post /sala/sobre "$TMP/sobre_a.json"; echo
+  fi
 fi
 
 echo "### A entrega la clave a B"
