@@ -39,6 +39,11 @@ echo "### buscar por dirección (16 hex, el id de contacto)"
 R=$(curl -s --compressed "$URL/buscar?dir=${DIR:0:16}")
 echo "$R" | grep -q "$(cat "$TMP/entrada.txt")" && echo "✓ encontrada por dirección" || { echo "✗ no encontrada por dirección"; exit 1; }
 
+echo "### agenda (solo acreditadas: la de prueba, sin acreditación, NO debe salir)"
+R=$(curl -s --compressed "$URL/agenda?desde=0")
+echo "$R" | python3 -c 'import json,sys; r=json.load(sys.stdin); print(len(r["fichas"]), "fichas · hasta", r["hasta"], "· quedan", r["quedan"]); [print("  ", f["codigo"], f["direccion"][:16]) for f in r["fichas"]]'
+echo "$R" | grep -q "\"codigo\":\"$CODIGO\"" && { echo "✗ la agenda incluye una entrada sin acreditar"; exit 1; } || echo "✓ la agenda no la incluye"
+
 echo "### entrada manipulada (debe rechazarse)"
 python3 - "$TMP/entrada.txt" "$TMP/rota.json" <<'PY'
 import json, sys

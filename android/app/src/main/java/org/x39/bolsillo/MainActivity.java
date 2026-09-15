@@ -68,7 +68,11 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.10.0";
+    private static final String VERSION = "0.11.0";
+    /** Marca de tiempo del buzón hasta la que ya se leyó la agenda. */
+    private static final String PREF_AGENDA_DESDE = "agenda_desde";
+    /** Entre dos consultas de la agenda con la app delante. */
+    private static final long INTERVALO_AGENDA_MS = 60_000;
     /** Un código de contacto suelto dentro de un texto compartido («Mi código x39: XXXX-XXXX-XXXX»). */
     private static final java.util.regex.Pattern CODIGO_EN_TEXTO =
             java.util.regex.Pattern.compile("(?<![0-9A-Za-z-])[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}(?![0-9A-Za-z-])");
@@ -116,11 +120,16 @@ public class MainActivity extends Activity {
     private String estadoDirectorio = "Todavía no publicado.";
     /** Remitentes desconocidos que se están buscando en el directorio → cuerpos descifrados a la espera. */
     private final java.util.Map<String, List<byte[]>> remitentesPendientes = new java.util.HashMap<>();
+    /** Agenda del Ayuntamiento: todo el personal acreditado aparece solo en Contactos. */
+    private long ultimoIntentoAgenda;
+    private boolean sincronizandoAgenda;
+    private String estadoAgenda = "Todavía no consultada.";
     private final Runnable sondeo = new Runnable() {
         @Override
         public void run() {
             if (!sondeando) return;
             if (!directorioPublicado && System.currentTimeMillis() - ultimoIntentoDirectorio > REINTENTO_DIRECTORIO_MS) publicarEnDirectorio();
+            if (System.currentTimeMillis() - ultimoIntentoAgenda > INTERVALO_AGENDA_MS) sincronizarAgenda();
             sincronizarBuzon();
             // Con una conversación o Chats delante se pregunta más a menudo; el resto del tiempo, menos.
             boolean atento = pantallaSecundaria != null || pestana == Pestana.CHATS;
@@ -909,6 +918,85 @@ public class MainActivity extends Activity {
         }, "x39-directorio-buscar").start();
     }
 
+    /**
+     * Agenda del Ayuntamiento: trae del directorio las entradas acreditadas nuevas y añade a cada persona a
+     * Contactos con el nombre de su invitación. Cada acreditación se comprueba aquí con la clave del
+     * Ayuntamiento y cada entrada con la firma de su propia clave: el buzón no decide quién entra.
+     */
+    private void sincronizarAgenda() {
+        if (clavePublica == null || sincronizandoAgenda || !buzon.activo() || autoridad() == null) return;
+        sincronizandoAgenda = true;
+        ultimoIntentoAgenda = System.currentTimeMillis();
+        final long desde = prefs().getLong(PREF_AGENDA_DESDE, 0);
+        new Thread(() -> {
+            Buzon.Agenda lote;
+            try {
+                lote = buzon.agenda(desde);
+            } catch (Exception e) {
+                final String err = Ui.mensaje(e);
+                runOnUiThread(() -> {
+                    sincronizandoAgenda = false;
+                    estadoAgenda = "Sin conexión con la agenda: " + err;
+                });
+                return;
+            }
+            // Verificar firmas (ML-DSA-87) fuera del hilo de pantalla; añadir contactos, dentro.
+            List<String> textos = new ArrayList<>();
+            for (String entrada : lote.entradas) {
+                try {
+                    textos.add(X39Core.directoryEntryRead(entrada, ""));
+                } catch (RuntimeException ignorada) {
+                    // Entrada que no verifica: no entra nadie por ella.
+                }
+            }
+            final Buzon.Agenda l = lote;
+            runOnUiThread(() -> {
+                sincronizandoAgenda = false;
+                if (isFinishing() || isDestroyed()) return;
+                int nuevos = 0;
+                int actualizados = 0;
+                try {
+                    for (String t : textos) {
+                        Almacen.Contacto leido = Almacen.leerTexto(t);
+                        if (leido.claveFirma == null || Arrays.equals(leido.clave, clavePublica)) continue;
+                        acreditarContacto(leido);
+                        if (leido.acreditadoNombre == null) continue;
+                        Almacen.Contacto existente = almacen.porId(Almacen.idDeClave(leido.clave));
+                        if (existente == null) {
+                            Almacen.Contacto c = almacen.agregar(leido.acreditadoSoloNombre(), t);
+                            acreditarContacto(c);
+                            nuevos++;
+                        } else if (!t.equals(existente.claveTexto + (existente.acreditacionTexto == null ? "" : " " + existente.acreditacionTexto))) {
+                            // Misma persona con acreditación o clave renovada: se conservan nombre y conversación.
+                            Almacen.Contacto c = almacen.agregar(existente.nombre, t);
+                            acreditarContacto(c);
+                            actualizados++;
+                        }
+                    }
+                    if (nuevos > 0 || actualizados > 0) almacen.guardar();
+                    prefs().edit().putLong(PREF_AGENDA_DESDE, l.hasta).apply();
+                } catch (Exception e) {
+                    estadoAgenda = "Error al guardar la agenda: " + Ui.mensaje(e);
+                    return;
+                }
+                int acreditados = 0;
+                for (Almacen.Contacto c : almacen.contactos) {
+                    if (c.acreditadoNombre != null) acreditados++;
+                }
+                estadoAgenda = acreditados + (acreditados == 1 ? " persona acreditada" : " personas acreditadas") + " · consultada a las " + Ui.hora(System.currentTimeMillis());
+                if (nuevos > 0) {
+                    Toast.makeText(this, nuevos == 1 ? "1 persona nueva en la agenda del Ayuntamiento" : nuevos + " personas nuevas en la agenda del Ayuntamiento", Toast.LENGTH_LONG).show();
+                    if (pantallaSecundaria == null && (pestana == Pestana.CONTACTOS || pestana == Pestana.CHATS)) mostrarPestana(pestana);
+                }
+                if (l.quedan) {
+                    // Hay más lotes: se siguen pidiendo sin esperar al siguiente minuto.
+                    ultimoIntentoAgenda = 0;
+                    sincronizarAgenda();
+                }
+            });
+        }, "x39-agenda").start();
+    }
+
     private static boolean esIdDeContacto(String s) {
         if (s.length() != 16) return false;
         for (int i = 0; i < s.length(); i++) {
@@ -967,7 +1055,7 @@ public class MainActivity extends Activity {
                         rechazo(interactivo, "Descartado un mensaje: la firma no es de la clave que figura en el directorio.");
                         return;
                     }
-                    Almacen.Contacto c = almacen.agregar(leido.acreditadoNombre, t);
+                    Almacen.Contacto c = almacen.agregar(leido.acreditadoSoloNombre(), t);
                     acreditarContacto(c);
                     Almacen.Contacto ultimo = null;
                     for (byte[] b : cuerpos) {
@@ -1174,7 +1262,11 @@ public class MainActivity extends Activity {
         ScrollView sv = new ScrollView(this);
         LinearLayout lista = Ui.columna(this);
         lista.setPadding(0, 0, 0, Ui.dp(this, 96));
-        List<Almacen.Contacto> cs = almacen.ordenados();
+        // Chats: solo con quien hay conversación. La agenda completa está en Contactos.
+        List<Almacen.Contacto> cs = new ArrayList<>();
+        for (Almacen.Contacto c : almacen.ordenados()) {
+            if (!c.mensajes.isEmpty()) cs.add(c);
+        }
         if (cs.isEmpty()) {
             lista.addView(estadoVacio());
         } else {
@@ -1221,16 +1313,17 @@ public class MainActivity extends Activity {
     private View estadoVacio() {
         LinearLayout col = Ui.columna(this);
         col.setPadding(Ui.dp(this, 20), Ui.dp(this, 28), Ui.dp(this, 20), 0);
-        TextView t = Ui.texto(this, "Aún no tienes contactos", 16, Ui.TEXTO, true);
+        TextView t = Ui.texto(this, "Aún no hay conversaciones", 16, Ui.TEXTO, true);
         col.addView(t);
-        TextView d = Ui.texto(this, "Pide su código de contacto (XXXX-XXXX-XXXX) y tecléalo en Añadir, o dale el tuyo: " + miCodigo()
-                + ". Después comparad la huella de seguridad en persona.", 14, Ui.SUAVE, false);
+        TextView d = Ui.texto(this, almacen.contactos.isEmpty()
+                ? "En cuanto alguien active x39 con su invitación aparecerá en Contactos, sin añadir nada. Para alguien de fuera, pide su código (XXXX-XXXX-XXXX) o dale el tuyo: " + miCodigo() + "."
+                : "Elige a alguien en Contactos: ahí está todo el personal acreditado del Ayuntamiento.", 14, Ui.SUAVE, false);
         d.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 16));
         col.addView(d);
-        col.addView(Ui.boton(this, "Compartir mi código", true, v -> compartir("Mi código de contacto en x39: " + miCodigo(), "Compartir mi código x39")));
+        col.addView(Ui.boton(this, "Ir a Contactos", true, v -> mostrarPestana(Pestana.CONTACTOS)));
         View esp = new View(this);
         col.addView(esp, new LinearLayout.LayoutParams(1, Ui.dp(this, 10)));
-        col.addView(Ui.boton(this, "Añadir un contacto", false, v -> abrirAgregar("")));
+        col.addView(Ui.boton(this, "Compartir mi código", false, v -> compartir("Mi código de contacto en x39: " + miCodigo(), "Compartir mi código x39")));
         return col;
     }
 
@@ -1244,12 +1337,12 @@ public class MainActivity extends Activity {
         textos.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 8), 0);
         LinearLayout nombre = Ui.fila(this);
         nombre.addView(Ui.texto(this, c.nombre, 16, Ui.TEXTO, true));
-        if (c.verificado) {
+        if (c.verificado || c.acreditadoNombre != null) {
             ImageView ok = Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.SUAVE, 14);
             ((LinearLayout.LayoutParams) ok.getLayoutParams()).setMargins(Ui.dp(this, 6), 0, 0, 0);
             nombre.addView(ok);
         } else {
-            TextView chip = Ui.texto(this, "Sin verificar", 11, Ui.AVISO, false);
+            TextView chip = Ui.texto(this, "Sin acreditar", 11, Ui.AVISO, false);
             chip.setPadding(Ui.dp(this, 6), Ui.dp(this, 1), Ui.dp(this, 6), Ui.dp(this, 1));
             android.graphics.drawable.GradientDrawable borde = new android.graphics.drawable.GradientDrawable();
             borde.setCornerRadius(Ui.dp(this, 6));
@@ -1258,7 +1351,7 @@ public class MainActivity extends Activity {
             nombre.addView(chip, Ui.margen(this, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 8, 0, 0, 0));
         }
         textos.addView(nombre);
-        if (c.acreditadoNombre != null) textos.addView(Ui.texto(this, c.acreditadoNombre + " · acreditación del Ayuntamiento", 12, Ui.SUAVE, false));
+        if (c.acreditadoNombre != null) textos.addView(Ui.texto(this, (c.acreditadoCargo() != null ? c.acreditadoCargo() : c.acreditadoNombre) + " · acreditación del Ayuntamiento", 12, Ui.SUAVE, false));
         String vista;
         if (c.mensajes.isEmpty()) {
             vista = "Sin mensajes todavía";
@@ -1424,28 +1517,44 @@ public class MainActivity extends Activity {
         }
 
         LinearLayout tit = Ui.fila(this);
-        tit.setPadding(0, Ui.dp(this, 22), 0, Ui.dp(this, 8));
-        tit.addView(Ui.texto(this, "Tus contactos", 17, Ui.TEXTO, true), Ui.peso(1));
+        tit.setPadding(0, Ui.dp(this, 22), 0, Ui.dp(this, 2));
+        tit.addView(Ui.texto(this, "Agenda del Ayuntamiento", 17, Ui.TEXTO, true), Ui.peso(1));
         TextView anadir = Ui.texto(this, "Añadir", 15, Ui.TEXTO, true);
         anadir.setPadding(Ui.dp(this, 12), Ui.dp(this, 12), 0, Ui.dp(this, 12));
         anadir.setOnClickListener(v -> abrirAgregar(""));
         Ui.clicable(anadir);
         tit.addView(anadir);
         col.addView(tit);
+        TextView agendaEstado = Ui.texto(this, "Todo el personal acreditado aparece aquí solo. " + estadoAgenda, 13, Ui.SUAVE, false);
+        agendaEstado.setPadding(0, 0, 0, Ui.dp(this, 8));
+        col.addView(agendaEstado);
 
         if (almacen.contactos.isEmpty()) {
-            col.addView(Ui.texto(this, "Todavía no has añadido a nadie.", 14, Ui.SUAVE, false));
+            col.addView(Ui.texto(this, "Todavía no hay nadie. En cuanto alguien active x39 con su invitación, aparecerá aquí.", 14, Ui.SUAVE, false));
         }
-        for (Almacen.Contacto c : almacen.ordenados()) {
+        List<Almacen.Contacto> porNombre = new ArrayList<>(almacen.contactos);
+        java.util.Collections.sort(porNombre, (a, b) -> a.nombre.compareToIgnoreCase(b.nombre));
+        for (Almacen.Contacto c : porNombre) {
             LinearLayout f = Ui.fila(this);
             f.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
             f.addView(Ui.avatar(this, c.nombre, 44));
             LinearLayout t = Ui.columna(this);
             t.setPadding(Ui.dp(this, 12), 0, 0, 0);
             t.addView(Ui.texto(this, c.nombre, 16, Ui.TEXTO, true));
-            if (c.acreditadoNombre != null) t.addView(Ui.texto(this, etiquetaAcreditado(c), 13, Ui.TEXTO_2, false));
-            String estadoContacto = c.claveFirma == null ? "Clave antigua sin firma" : (c.verificado ? "Verificado" : "Sin verificar");
-            t.addView(Ui.texto(this, estadoContacto, 13, c.claveFirma != null && c.verificado ? Ui.SUAVE : Ui.AVISO, false));
+            if (c.acreditadoCargo() != null) t.addView(Ui.texto(this, c.acreditadoCargo(), 14, Ui.TEXTO_2, false));
+            String estadoContacto;
+            int colorEstado;
+            if (c.claveFirma == null) {
+                estadoContacto = "Clave antigua sin firma";
+                colorEstado = Ui.AVISO;
+            } else if (c.acreditadoNombre != null) {
+                estadoContacto = "Acreditación del Ayuntamiento hasta el " + c.acreditadoHastaVisible() + (c.verificado ? " · huella comparada" : "");
+                colorEstado = Ui.SUAVE;
+            } else {
+                estadoContacto = c.verificado ? "Huella comparada · sin acreditación" : "Sin acreditación ni huella comparada";
+                colorEstado = c.verificado ? Ui.SUAVE : Ui.AVISO;
+            }
+            t.addView(Ui.texto(this, estadoContacto, 13, colorEstado, false));
             f.addView(t, Ui.peso(1));
             f.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18));
             f.setOnClickListener(v -> abrirVerificar(c));
@@ -1538,7 +1647,7 @@ public class MainActivity extends Activity {
                     acreditarContacto(leido);
                     boolean ok = leido.acreditadoNombre != null;
                     // El nombre acreditado sirve de nombre del contacto si no se ha escrito otro.
-                    if (ok && nombre.getText().toString().trim().isEmpty()) nombre.setText(leido.acreditadoNombre);
+                    if (ok && nombre.getText().toString().trim().isEmpty()) nombre.setText(leido.acreditadoSoloNombre());
                     huellaCaja.addView(Ui.texto(this, ok
                             ? "Acreditado por el Ayuntamiento como " + leido.acreditadoNombre + " · hasta el " + leido.acreditadoHastaVisible()
                             : "⚠ Trae una acreditación que no verifica (firma o fecha).", 13, ok ? Ui.SUAVE : Ui.AVISO, false));

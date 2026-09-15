@@ -52,6 +52,20 @@ final class Almacen {
         String acreditadoHasta;
         final List<Mensaje> mensajes = new ArrayList<>();
 
+        /** La invitación lleva «Nombre Apellidos · Cargo»; esto es solo el nombre (o todo, si no hay cargo). */
+        String acreditadoSoloNombre() {
+            if (acreditadoNombre == null) return null;
+            int i = acreditadoNombre.indexOf(" · ");
+            return i > 0 ? acreditadoNombre.substring(0, i).trim() : acreditadoNombre;
+        }
+
+        /** El cargo de la invitación, o null si no lo lleva. */
+        String acreditadoCargo() {
+            if (acreditadoNombre == null) return null;
+            int i = acreditadoNombre.indexOf(" · ");
+            return i > 0 ? acreditadoNombre.substring(i + 3).trim() : null;
+        }
+
         String acreditadoHastaVisible() {
             if (acreditadoHasta == null || acreditadoHasta.length() != 10) return acreditadoHasta;
             String[] p = acreditadoHasta.split("-");

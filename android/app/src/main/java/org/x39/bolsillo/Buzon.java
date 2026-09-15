@@ -36,7 +36,8 @@ final class Buzon {
     static final String PREF_DESDE = "buzon_desde";
     /** Canister buzon desplegado el 15/09/2026 (canister/buzon/canister_ids.json). Se puede cambiar en Seguridad. */
     static final String URL_POR_DEFECTO = "https://gx4ic-yqaaa-aaaah-qu43a-cai.raw.icp0.io";
-    private static final int MAX_RESPUESTA = 256 * 1024;
+    /** Un lote de la agenda son hasta 10 entradas de ~31 kB. */
+    private static final int MAX_RESPUESTA = 1024 * 1024;
     private static final int MAX_REGISTRO = 30;
     private static final ArrayDeque<String> REGISTRO = new ArrayDeque<>();
 
@@ -139,6 +140,29 @@ final class Buzon {
     /** Entrada del directorio de quien tiene esa dirección de buzón (o su prefijo de 16+ hex, el id de contacto). */
     String buscarPorDireccion(String prefijoHex) throws IOException {
         return entradaDe(pedir("GET", url() + "/buscar?dir=" + URLEncoder.encode(prefijoHex, "UTF-8"), null));
+    }
+
+    /** Un lote de la agenda del Ayuntamiento: entradas acreditadas publicadas después de `desde`. */
+    static final class Agenda {
+        final List<String> entradas = new ArrayList<>();
+        long hasta;
+        boolean quedan;
+    }
+
+    Agenda agenda(long desde) throws IOException {
+        JSONObject r = pedir("GET", url() + "/agenda?desde=" + desde, null);
+        Agenda a = new Agenda();
+        a.hasta = r.optLong("hasta", desde);
+        a.quedan = r.optBoolean("quedan", false);
+        JSONArray fs = r.optJSONArray("fichas");
+        if (fs != null) {
+            for (int i = 0; i < fs.length(); i++) {
+                JSONObject f = fs.optJSONObject(i);
+                String e = f == null ? "" : f.optString("entrada", "");
+                if (!e.isEmpty()) a.entradas.add(e);
+            }
+        }
+        return a;
     }
 
     private static String entradaDe(JSONObject r) throws IOException {

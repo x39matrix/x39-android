@@ -199,6 +199,19 @@
    "pdf": "actas/ACTA-MESA-DE-CONTRATACION-EXPTE-2026-SSU-000514-28-2026-07-01.pdf"
   },
   {
+   "id": "acta-mesa-de-contratacion-expte-2016-svs-000196-21-2026-07-01",
+   "area": "contratacion",
+   "nombre": "Acta Mesa de Contratacion expte 2016-SVS-000196-21",
+   "sesion": "01-07-2026",
+   "anclaje": "09-09-2026",
+   "sha256": "c5a5a5aee8444012812dab9e5a2af0ae1198b1040db678fcd8d20d5bea266f27",
+   "bloque": "966191",
+   "verificado_bloque": "966191",
+   "qtst": "14-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
+   "pdf": "actas/ACTA-MESA-DE-CONTRATACION-EXPTE-2016-SVS-000196-21-2026-07-01.pdf"
+  },
+  {
    "id": "estatutos-de-la-agencia-tributaria-de-sevilla-2020-01-01",
    "area": "agencia-tributaria",
    "nombre": "Estatutos de la Agencia Tributaria de Sevilla",

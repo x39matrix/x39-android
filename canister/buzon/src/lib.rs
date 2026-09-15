@@ -16,6 +16,7 @@
 //! sale de la clave firmada: nadie puede publicar bajo el código de otro.
 //!   POST /publicar         cuerpo JSON {"entrada": "X39DIR1:…"}                 → {"codigo": "XXXX-XXXX-XXXX", "direccion": <64 hex>}
 //!   GET  /buscar?codigo=XXXX-XXXX-XXXX   o   /buscar?dir=<16..64 hex>            → {"entrada": "X39DIR1:…", "codigo", "direccion", "ts"}
+//!   GET  /agenda?desde=<ts>              (fichas acreditadas más nuevas que ts)  → {"fichas":[…], "hasta": ts, "quedan": bool}
 //! Límites: 40 000 caracteres por entrada, 2 000 entradas, 365 días sin renovar. Lo que revela: claves
 //! públicas y acreditación (nombre, fecha) de quien publica, a quien sepa su código o su dirección.
 //! No hay control de quién escribe: cualquiera con la URL puede dejar mensajes (la app descarta los que no
@@ -38,6 +39,8 @@ const MAX_FICHAS: usize = 2_000;
 const VIDA_FICHA_NS: u64 = 365 * 24 * 3600 * 1_000_000_000;
 /// Mínimo de caracteres de dirección para buscar: el identificador de contacto de la app (16 hex).
 const MIN_DIR: usize = 16;
+/// Fichas por respuesta de /agenda (unos 31 000 caracteres cada una con acreditación).
+const LOTE_AGENDA: usize = 10;
 
 #[derive(CandidType, Deserialize)]
 struct HttpRequest {
@@ -70,6 +73,8 @@ struct Ficha {
     direccion: String,
     entrada: String,
     ts: u64,
+    /// Lleva acreditación (X39ACR1). `opt` por las fichas guardadas antes de existir el campo.
+    acreditada: Option<bool>,
 }
 
 #[derive(Default, Serialize, Deserialize, CandidType)]
@@ -155,6 +160,31 @@ fn buscar(consulta: &str) -> HttpResponse {
     ESTADO.with(|s| buscar_en(&s.borrow(), consulta))
 }
 
+/// Agenda: las fichas acreditadas publicadas después de `desde` (marca de tiempo), en lotes.
+/// La app comprueba cada acreditación con la clave del Ayuntamiento antes de añadir a nadie.
+fn agenda_en(s: &Estado, consulta: &str) -> HttpResponse {
+    let desde: u64 = parametro(consulta, "desde").and_then(|d| d.parse().ok()).unwrap_or(0);
+    let vacio = Vec::new();
+    let d = s.directorio.as_ref().unwrap_or(&vacio);
+    let mut fichas: Vec<&Ficha> = d.iter().filter(|f| f.ts > desde && f.acreditada != Some(false)).collect();
+    fichas.sort_by_key(|f| f.ts);
+    let quedan = fichas.len() > LOTE_AGENDA;
+    fichas.truncate(LOTE_AGENDA);
+    let hasta = fichas.last().map_or(desde, |f| f.ts);
+    let lote: Vec<serde_json::Value> = fichas
+        .iter()
+        .map(|f| {
+            serde_json::json!({
+                "entrada": f.entrada,
+                "codigo": directorio::codigo_visible(&f.codigo),
+                "direccion": f.direccion,
+                "ts": f.ts,
+            })
+        })
+        .collect();
+    json(200, serde_json::json!({ "fichas": lote, "hasta": hasta, "quedan": quedan }).to_string())
+}
+
 fn buscar_en(s: &Estado, consulta: &str) -> HttpResponse {
     // El parámetro llega tal cual se escribió en la URL: los guiones no se codifican.
     let por_codigo = parametro(consulta, "codigo").map(|c| c.replace("%2D", "-"));
@@ -225,6 +255,7 @@ fn http_request(req: HttpRequest) -> HttpResponse {
             })
         }
         ("GET", "/buscar") => buscar(consulta),
+        ("GET", "/agenda") => ESTADO.with(|s| agenda_en(&s.borrow(), consulta)),
         _ => error(404, "no existe"),
     }
 }
@@ -282,6 +313,7 @@ fn publicar_en(s: &mut Estado, cuerpo: &[u8], ahora: u64) -> HttpResponse {
         direccion: directorio::direccion(&e.kem_pk),
         entrada: p.entrada,
         ts: ahora,
+        acreditada: Some(e.acreditacion.is_some()),
     };
     purgar(s, ahora);
     let d = s.directorio.get_or_insert_with(Vec::new);
@@ -404,6 +436,35 @@ mod tests {
     }
 
     #[test]
+    fn agenda_solo_acreditadas_por_lotes_y_desde() {
+        let autoridad = firma::generate_seed().unwrap();
+        let inv = x39_core::invitacion::emitir(&autoridad, "2027-12-31", "Prueba").unwrap();
+        let mut s = Estado::default();
+        // 12 acreditadas y 1 sin acreditar.
+        for i in 0..12u64 {
+            let seed = firma::generate_seed().unwrap();
+            let kem = x39_core::generate_keypair().unwrap();
+            let acr = x39_core::invitacion::acreditar(&seed, &inv).unwrap();
+            let e = directorio::publicar(&seed, &kem.public, Some(&acr)).unwrap();
+            assert_eq!(publicar_en(&mut s, &publicacion(&e), 100 + i).status_code, 200);
+        }
+        let (sin, _, _) = entrada(None);
+        assert_eq!(publicar_en(&mut s, &publicacion(&sin), 200).status_code, 200);
+
+        let r: serde_json::Value = serde_json::from_str(&cuerpo(&agenda_en(&s, ""))).unwrap();
+        assert_eq!(r["fichas"].as_array().unwrap().len(), LOTE_AGENDA);
+        assert_eq!(r["quedan"], true);
+        assert_eq!(r["hasta"], 109);
+        let r: serde_json::Value = serde_json::from_str(&cuerpo(&agenda_en(&s, "desde=109"))).unwrap();
+        assert_eq!(r["fichas"].as_array().unwrap().len(), 2, "la sin acreditar no sale");
+        assert_eq!(r["quedan"], false);
+        assert_eq!(r["hasta"], 111);
+        let r: serde_json::Value = serde_json::from_str(&cuerpo(&agenda_en(&s, "desde=111"))).unwrap();
+        assert_eq!(r["fichas"].as_array().unwrap().len(), 0);
+        assert_eq!(r["hasta"], 111);
+    }
+
+    #[test]
     fn el_estado_antiguo_sin_directorio_se_restaura() {
         // Lo que guardó la versión 0.8 (sin campo directorio) tiene que poder leerse tras la actualización.
         #[derive(CandidType)]
@@ -417,5 +478,29 @@ mod tests {
         assert_eq!(nuevo.ultimo, 7);
         assert_eq!(nuevo.entradas.len(), 1);
         assert!(nuevo.directorio.is_none());
+
+        // Y lo que guardó 0.10 (fichas sin el campo acreditada) también.
+        #[derive(CandidType)]
+        struct FichaVieja {
+            codigo: String,
+            direccion: String,
+            entrada: String,
+            ts: u64,
+        }
+        #[derive(CandidType)]
+        struct EstadoDiez {
+            ultimo: u64,
+            entradas: Vec<Entrada>,
+            directorio: Option<Vec<FichaVieja>>,
+        }
+        let diez = EstadoDiez {
+            ultimo: 1,
+            entradas: vec![],
+            directorio: Some(vec![FichaVieja { codigo: "A".repeat(12), direccion: "b".repeat(64), entrada: "X39DIR1:x".into(), ts: 5 }]),
+        };
+        let nuevo: Estado = candid::decode_one(&candid::encode_one(&diez).unwrap()).unwrap();
+        let f = &nuevo.directorio.unwrap()[0];
+        assert_eq!(f.ts, 5);
+        assert_eq!(f.acreditada, None, "sin dato: la agenda la incluye y la app decide");
     }
 }
