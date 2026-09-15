@@ -7,6 +7,12 @@ cd "$HOME/x39_mensajeria"
 
 echo "### 0. Registro de actas incluido en la app"
 bash scripts/actualizar_registro.sh
+if [ -f android/app/src/main/assets/autoridad.pk ]; then
+  echo "autoridad del Ayuntamiento: clave pública sha256 $(sha256sum android/app/src/main/assets/autoridad.pk | cut -c1-16)…"
+else
+  echo "AVISO: no hay android/app/src/main/assets/autoridad.pk (scripts/invitaciones.sh crear):"
+  echo "       «Soy personal del Ayuntamiento» dirá que esta versión no lleva la clave de la autoridad."
+fi
 
 echo "### 1. Motor Rust para arm64 (móviles) y x86_64 (emulador)"
 ( cd x39-jni && cargo ndk -t arm64-v8a -t x86_64 --platform 28 -o ../android/app/src/main/jniLibs build --release 2>&1 \

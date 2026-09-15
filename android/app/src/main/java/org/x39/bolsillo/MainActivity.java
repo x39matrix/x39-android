@@ -44,9 +44,12 @@ import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * x39 v0.6 · transparencia verificable y canal seguro para el Ayuntamiento.
@@ -60,7 +63,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.6.2";
+    private static final String VERSION = "0.7.0";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -216,7 +219,8 @@ public class MainActivity extends Activity {
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
         if (pantallaSecundaria != null) {
-            mostrarPestana(pestana);
+            if (enBienvenida) volverDeInvitacion();
+            else mostrarPestana(pestana);
         } else {
             super.onBackPressed();
         }
@@ -427,7 +431,7 @@ public class MainActivity extends Activity {
 
         TextView ciudadano = Ui.boton(this, "Ver plenos y comprobar documentos", true, v -> entrarComoCiudadano());
         col.addView(ciudadano, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 16, 0, 10));
-        TextView personal = Ui.boton(this, "Soy personal del Ayuntamiento", false, v -> crearIdentidad());
+        TextView personal = Ui.boton(this, "Soy personal del Ayuntamiento", false, v -> pedirInvitacion());
         col.addView(personal, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 10));
         TextView pie = Ui.texto(this, "Versión de prueba · protocolo pendiente de auditoría externa", 12, Ui.TENUE, false);
         pie.setGravity(Gravity.CENTER);
@@ -573,14 +577,117 @@ public class MainActivity extends Activity {
         mostrarPestana(Pestana.PLENOS);
     }
 
-    /** Desde el modo ciudadano: crear la clave del personal. */
+    /** Desde el modo ciudadano: el acceso del personal pasa siempre por la invitación. */
     private void activarAccesoPersonal() {
+        pedirInvitacion();
+    }
+
+    // ------------------------------------------------------------------ invitación del Ayuntamiento
+
+    private static final String ASSET_AUTORIDAD = "autoridad.pk";
+    private static final String PREF_INV_NOMBRE = "invitacion_nombre";
+    private static final String PREF_INV_CADUCA = "invitacion_caduca";
+
+    /** Clave pública ML-DSA-87 de la autoridad (el Ayuntamiento), incluida en la app; null si esta compilación no la lleva. */
+    private byte[] autoridad() {
+        try (InputStream in = getAssets().open(ASSET_AUTORIDAD)) {
+            byte[] pk = new byte[X39Core.DSA_PK_LEN];
+            int total = 0;
+            while (total < pk.length) {
+                int n = in.read(pk, total, pk.length - total);
+                if (n < 0) break;
+                total += n;
+            }
+            return total == pk.length && in.read() < 0 ? pk : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * «Soy personal del Ayuntamiento» no crea la clave sin más: hace falta una invitación firmada por la
+     * autoridad del Ayuntamiento (texto «X39INV1:…» que llega por cualquier canal). Sin servidor.
+     */
+    private void pedirInvitacion() {
+        if (autoridad() == null) {
+            aviso("Esta versión de la app no lleva la clave de la autoridad del Ayuntamiento, así que no puede "
+                    + "comprobar invitaciones. Pide una compilación que la incluya.");
+            return;
+        }
+        pantallaSecundaria = () -> mostrar(pantallaInvitacion(), false);
+        pantallaSecundaria.run();
+    }
+
+    private void volverDeInvitacion() {
+        pantallaSecundaria = null;
+        if (enBienvenida) mostrar(pantallaBienvenida(), false);
+        else mostrarPestana(Pestana.PLENOS);
+    }
+
+    private View pantallaInvitacion() {
+        LinearLayout raizCol = Ui.columna(this);
+        raizCol.addView(cabeceraSecundaria("Invitación del Ayuntamiento", this::volverDeInvitacion));
+        ScrollView sv = new ScrollView(this);
+        LinearLayout col = Ui.columna(this);
+        col.setPadding(Ui.dp(this, 20), Ui.dp(this, 4), Ui.dp(this, 20), Ui.dp(this, 24));
+
+        col.addView(Ui.texto(this, "El acceso del personal lo da el Ayuntamiento", 22, Ui.TEXTO, true));
+        TextView d = Ui.texto(this, "Pega aquí la invitación que te ha enviado el Ayuntamiento (empieza por X39INV1). "
+                + "La app comprueba su firma sin conexión; si es válida y no ha caducado, crea tu clave en este móvil.", 15, Ui.TEXTO_2, false);
+        d.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 16));
+        col.addView(d);
+
+        EditText campo = Ui.campo(this, "X39INV1:…", 5, true);
+        col.addView(campo, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView pegar = Ui.boton(this, "Pegar del portapapeles", false, v -> {
+            String t = portapapeles();
+            if (t == null || t.trim().isEmpty()) aviso("No hay nada copiado.");
+            else campo.setText(t.trim());
+        });
+        col.addView(pegar, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
+        TextView comprobar = Ui.boton(this, "Comprobar la invitación", true, v -> comprobarInvitacion(campo.getText().toString()));
+        col.addView(comprobar, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
+
+        TextView nota = Ui.texto(this, "La invitación lleva la firma ML-DSA-87 de la autoridad del Ayuntamiento, una fecha de caducidad "
+                + "y el nombre o cargo para quien se emitió. No se envía a ningún sitio: se comprueba en este móvil.", 12, Ui.TENUE, false);
+        nota.setPadding(0, Ui.dp(this, 16), 0, 0);
+        col.addView(nota);
+        sv.addView(col);
+        raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        return raizCol;
+    }
+
+    private void comprobarInvitacion(String texto) {
+        byte[] pk = autoridad();
+        if (pk == null || texto.trim().isEmpty()) {
+            aviso("Pega primero la invitación.");
+            return;
+        }
+        String hoy = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(new Date());
+        String resultado;
+        try {
+            resultado = X39Core.invitationVerify(pk, texto, hoy);
+        } catch (Exception e) {
+            aviso("Invitación no válida: " + Ui.mensaje(e));
+            return;
+        }
+        int sep = resultado.indexOf('|');
+        final String caduca = sep > 0 ? resultado.substring(0, sep) : resultado;
+        final String nombre = sep > 0 ? resultado.substring(sep + 1) : "";
+        String[] p = caduca.split("-");
+        String caducaVisible = p.length == 3 ? p[2] + "/" + p[1] + "/" + p[0] : caduca;
         new AlertDialog.Builder(this)
-                .setTitle("Acceso del personal")
-                .setMessage("Se creará tu clave en este móvil (ML-KEM-1024 y ML-DSA-87). "
+                .setTitle("Invitación válida")
+                .setMessage("Emitida para: " + nombre + "\nVálida hasta el " + caducaVisible + ".\n\n"
+                        + "Se creará tu clave en este móvil (ML-KEM-1024 y ML-DSA-87). "
                         + "Los chats solo funcionan entre personas que hayan comparado su huella en persona.")
                 .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Crear mi clave", (d, w) -> crearIdentidad())
+                .setPositiveButton("Crear mi clave", (dlg, w) -> {
+                    prefs().edit().putString(PREF_INV_NOMBRE, nombre).putString(PREF_INV_CADUCA, caduca).apply();
+                    pantallaSecundaria = null;
+                    crearIdentidad();
+                })
                 .show();
     }
 

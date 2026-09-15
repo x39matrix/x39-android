@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 
 pub mod firma;
+pub mod invitacion;
 pub mod ots;
 pub mod share;
 
@@ -58,6 +59,8 @@ pub enum Error {
     Firma,
     /// Prueba OpenTimestamps (.ots) o respuesta de calendario mal formada.
     Ots,
+    /// Invitación del Ayuntamiento con la fecha de validez ya pasada.
+    Caducada,
 }
 
 impl std::fmt::Display for Error {
@@ -74,6 +77,7 @@ impl std::fmt::Display for Error {
             Error::Formato => "texto corrupto o de otro tipo (revisa que se copió entero)",
             Error::Firma => "la firma del remitente no es válida",
             Error::Ots => "prueba OpenTimestamps no válida",
+            Error::Caducada => "la invitación ha caducado",
         };
         f.write_str(s)
     }

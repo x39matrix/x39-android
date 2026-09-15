@@ -65,6 +65,12 @@ final class X39Core {
     /** Matriz QR (corrección L): ancho en u16 big-endian y un byte por módulo, fila a fila (1 = oscuro). */
     static native byte[] qrMatrix(byte[] data);
 
+    /**
+     * Invitación del Ayuntamiento («X39INV1:…») verificada con la clave pública de su autoridad.
+     * {@code today} es AAAA-MM-DD. Devuelve "caduca|nombre"; si no verifica o ha caducado, lanza RuntimeException.
+     */
+    static native String invitationVerify(byte[] authorityKey, String text, String today);
+
     /** clave_pública(1568) || clave_secreta(3168). */
     static native byte[] generateKeypair();
 

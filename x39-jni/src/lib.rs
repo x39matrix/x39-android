@@ -8,6 +8,7 @@ use jni::errors::ThrowRuntimeExAndDefault;
 use jni::objects::{JByteArray, JClass, JString};
 use jni::sys::{jint, jlong};
 use x39_core::firma::{self, DSA_PK_LEN, DSA_SEED_LEN};
+use x39_core::invitacion;
 use x39_core::ots::Prueba;
 use x39_core::{CID_LEN, PK_LEN, SK_LEN, TtlPolicy, share};
 use zeroize::Zeroizing;
@@ -425,6 +426,25 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_qrMatrix<'c>(
             salida.extend_from_slice(&(ancho as u16).to_be_bytes());
             salida.extend(qr.to_colors().iter().map(|c| u8::from(*c == qrcode::Color::Dark)));
             Ok(env.byte_array_from_slice(&salida)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Verifica una invitación «X39INV1:…» con la clave pública de la autoridad (el Ayuntamiento).
+/// `today` es AAAA-MM-DD. Devuelve "caduca|nombre"; si no verifica o ha caducado, lanza la excepción.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_invitationVerify<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    authority_key: JByteArray<'c>,
+    text: JString<'c>,
+    today: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = signing_public_key_from(env, &authority_key)?;
+            let inv = invitacion::verificar(&pk, &text.to_string(), &today.to_string())?;
+            Ok(env.new_string(format!("{}|{}", inv.caduca, inv.nombre))?)
         })
         .resolve::<ThrowRuntimeExAndDefault>()
 }

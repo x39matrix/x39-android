@@ -79,14 +79,14 @@ fn checksum(prefix: &str, data: &[u8]) -> [u8; CHECK_LEN] {
     h.finalize()[..CHECK_LEN].try_into().expect("4 bytes")
 }
 
-fn encode(prefix: &str, data: &[u8]) -> String {
+pub(crate) fn encode(prefix: &str, data: &[u8]) -> String {
     let mut payload = Vec::with_capacity(data.len() + CHECK_LEN);
     payload.extend_from_slice(data);
     payload.extend_from_slice(&checksum(prefix, data));
     format!("{prefix}{}", b64_encode(&payload))
 }
 
-fn decode(prefix: &str, text: &str) -> Result<Vec<u8>, Error> {
+pub(crate) fn decode(prefix: &str, text: &str) -> Result<Vec<u8>, Error> {
     // Los chats y el correo suelen partir líneas o añadir espacios: se ignoran.
     let compact: String = text.chars().filter(|c| !c.is_whitespace()).collect();
     let body = compact.strip_prefix(prefix).ok_or(Error::Formato)?;
