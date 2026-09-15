@@ -62,6 +62,9 @@ final class X39Core {
     /** Bloques de Bitcoin que atestiguan la prueba, separados por comas. */
     static native String otsBlocks(byte[] ots);
 
+    /** Matriz QR (corrección L): ancho en u16 big-endian y un byte por módulo, fila a fila (1 = oscuro). */
+    static native byte[] qrMatrix(byte[] data);
+
     /** clave_pública(1568) || clave_secreta(3168). */
     static native byte[] generateKeypair();
 

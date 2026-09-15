@@ -4,21 +4,27 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Insets;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
+import android.text.TextUtils;
+import android.text.format.Formatter;
 import android.util.Base64;
 import android.view.Gravity;
 import android.view.TextureView;
@@ -35,8 +41,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -46,15 +54,23 @@ import java.util.Locale;
 
 /**
  * x39 · Evidencia v0.1 (etapa A).
- * Foto desde la cámara propia → almacén cifrado → huella SHA-256 → firma ML-DSA-87 → cola de anclaje
- * OpenTimestamps. La foto no sale del móvil; por la red solo viajan compromisos de 32 bytes.
+ * Identidad ML-DSA-87 creada a mano en el primer arranque → foto de la cámara propia o cualquier archivo →
+ * almacén cifrado → huella SHA-256 → firma → cola de anclaje OpenTimestamps. Lo guardado no sale del móvil;
+ * por la red solo viajan compromisos de 32 bytes.
  * Textos según la sección 9 de la especificación: nada de «auténtica», «sin rastro» ni «subir».
  */
 public class EvidenciaActivity extends Activity {
-    static final String VERSION = "0.1.0";
+    static final String VERSION = "0.1.1";
     private static final int REQ_CAMARA = 1;
-    private static final int REQ_EXPORTAR_FOTO = 2;
-    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm", new Locale("es", "ES"));
+    private static final int REQ_EXPORTAR = 2;
+    private static final int REQ_ARCHIVO = 3;
+    /** Hasta este tamaño una imagen se descifra en memoria para verla; por encima se muestra un icono. */
+    private static final long MAX_VISTA = 25L << 20;
+    private static final Locale ES = new Locale("es", "ES");
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm", ES);
+    private static final String AVISO_IDENTIDAD = "Esta clave vive solo en este móvil. Si se pierde o se borra, se pierde la identidad: "
+            + "los recibos ya emitidos siguen valiendo si exportaste la clave pública, pero las evidencias nuevas irán con otra identidad. "
+            + "No hay copia en la nube, a propósito.";
 
     private enum Pestana { EVIDENCIAS, SEGURIDAD, AJUSTES }
 
@@ -64,7 +80,6 @@ public class EvidenciaActivity extends Activity {
     private Evidencias evidencias;
     private Camara camara;
     private String exportandoId;
-    private String errorInicio;
 
     // ------------------------------------------------------------------ ciclo de vida
 
@@ -81,11 +96,6 @@ public class EvidenciaActivity extends Activity {
         });
         setContentView(raiz);
         evidencias = new Evidencias(this);
-        try {
-            evidencias.asegurarIdentidad();
-        } catch (Exception e) {
-            errorInicio = Ui.mensaje(e);
-        }
         ColaAnclaje.programar(this);
     }
 
@@ -136,8 +146,10 @@ public class EvidenciaActivity extends Activity {
     // ------------------------------------------------------------------ navegación
 
     private void render() {
-        if (errorInicio != null) {
-            mostrarError();
+        if (!evidencias.tieneIdentidad()) {
+            // Pantalla 0: nada de cámara ni archivos hasta que exista la identidad.
+            secundaria = null;
+            mostrar(pantallaIdentidad(true), false);
         } else if (secundaria != null) {
             secundaria.run();
         } else {
@@ -193,7 +205,8 @@ public class EvidenciaActivity extends Activity {
         barra.setElevation(dp(8));
         barra.setPadding(dp(6), 0, dp(6), 0);
         barra.addView(itemNavegacion(Icono.Tipo.ACTAS, "Evidencias", pestana == Pestana.EVIDENCIAS && secundaria == null, () -> mostrarPestana(Pestana.EVIDENCIAS)), Ui.peso(1));
-        barra.addView(itemNavegacion(Icono.Tipo.CAMARA, "Cámara", false, this::abrirCamara), Ui.peso(1));
+        barra.addView(itemNavegacion(Icono.Tipo.CAMARA, "Hacer una foto", false, this::abrirCamara), Ui.peso(1));
+        barra.addView(itemNavegacion(Icono.Tipo.ARCHIVO, "Elegir un archivo", false, this::elegirArchivo), Ui.peso(1));
         barra.addView(itemNavegacion(Icono.Tipo.ESCUDO, "Seguridad", pestana == Pestana.SEGURIDAD && secundaria == null, () -> mostrarPestana(Pestana.SEGURIDAD)), Ui.peso(1));
         barra.addView(itemNavegacion(Icono.Tipo.AJUSTES, "Ajustes", pestana == Pestana.AJUSTES && secundaria == null, () -> mostrarPestana(Pestana.AJUSTES)), Ui.peso(1));
         return barra;
@@ -212,6 +225,193 @@ public class EvidenciaActivity extends Activity {
         return item;
     }
 
+    // ------------------------------------------------------------------ identidad (pantalla 0)
+
+    /**
+     * @param inicial sin flecha de volver: primer arranque (con «Continuar» una vez creada la clave).
+     */
+    private View pantallaIdentidad(boolean inicial) {
+        LinearLayout raizCol = Ui.columna(this);
+        raizCol.addView(barraSuperior("Tu identidad", inicial ? null : () -> mostrarPestana(pestana), 0));
+        ScrollView sv = new ScrollView(this);
+        LinearLayout col = Ui.columna(this);
+        col.setPadding(dp(16), 0, dp(16), dp(24));
+
+        if (!evidencias.tieneIdentidad()) {
+            LinearLayout intro = Ui.columna(this);
+            intro.setGravity(Gravity.CENTER_HORIZONTAL);
+            intro.setPadding(dp(20), dp(28), dp(20), dp(22));
+            intro.setBackground(Ui.degradado(this, 28));
+            intro.addView(aro(Icono.Tipo.LLAVE), new LinearLayout.LayoutParams(dp(84), dp(84)));
+            TextView t = Ui.texto(this, "Sin cuenta y sin registro", 20, Ui.TEXTO, true);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(0, dp(14), 0, dp(6));
+            intro.addView(t);
+            TextView d = Ui.texto(this, "Tu identidad es una clave de firma ML-DSA-87 que se crea ahora, en este móvil, y firma cada evidencia. No hay servidor ni alta: la clave es la identidad y nada más.", 14, Ui.TEXTO_2, false);
+            d.setGravity(Gravity.CENTER);
+            d.setPadding(0, 0, 0, dp(18));
+            intro.addView(d);
+            TextView crear = Ui.boton(this, "Crear identidad", true, null);
+            crear.setOnClickListener(v -> crearIdentidad(crear));
+            intro.addView(crear, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            col.addView(intro, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
+        } else {
+            try {
+                byte[] pk = evidencias.clavePublica();
+                String fp = Evidencias.sha256Hex(pk);
+
+                LinearLayout h = tarjeta(col, "Huella de tu clave");
+                TextView hv = Ui.mono(this, bloquesHuella(fp), 17, Ui.TEXTO);
+                hv.setLineSpacing(dp(4), 1f);
+                h.addView(hv);
+                TextView hn = Ui.texto(this, "SHA-256 de la clave pública. Quien reciba un recibo compara la huella que trae con esta.", 13, Ui.SUAVE, false);
+                hn.setPadding(0, dp(8), 0, 0);
+                h.addView(hn);
+                h.addView(Ui.boton(this, "Copiar huella", false, v -> copiarHuella(fp)),
+                        Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
+
+                LinearLayout k = tarjeta(col, "Clave pública");
+                ImageView qr = new ImageView(this);
+                qr.setAdjustViewBounds(true);
+                qr.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                qr.setBackground(Ui.redondeado(this, 0xFFFFFFFF, 14));
+                qr.setPadding(dp(8), dp(8), dp(8), dp(8));
+                qr.setContentDescription("Código QR con la clave pública");
+                k.addView(qr, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                dibujarQr(qr, pk);
+                TextView ki = Ui.texto(this, "ML-DSA-87 · " + miles(pk.length) + " bytes. El QR lleva la clave entera (versión 40, 177 × 177 módulos): acerca bien la cámara al escanearlo.", 13, Ui.TEXTO_2, false);
+                ki.setPadding(0, dp(10), 0, 0);
+                k.addView(ki);
+                k.addView(Ui.boton(this, "Exportar clave pública (.bin)", false, v -> compartirClave()),
+                        Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
+
+                LinearLayout z = tarjeta(col, "Comprobar tamaños");
+                TextView res = Ui.texto(this, "ML-DSA-87 son " + miles(Evidencias.PK_ESPERADA) + " bytes de clave pública y " + miles(Evidencias.FIRMA_ESPERADA)
+                        + " de firma. Se miden aquí, en este móvil, con una firma de prueba.", 13, Ui.TEXTO_2, false);
+                z.addView(res);
+                z.addView(Ui.boton(this, "Comprobar en este móvil", false, v -> comprobarTamanos(res)),
+                        Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
+
+                LinearLayout donde = tarjeta(col, "Dónde vive");
+                donde.addView(Ui.texto(this, "La semilla de la clave está cifrada con una clave del Keystore de Android ("
+                        + evidencias.nivelHardware() + "). Android aún no firma con ML-DSA dentro del Keystore, así que la firma "
+                        + "se calcula en la app con la semilla descifrada solo en memoria y borrada al terminar.", 13, Ui.TEXTO_2, false));
+            } catch (Exception e) {
+                tarjeta(col, null).addView(Ui.texto(this, "No se pudo leer la clave: " + Ui.mensaje(e), 14, Ui.AVISO, false));
+            }
+        }
+
+        LinearLayout aviso = Ui.fila(this);
+        aviso.setGravity(Gravity.TOP);
+        aviso.setPadding(dp(18), dp(16), dp(18), dp(16));
+        aviso.setBackground(Ui.redondeado(this, Ui.CAJA, 24));
+        aviso.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.AVISO, 20));
+        TextView at = Ui.texto(this, AVISO_IDENTIDAD, 14, Ui.AVISO, false);
+        at.setPadding(dp(12), 0, 0, 0);
+        aviso.addView(at, Ui.peso(1));
+        col.addView(aviso, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
+
+        if (inicial && evidencias.tieneIdentidad()) {
+            col.addView(Ui.boton(this, "Continuar", true, v -> mostrarPestana(Pestana.EVIDENCIAS)),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 18, 0, 0));
+        }
+        sv.addView(col);
+        raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        return raizCol;
+    }
+
+    private void crearIdentidad(TextView boton) {
+        boton.setEnabled(false);
+        boton.setText("Creando la clave…");
+        new Thread(() -> {
+            String fallo = null;
+            try {
+                evidencias.crearIdentidad();
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            }
+            final String error = fallo;
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                if (error != null) {
+                    boton.setEnabled(true);
+                    boton.setText("Crear identidad");
+                    aviso("No se pudo crear la identidad: " + error);
+                    return;
+                }
+                abrirSecundaria(() -> mostrar(pantallaIdentidad(true), false));
+            });
+        }, "x39-identidad").start();
+    }
+
+    /** 64 hex en cuatro líneas de 16, en grupos de 4. */
+    private static String bloquesHuella(String hex) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hex.length(); i += 4) {
+            if (i > 0) sb.append(i % 16 == 0 ? '\n' : ' ');
+            sb.append(hex, i, Math.min(i + 4, hex.length()));
+        }
+        return sb.toString();
+    }
+
+    private void copiarHuella(String fp) {
+        ClipboardManager cm = getSystemService(ClipboardManager.class);
+        if (cm == null) return;
+        cm.setPrimaryClip(ClipData.newPlainText("Huella de la clave x39", fp));
+        Toast.makeText(this, "Huella copiada", Toast.LENGTH_SHORT).show();
+    }
+
+    private void dibujarQr(ImageView destino, byte[] datos) {
+        new Thread(() -> {
+            try {
+                byte[] m = X39Core.qrMatrix(datos);
+                int ancho = ((m[0] & 0xff) << 8) | (m[1] & 0xff);
+                int margen = 4;
+                int lado = ancho + 2 * margen;
+                int[] px = new int[lado * lado];
+                Arrays.fill(px, 0xFFFFFFFF);
+                for (int y = 0; y < ancho; y++) {
+                    for (int x = 0; x < ancho; x++) {
+                        if (m[2 + y * ancho + x] != 0) px[(y + margen) * lado + x + margen] = 0xFF000000;
+                    }
+                }
+                Bitmap base = Bitmap.createBitmap(px, lado, lado, Bitmap.Config.ARGB_8888);
+                int escala = Math.max(1, 1080 / lado);
+                // Sin suavizado: cada módulo queda como un cuadrado nítido.
+                Bitmap grande = Bitmap.createScaledBitmap(base, lado * escala, lado * escala, false);
+                runOnUiThread(() -> {
+                    if (!isDestroyed()) destino.setImageBitmap(grande);
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> destino.setVisibility(View.GONE));
+            }
+        }, "x39-qr").start();
+    }
+
+    private void comprobarTamanos(TextView resultado) {
+        resultado.setText("Firmando y midiendo…");
+        new Thread(() -> {
+            String texto;
+            try {
+                int[] t = evidencias.comprobarTamanos();
+                boolean clave = t[0] == Evidencias.PK_ESPERADA;
+                boolean firma = t[1] == Evidencias.FIRMA_ESPERADA;
+                texto = "Clave pública: " + miles(t[0]) + " bytes " + (clave ? "✓" : "✗ (esperados " + miles(Evidencias.PK_ESPERADA) + ")")
+                        + "\nFirma de prueba: " + miles(t[1]) + " bytes " + (firma ? "✓" : "✗ (esperados " + miles(Evidencias.FIRMA_ESPERADA) + ")")
+                        + "\nLa firma de prueba verifica con la clave ✓"
+                        + (clave && firma ? "\n\nMedido en este móvil: es ML-DSA-87." : "\n\nEstos tamaños no son de ML-DSA-87.");
+            } catch (Exception e) {
+                texto = "✗ La firma de prueba no se pudo hacer o no verifica: " + Ui.mensaje(e);
+            }
+            final String fin = texto;
+            runOnUiThread(() -> resultado.setText(fin));
+        }, "x39-tamanos").start();
+    }
+
+    private static String miles(long n) {
+        return String.format(ES, "%,d", n);
+    }
+
     // ------------------------------------------------------------------ evidencias
 
     private View pantallaEvidencias() {
@@ -220,30 +420,31 @@ public class EvidenciaActivity extends Activity {
         ScrollView sv = new ScrollView(this);
         LinearLayout col = Ui.columna(this);
         col.setPadding(dp(16), 0, dp(16), dp(24));
-        col.addView(Ui.texto(this, "La foto no sale de este móvil. Solo viaja su huella.", 13, Ui.SUAVE, false));
+        col.addView(Ui.texto(this, "Lo que guardas no sale de este móvil. Solo viaja su huella.", 13, Ui.SUAVE, false));
 
         List<Evidencias.Ficha> fichas;
         try {
             fichas = evidencias.todas();
         } catch (Exception e) {
             fichas = new ArrayList<>();
-            col.addView(Ui.texto(this, "⚠ No se pudo leer el almacén: " + Ui.mensaje(e), 14, Ui.AVISO, false));
+            col.addView(Ui.texto(this, "No se pudo leer el almacén: " + Ui.mensaje(e), 14, Ui.AVISO, false));
         }
         if (fichas.isEmpty()) {
             LinearLayout vacio = Ui.columna(this);
             vacio.setGravity(Gravity.CENTER_HORIZONTAL);
             vacio.setPadding(dp(20), dp(28), dp(20), dp(22));
             vacio.setBackground(Ui.degradado(this, 28));
-            FrameLayout aro = aro(Icono.Tipo.CAMARA);
-            vacio.addView(aro, new LinearLayout.LayoutParams(dp(84), dp(84)));
+            vacio.addView(aro(Icono.Tipo.CAMARA), new LinearLayout.LayoutParams(dp(84), dp(84)));
             TextView t = Ui.texto(this, "Aún no hay evidencias", 20, Ui.TEXTO, true);
             t.setPadding(0, dp(14), 0, dp(6));
             vacio.addView(t);
-            TextView d = Ui.texto(this, "Haz una foto desde aquí: se guarda cifrada en este móvil, se firma con tu clave y su huella se ancla en Bitcoin sin que tengas que hacer nada más.", 14, Ui.TEXTO_2, false);
+            TextView d = Ui.texto(this, "Haz una foto desde aquí o elige cualquier archivo del móvil (PDF, vídeo, audio, lo que sea). Se guarda cifrado en este móvil, se firma con tu clave y su huella se ancla en Bitcoin sin que hagas nada más.", 14, Ui.TEXTO_2, false);
             d.setGravity(Gravity.CENTER);
             d.setPadding(0, 0, 0, dp(18));
             vacio.addView(d);
             vacio.addView(Ui.boton(this, "Hacer una foto", true, v -> abrirCamara()), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            vacio.addView(Ui.boton(this, "Elegir un archivo", false, v -> elegirArchivo()),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
             col.addView(vacio, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
         }
         for (Evidencias.Ficha f : fichas) col.addView(filaFicha(f));
@@ -254,8 +455,8 @@ public class EvidenciaActivity extends Activity {
 
     private FrameLayout aro(Icono.Tipo tipo) {
         FrameLayout aro = new FrameLayout(this);
-        android.graphics.drawable.GradientDrawable circulo = new android.graphics.drawable.GradientDrawable();
-        circulo.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        GradientDrawable circulo = new GradientDrawable();
+        circulo.setShape(GradientDrawable.OVAL);
         circulo.setColor(Ui.CAJA);
         circulo.setStroke(dp(2), Ui.BLANCO);
         aro.setBackground(circulo);
@@ -263,27 +464,48 @@ public class EvidenciaActivity extends Activity {
         return aro;
     }
 
+    private static Icono.Tipo iconoDe(Evidencias.Ficha f) {
+        if (f.esFoto()) return Icono.Tipo.CAMARA;
+        if (f.mime.startsWith("video/")) return Icono.Tipo.VIDEO;
+        if (f.mime.startsWith("audio/")) return Icono.Tipo.AUDIO;
+        return Icono.Tipo.ARCHIVO;
+    }
+
+    private String tamano(Evidencias.Ficha f) {
+        return f.bytes >= 0 ? Formatter.formatShortFileSize(this, f.bytes) : "";
+    }
+
     private View filaFicha(Evidencias.Ficha f) {
         LinearLayout card = Ui.fila(this);
         card.setPadding(dp(12), dp(12), dp(12), dp(12));
         card.setBackground(Ui.degradado(this, 22));
-        ImageView mini = new ImageView(this);
-        mini.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        FrameLayout mini = new FrameLayout(this);
         mini.setBackground(Ui.redondeado(this, Ui.CAJA, 14));
         mini.setClipToOutline(true);
+        if (f.esImagen() && f.bytes <= MAX_VISTA) {
+            ImageView img = new ImageView(this);
+            img.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            mini.addView(img, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            cargarImagen(f, img, 160);
+        } else {
+            mini.addView(Ui.icono(this, iconoDe(f), Ui.BLANCO, 28), new FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER));
+        }
         card.addView(mini, new LinearLayout.LayoutParams(dp(64), dp(64)));
-        cargarImagen(f, mini, 160);
 
         LinearLayout t = Ui.columna(this);
         t.setPadding(dp(14), 0, dp(6), 0);
-        t.addView(Ui.texto(this, fechaCorta(f.capturada), 15, Ui.TEXTO, true));
+        TextView titulo = Ui.texto(this, f.esFoto() ? "Foto" : (f.nombre.isEmpty() ? "Archivo" : f.nombre), 15, Ui.TEXTO, true);
+        titulo.setSingleLine(true);
+        titulo.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+        t.addView(titulo);
+        t.addView(Ui.texto(this, fechaCorta(f.capturada) + (f.esFoto() ? "" : " · " + tamano(f)), 13, Ui.SUAVE, false));
         t.addView(Ui.mono(this, "huella " + f.sha256.substring(0, 12) + "…", 12, Ui.SUAVE));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(0, dp(6), 0, 0);
         t.addView(pildora(f), lp);
         card.addView(t, Ui.peso(1));
         card.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18));
-        card.setContentDescription("Evidencia del " + fechaCorta(f.capturada));
+        card.setContentDescription((f.esFoto() ? "Foto" : "Archivo") + " del " + fechaCorta(f.capturada));
         card.setOnClickListener(v -> abrirFicha(f.id));
         Ui.clicable(card);
         LinearLayout envoltura = Ui.columna(this);
@@ -291,23 +513,24 @@ public class EvidenciaActivity extends Activity {
         return envoltura;
     }
 
+    /** Tres estados en escala de grafito (el rojo es solo de marca): ○ firmada, ◐ en calendarios, ● anclada. */
     private TextView pildora(Evidencias.Ficha f) {
         String texto;
         int fondo;
         int color;
         switch (f.otsEstado) {
             case "bitcoin":
-                texto = "Anclada · bloque " + f.bloque;
+                texto = "●  Anclada · bloque " + f.bloque;
                 fondo = Ui.BLANCO;
                 color = Ui.FONDO;
                 break;
             case "calendar":
-                texto = "Enviada a los calendarios";
+                texto = "◐  Enviada a los calendarios";
                 fondo = Ui.SUPERFICIE_2;
                 color = Ui.TEXTO;
                 break;
             default:
-                texto = "Firmada · en espera de ancla";
+                texto = "○  Firmada · en espera de ancla";
                 fondo = Ui.CAJA;
                 color = Ui.TEXTO_2;
                 break;
@@ -326,12 +549,12 @@ public class EvidenciaActivity extends Activity {
         }
     }
 
-    /** Descifra y decodifica la foto en memoria, reducida; nunca se guarda en claro. */
+    /** Descifra y decodifica la imagen en memoria, reducida; nunca se guarda en claro. */
     private void cargarImagen(Evidencias.Ficha f, ImageView destino, int ladoMaximo) {
         new Thread(() -> {
             byte[] datos = null;
             try {
-                datos = evidencias.foto(f);
+                datos = evidencias.leerEntero(f, MAX_VISTA);
                 BitmapFactory.Options o = new BitmapFactory.Options();
                 o.inJustDecodeBounds = true;
                 BitmapFactory.decodeByteArray(datos, 0, datos.length, o);
@@ -351,9 +574,90 @@ public class EvidenciaActivity extends Activity {
         }, "x39-imagen").start();
     }
 
+    // ------------------------------------------------------------------ archivo
+
+    private void elegirArchivo() {
+        if (!evidencias.tieneIdentidad()) {
+            render();
+            return;
+        }
+        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
+        startActivityForResult(i, REQ_ARCHIVO);
+    }
+
+    private void sellarArchivo(Uri uri) {
+        String nombre = null;
+        long tam = -1;
+        try (Cursor c = getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE}, null, null, null)) {
+            if (c != null && c.moveToFirst()) {
+                int i = c.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (i >= 0 && !c.isNull(i)) nombre = c.getString(i);
+                int j = c.getColumnIndex(OpenableColumns.SIZE);
+                if (j >= 0 && !c.isNull(j)) tam = c.getLong(j);
+            }
+        } catch (Exception ignorado) {
+            // Sin nombre ni tamaño: se sella igual.
+        }
+        String tipoMime = getContentResolver().getType(uri);
+        final String mime = tipoMime != null ? tipoMime : "application/octet-stream";
+        final String nombreFinal = nombre != null ? nombre : "archivo";
+        final long total = tam;
+        if (total > 0 && total + (64L << 20) > evidencias.espacioLibre()) {
+            aviso("No hay espacio en el móvil para guardar una copia cifrada de este archivo (" + Formatter.formatShortFileSize(this, total) + ").");
+            return;
+        }
+
+        TextView estado = Ui.texto(this, "Calculando la huella y cifrando…", 14, Ui.TEXTO, false);
+        estado.setPadding(dp(24), dp(20), dp(24), dp(8));
+        AlertDialog espera = new AlertDialog.Builder(this).setTitle(nombreFinal).setView(estado).setCancelable(false).show();
+        final long inicio = System.currentTimeMillis();
+        new Thread(() -> {
+            Evidencias.Sellado sellado = null;
+            String fallo = null;
+            long[] ultimoAviso = {0};
+            try (InputStream in = getContentResolver().openInputStream(uri)) {
+                if (in == null) throw new IllegalStateException("el sistema no dio acceso al archivo");
+                sellado = evidencias.sellar(in, Evidencias.ARCHIVO, nombreFinal, mime, hechos -> {
+                    long ahora = System.currentTimeMillis();
+                    if (ahora - ultimoAviso[0] < 250) return;
+                    ultimoAviso[0] = ahora;
+                    String t = Formatter.formatShortFileSize(this, hechos)
+                            + (total > 0 ? " de " + Formatter.formatShortFileSize(this, total) + " (" + (hechos * 100 / total) + " %)" : "");
+                    runOnUiThread(() -> estado.setText("Calculando la huella y cifrando…\n" + t));
+                });
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            }
+            final Evidencias.Sellado resultado = sellado;
+            final String error = fallo;
+            final long ms = System.currentTimeMillis() - inicio;
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                espera.dismiss();
+                mostrarPestana(Pestana.EVIDENCIAS);
+                if (error != null) {
+                    aviso("No se pudo sellar el archivo: " + error);
+                } else if (resultado.yaExistia) {
+                    aviso("Este archivo ya estaba sellado: tiene la misma huella que una evidencia de la lista.");
+                } else {
+                    Toast.makeText(this, "Guardado y firmado en " + duracion(ms), Toast.LENGTH_SHORT).show();
+                    ColaAnclaje.programar(this);
+                }
+            });
+        }, "x39-archivo").start();
+    }
+
+    private static String duracion(long ms) {
+        return ms < 1000 ? ms + " ms" : String.format(ES, "%.1f s", ms / 1000.0);
+    }
+
     // ------------------------------------------------------------------ cámara
 
     private void abrirCamara() {
+        if (!evidencias.tieneIdentidad()) {
+            render();
+            return;
+        }
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_CAMARA);
             return;
@@ -379,14 +683,14 @@ public class EvidenciaActivity extends Activity {
         ayuda.setPadding(0, 0, 0, dp(14));
         abajo.addView(ayuda);
         FrameLayout disparador = new FrameLayout(this);
-        android.graphics.drawable.GradientDrawable anillo = new android.graphics.drawable.GradientDrawable();
-        anillo.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        GradientDrawable anillo = new GradientDrawable();
+        anillo.setShape(GradientDrawable.OVAL);
         anillo.setColor(0x00000000);
         anillo.setStroke(dp(4), Ui.BLANCO);
         disparador.setBackground(anillo);
         View centro = new View(this);
-        android.graphics.drawable.GradientDrawable punto = new android.graphics.drawable.GradientDrawable();
-        punto.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        GradientDrawable punto = new GradientDrawable();
+        punto.setShape(GradientDrawable.OVAL);
         punto.setColor(Ui.BLANCO);
         centro.setBackground(punto);
         disparador.addView(centro, new FrameLayout.LayoutParams(dp(60), dp(60), Gravity.CENTER));
@@ -428,7 +732,7 @@ public class EvidenciaActivity extends Activity {
         new Thread(() -> {
             String fallo = null;
             try {
-                evidencias.crear(jpeg);
+                evidencias.crearFoto(jpeg);
             } catch (Exception e) {
                 fallo = Ui.mensaje(e);
             } finally {
@@ -442,7 +746,7 @@ public class EvidenciaActivity extends Activity {
                 if (error != null) {
                     aviso("No se pudo guardar la evidencia: " + error);
                 } else {
-                    Toast.makeText(this, "Firmada en " + ms + " ms", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Firmada en " + duracion(ms), Toast.LENGTH_SHORT).show();
                     ColaAnclaje.programar(this);
                 }
             });
@@ -456,7 +760,7 @@ public class EvidenciaActivity extends Activity {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             abrirCamara();
         } else {
-            aviso("Sin permiso de cámara no se pueden hacer fotos. Puedes darlo en los ajustes de Android.");
+            aviso("Sin permiso de cámara no se pueden hacer fotos. Puedes darlo en los ajustes de Android. Los archivos se pueden sellar igual.");
         }
     }
 
@@ -512,14 +816,28 @@ public class EvidenciaActivity extends Activity {
         LinearLayout col = Ui.columna(this);
         col.setPadding(dp(16), dp(4), dp(16), dp(24));
 
-        ImageView foto = new ImageView(this);
-        foto.setAdjustViewBounds(true);
-        foto.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        foto.setBackground(Ui.degradado(this, 24));
-        foto.setClipToOutline(true);
-        foto.setMinimumHeight(dp(200));
-        col.addView(foto, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        cargarImagen(f, foto, getResources().getDisplayMetrics().widthPixels);
+        if (f.esImagen() && f.bytes <= MAX_VISTA) {
+            ImageView foto = new ImageView(this);
+            foto.setAdjustViewBounds(true);
+            foto.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            foto.setBackground(Ui.degradado(this, 24));
+            foto.setClipToOutline(true);
+            foto.setMinimumHeight(dp(200));
+            col.addView(foto, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            cargarImagen(f, foto, getResources().getDisplayMetrics().widthPixels);
+        }
+        if (!f.esFoto()) {
+            LinearLayout arch = Ui.fila(this);
+            arch.setPadding(dp(16), dp(16), dp(16), dp(16));
+            arch.setBackground(Ui.degradado(this, 24));
+            arch.addView(aro(iconoDe(f)), new LinearLayout.LayoutParams(dp(64), dp(64)));
+            LinearLayout tx = Ui.columna(this);
+            tx.setPadding(dp(14), 0, 0, 0);
+            tx.addView(Ui.texto(this, f.nombre.isEmpty() ? "Archivo" : f.nombre, 16, Ui.TEXTO, true));
+            tx.addView(Ui.texto(this, f.mime + " · " + tamano(f), 13, Ui.SUAVE, false));
+            arch.addView(tx, Ui.peso(1));
+            col.addView(arch, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, f.esImagen() && f.bytes <= MAX_VISTA ? 12 : 0, 0, 0));
+        }
 
         LinearLayout datos = Ui.columna(this);
         datos.setPadding(dp(18), dp(16), dp(18), dp(16));
@@ -527,14 +845,15 @@ public class EvidenciaActivity extends Activity {
         LinearLayout.LayoutParams lpp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         datos.addView(pildora(f), lpp);
         dato(datos, "Huella SHA-256", f.sha256, true);
-        dato(datos, "Hora del dispositivo (no verificable)", f.capturada, false);
+        dato(datos, "Hora del dispositivo al sellar (declarada, no verificable)", f.capturada, false);
         dato(datos, "Firmada con la clave", agrupar(f.firmante), true);
         int bytesFirma = Base64.decode(f.firma, Base64.NO_WRAP).length;
-        dato(datos, "Firma", "ML-DSA-87 · " + bytesFirma + " bytes", false);
+        dato(datos, "Firma", "ML-DSA-87 · " + miles(bytesFirma) + " bytes", false);
+        String sujeto = f.esFoto() ? "Esta foto" : "Este archivo";
         String ancla;
         switch (f.otsEstado) {
             case "bitcoin":
-                ancla = "Esta foto existía con este contenido exacto al menos desde el bloque " + f.bloque + " de Bitcoin, y no ha cambiado desde entonces.";
+                ancla = sujeto + " existía con este contenido exacto al menos desde el bloque " + f.bloque + " de Bitcoin, y no ha cambiado desde entonces.";
                 break;
             case "calendar":
                 ancla = "La huella está en los calendarios de OpenTimestamps. Bitcoin la confirma en una o dos horas.";
@@ -550,10 +869,11 @@ public class EvidenciaActivity extends Activity {
         espacio(col);
         col.addView(Ui.boton(this, "Compartir recibo", false, v -> compartirRecibo(f)));
         espacio(col);
-        col.addView(Ui.boton(this, "Exportar foto", false, v -> confirmarExportar(f)));
+        col.addView(Ui.boton(this, f.esFoto() ? "Exportar foto" : "Exportar archivo", false, v -> confirmarExportar(f)));
         espacio(col);
         col.addView(Ui.boton(this, "Borrar", false, v -> confirmarBorrar(f)));
-        TextView nota = Ui.texto(this, "El recibo lleva la huella, la firma y la prueba .ots. No lleva la foto. Se verifica con herramientas públicas: OpenTimestamps.", 12, Ui.TENUE, false);
+        TextView nota = Ui.texto(this, "El recibo lleva la huella, la firma y la prueba .ots. No lleva " + (f.esFoto() ? "la foto" : "el archivo")
+                + ". Se verifica con herramientas públicas: OpenTimestamps.", 12, Ui.TENUE, false);
         nota.setPadding(dp(4), dp(14), dp(4), 0);
         col.addView(nota);
         sv.addView(col);
@@ -577,18 +897,19 @@ public class EvidenciaActivity extends Activity {
     }
 
     private void verificar(Evidencias.Ficha f) {
+        AlertDialog espera = new AlertDialog.Builder(this).setMessage("Recalculando la huella de lo guardado…").setCancelable(false).show();
         new Thread(() -> {
             StringBuilder sb = new StringBuilder();
-            byte[] datos = null;
+            String guardado = f.esFoto() ? "la foto guardada" : "el archivo guardado";
             try {
-                datos = evidencias.foto(f);
-                boolean huellaOk = Evidencias.sha256Hex(datos).equals(f.sha256);
-                sb.append(huellaOk ? "✓ La huella coincide: la foto guardada no ha cambiado.\n\n"
-                        : "✗ La huella no coincide: la foto guardada ha cambiado desde que se firmó.\n\n");
+                boolean huellaOk = evidencias.huellaGuardada(f).equals(f.sha256);
+                sb.append(huellaOk ? "✓ La huella coincide: " + guardado + " no ha cambiado desde que se firmó.\n\n"
+                        : "✗ La huella no coincide: " + guardado + " ha cambiado desde que se firmó.\n\n");
+            } catch (GeneralSecurityException e) {
+                // El cifrado autenticado detecta cualquier byte cambiado antes de llegar a la huella.
+                sb.append("✗ La huella no coincide: ").append(guardado).append(" ha cambiado o está dañado desde que se firmó.\n\n");
             } catch (Exception e) {
-                sb.append("✗ No se pudo leer la foto guardada: ").append(Ui.mensaje(e)).append("\n\n");
-            } finally {
-                if (datos != null) Arrays.fill(datos, (byte) 0);
+                sb.append("✗ No se pudo leer ").append(guardado).append(": ").append(Ui.mensaje(e)).append("\n\n");
             }
             try {
                 X39Core.verifyMessage(evidencias.clavePublica(), f.canonica().getBytes(StandardCharsets.UTF_8), Base64.decode(f.firma, Base64.NO_WRAP));
@@ -604,16 +925,19 @@ public class EvidenciaActivity extends Activity {
                     sb.append("Ancla: todavía no hay prueba .ots (la huella no se ha enviado).");
                 } else {
                     String bloques = X39Core.otsBlocks(ots);
-                    int pendientes = X39Core.otsPending(ots).isEmpty() ? 0 : X39Core.otsPending(ots).split("\n").length;
+                    String pendientes = X39Core.otsPending(ots);
+                    int n = pendientes.isEmpty() ? 0 : pendientes.split("\n").length;
                     sb.append(bloques.isEmpty()
-                            ? "Ancla: prueba .ots válida, pendiente en " + pendientes + " calendarios."
+                            ? "Ancla: prueba .ots válida, pendiente en " + n + " calendarios."
                             : "✓ Ancla: prueba .ots con el bloque " + bloques + " de Bitcoin. Compruébalo fuera de la app con «ots verify».");
                 }
             } catch (Exception e) {
                 sb.append("✗ La prueba .ots no es válida: ").append(Ui.mensaje(e));
             }
             runOnUiThread(() -> {
-                if (!isDestroyed()) new AlertDialog.Builder(this).setTitle("Verificación").setMessage(sb.toString()).setPositiveButton("Entendido", null).show();
+                if (isDestroyed()) return;
+                espera.dismiss();
+                new AlertDialog.Builder(this).setTitle("Verificación").setMessage(sb.toString()).setPositiveButton("Entendido", null).show();
             });
         }, "x39-verificar").start();
     }
@@ -631,7 +955,7 @@ public class EvidenciaActivity extends Activity {
                 Evidencias.escribirAtomico(new File(dir, nombre), ots);
                 uris.add(ProveedorRecibos.uri(this, nombre));
             }
-            compartirFicheros(uris, "Compartir recibo (sin la foto)");
+            compartirFicheros(uris, f.esFoto() ? "Compartir recibo (sin la foto)" : "Compartir recibo (sin el archivo)");
         } catch (Exception e) {
             aviso("No se pudo preparar el recibo: " + Ui.mensaje(e));
         }
@@ -650,15 +974,17 @@ public class EvidenciaActivity extends Activity {
     }
 
     private void confirmarExportar(Evidencias.Ficha f) {
+        String lo = f.esFoto() ? "La foto" : "El archivo";
         new AlertDialog.Builder(this)
-                .setTitle("Exportar la foto")
-                .setMessage("La foto saldrá del almacén cifrado de la app y quedará como un archivo normal donde elijas. Quien tenga ese archivo podrá verla. El recibo sigue valiendo: la huella del archivo exportado es la misma.")
+                .setTitle(f.esFoto() ? "Exportar la foto" : "Exportar el archivo")
+                .setMessage(lo + " saldrá del almacén cifrado de la app y quedará como un archivo normal donde elijas. Quien tenga ese archivo podrá abrirlo. El recibo sigue valiendo: la huella del archivo exportado es la misma.")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Exportar", (d, w) -> {
                     exportandoId = f.id;
+                    String titulo = f.esFoto() ? "x39-" + f.id + ".jpg" : (f.nombre.isEmpty() ? "x39-" + f.id : f.nombre);
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                            .setType("image/jpeg").putExtra(Intent.EXTRA_TITLE, "x39-" + f.id + ".jpg");
-                    startActivityForResult(i, REQ_EXPORTAR_FOTO);
+                            .setType(f.mime).putExtra(Intent.EXTRA_TITLE, titulo);
+                    startActivityForResult(i, REQ_EXPORTAR);
                 })
                 .show();
     }
@@ -666,35 +992,39 @@ public class EvidenciaActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQ_EXPORTAR_FOTO || resultCode != RESULT_OK || data == null || data.getData() == null || exportandoId == null) return;
-        final String id = exportandoId;
-        exportandoId = null;
-        final Uri destino = data.getData();
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        if (requestCode == REQ_ARCHIVO) {
+            sellarArchivo(data.getData());
+        } else if (requestCode == REQ_EXPORTAR && exportandoId != null) {
+            exportar(exportandoId, data.getData());
+            exportandoId = null;
+        }
+    }
+
+    private void exportar(String id, Uri destino) {
         new Thread(() -> {
             String fallo = null;
-            byte[] datos = null;
             try {
                 Evidencias.Ficha f = evidencias.porId(id);
                 if (f == null) throw new IllegalStateException("la evidencia ya no existe");
-                datos = evidencias.foto(f);
                 try (OutputStream out = getContentResolver().openOutputStream(destino)) {
                     if (out == null) throw new IllegalStateException("el sistema no dio el destino");
-                    out.write(datos);
+                    evidencias.descifrarA(f, out);
                 }
+            } catch (GeneralSecurityException e) {
+                fallo = "lo guardado ha cambiado o está dañado; la copia exportada quedó incompleta";
             } catch (Exception e) {
                 fallo = Ui.mensaje(e);
-            } finally {
-                if (datos != null) Arrays.fill(datos, (byte) 0);
             }
             final String error = fallo;
-            runOnUiThread(() -> Toast.makeText(this, error == null ? "Foto exportada" : "No se pudo exportar: " + error, Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> Toast.makeText(this, error == null ? "Exportado" : "No se pudo exportar: " + error, Toast.LENGTH_LONG).show());
         }, "x39-exportar").start();
     }
 
     private void confirmarBorrar(Evidencias.Ficha f) {
         new AlertDialog.Builder(this)
                 .setTitle("Borrar evidencia")
-                .setMessage("Se borran la foto y su ficha de este móvil. Un recibo que ya hayas compartido sigue valiendo.")
+                .setMessage("Se borran " + (f.esFoto() ? "la foto" : "el archivo") + " y su ficha de este móvil. Un recibo que ya hayas compartido sigue valiendo.")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Borrar", (d, w) -> {
                     try {
@@ -727,36 +1057,30 @@ public class EvidenciaActivity extends Activity {
         } catch (Exception e) {
             permisos.addView(Ui.texto(this, "No se pudieron leer: " + Ui.mensaje(e), 13, Ui.AVISO, false));
         }
-        TextView internet = Ui.texto(this, "Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas. Nunca fotos.", 13, Ui.TEXTO_2, false);
+        TextView internet = Ui.texto(this, "Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas. Nunca fotos ni archivos.", 13, Ui.TEXTO_2, false);
         internet.setPadding(0, dp(8), 0, 0);
         permisos.addView(internet);
 
         LinearLayout estado = tarjeta(col, null);
         boolean copias = (getApplicationInfo().flags & ApplicationInfo.FLAG_ALLOW_BACKUP) != 0;
         filaEstado(estado, "Capturas de pantalla", "Bloqueadas", true);
-        filaEstado(estado, "Fotos en la galería", "Nunca", true);
+        filaEstado(estado, "Evidencias en la galería", "Nunca", true);
         filaEstado(estado, "Copias en la nube", copias ? "Activadas" : "Desactivadas", !copias);
         filaEstado(estado, "Ubicación en las fotos", "No", true);
         boolean aislado = ColaAnclaje.aislado(this);
         filaEstado(estado, "Modo aislado", aislado ? "Activo: nada sale del móvil" : "Apagado", true);
 
-        LinearLayout clave = tarjeta(col, "Tu clave de firma");
+        LinearLayout clave = tarjeta(col, "Tu identidad");
         try {
-            byte[] pk = evidencias.clavePublica();
-            clave.addView(Ui.mono(this, agrupar(Evidencias.sha256Hex(pk)), 13, Ui.TEXTO));
-            TextView medida = Ui.texto(this, "Clave pública ML-DSA-87: " + pk.length + " bytes (medido ahora)", 13, Ui.TEXTO_2, false);
+            clave.addView(Ui.mono(this, agrupar(evidencias.huellaClave()), 13, Ui.TEXTO));
+            TextView medida = Ui.texto(this, "Clave pública ML-DSA-87: " + miles(evidencias.clavePublica().length) + " bytes (medido ahora)", 13, Ui.TEXTO_2, false);
             medida.setPadding(0, dp(6), 0, 0);
             clave.addView(medida);
-            List<Evidencias.Ficha> fichas = evidencias.todas();
-            if (!fichas.isEmpty()) {
-                int n = Base64.decode(fichas.get(0).firma, Base64.NO_WRAP).length;
-                clave.addView(Ui.texto(this, "Última firma: " + n + " bytes (medido ahora)", 13, Ui.TEXTO_2, false));
-            }
-            TextView boton = Ui.boton(this, "Compartir clave pública y última firma", false, v -> compartirClave());
-            clave.addView(boton, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
         } catch (Exception e) {
             clave.addView(Ui.texto(this, "No se pudo leer la clave: " + Ui.mensaje(e), 13, Ui.AVISO, false));
         }
+        clave.addView(Ui.boton(this, "Ver identidad, QR y tamaños", false, v -> abrirSecundaria(() -> mostrar(pantallaIdentidad(false), false))),
+                Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
 
         LinearLayout red = tarjeta(col, "Registro de red");
         List<String> lineas = RedX39.ultimas(this, 40);
@@ -776,7 +1100,10 @@ public class EvidenciaActivity extends Activity {
         return raizCol;
     }
 
-    /** Prueba de aceptación 8: los bytes reales que salen del móvil, no los tests del motor. */
+    /**
+     * Prueba de aceptación 8: los bytes reales que salen del móvil, no los tests del motor.
+     * Clave pública (2.592 B) y, si ya hay evidencias, la última firma real (4.627 B) con su mensaje firmado.
+     */
     private void compartirClave() {
         try {
             File dir = ProveedorRecibos.carpeta(this);
@@ -791,7 +1118,7 @@ public class EvidenciaActivity extends Activity {
                 uris.add(ProveedorRecibos.uri(this, "firma_" + f.id + ".bin"));
                 uris.add(ProveedorRecibos.uri(this, "mensaje_" + f.id + ".txt"));
             }
-            compartirFicheros(uris, "Compartir clave pública y firma");
+            compartirFicheros(uris, "Exportar clave pública");
         } catch (Exception e) {
             aviso(Ui.mensaje(e));
         }
@@ -857,17 +1184,6 @@ public class EvidenciaActivity extends Activity {
         v.setPadding(dp(6), 0, 0, 0);
         f.addView(v);
         lista.addView(f);
-    }
-
-    private void mostrarError() {
-        LinearLayout col = Ui.columna(this);
-        col.setPadding(dp(24), dp(48), dp(24), 0);
-        col.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.TEXTO, 32));
-        TextView t = Ui.texto(this, "No se pudo abrir la clave de firma", 18, Ui.TEXTO, true);
-        t.setPadding(0, dp(12), 0, dp(8));
-        col.addView(t);
-        col.addView(Ui.texto(this, errorInicio, 14, Ui.TEXTO_2, false));
-        mostrar(col, false);
     }
 
     private void aviso(String texto) {

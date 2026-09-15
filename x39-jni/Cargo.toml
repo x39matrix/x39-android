@@ -9,6 +9,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 jni = "0.22.4"
+# Solo el codificador de matrices QR (sin imagen ni svg): la app pinta los módulos.
+qrcode = { version = "0.14", default-features = false }
 x39-core = { version = "0.1.0", path = "../x39-core" }
 zeroize = "1.9.0"
 

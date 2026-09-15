@@ -407,6 +407,28 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_otsIncorporate<'c>(
         .resolve::<ThrowRuntimeExAndDefault>()
 }
 
+/// Matriz QR (corrección L, modo binario) de unos bytes: ancho en u16 big-endian seguido de un byte
+/// por módulo, fila a fila (1 = oscuro). Una clave ML-DSA-87 (2.592 bytes) cabe en la versión 40.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_qrMatrix<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    data: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let datos = env.convert_byte_array(&data)?;
+            let qr = qrcode::QrCode::with_error_correction_level(&datos, qrcode::EcLevel::L)
+                .map_err(|_| PuenteError::Datos("los datos no caben en un código QR"))?;
+            let ancho = qr.width();
+            let mut salida = Vec::with_capacity(2 + ancho * ancho);
+            salida.extend_from_slice(&(ancho as u16).to_be_bytes());
+            salida.extend(qr.to_colors().iter().map(|c| u8::from(*c == qrcode::Color::Dark)));
+            Ok(env.byte_array_from_slice(&salida)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
 /// Calendarios pendientes, una línea por cada uno: "uri mensaje_hex".
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_org_x39_bolsillo_X39Core_otsPending<'c>(

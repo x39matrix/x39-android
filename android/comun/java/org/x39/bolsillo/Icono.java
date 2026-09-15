@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 
 /** Iconos de trazo dibujados sobre una rejilla de 24 unidades, coherentes con el diseño. */
 final class Icono extends Drawable {
-    enum Tipo { INICIO, CAMARA, AJUSTES, CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
+    enum Tipo { INICIO, CAMARA, AJUSTES, ARCHIVO, VIDEO, AUDIO, CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
 
     private final Tipo tipo;
     private final Paint pincel = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -43,6 +43,20 @@ final class Icono extends Drawable {
                 p.addCircle(9, 7, 2.2f, Path.Direction.CW);
                 p.addCircle(15, 12, 2.2f, Path.Direction.CW);
                 p.addCircle(8, 17, 2.2f, Path.Direction.CW);
+                break;
+            case ARCHIVO:
+                p.moveTo(6, 3); p.lineTo(14, 3); p.lineTo(19, 8); p.lineTo(19, 21); p.lineTo(6, 21); p.close();
+                p.moveTo(14, 3); p.lineTo(14, 8); p.lineTo(19, 8);
+                p.moveTo(9, 13); p.lineTo(16, 13); p.moveTo(9, 17); p.lineTo(14, 17);
+                break;
+            case VIDEO:
+                p.addRoundRect(new RectF(3, 6, 16, 18), 2, 2, Path.Direction.CW);
+                p.moveTo(16, 10); p.lineTo(21, 7); p.lineTo(21, 17); p.lineTo(16, 14);
+                break;
+            case AUDIO:
+                p.moveTo(9, 18); p.lineTo(9, 5); p.lineTo(19, 3); p.lineTo(19, 16);
+                p.addCircle(6.5f, 18, 2.5f, Path.Direction.CW);
+                p.addCircle(16.5f, 16, 2.5f, Path.Direction.CW);
                 break;
             case INICIO:
                 p.moveTo(3.5f, 11); p.lineTo(12, 4); p.lineTo(20.5f, 11);
