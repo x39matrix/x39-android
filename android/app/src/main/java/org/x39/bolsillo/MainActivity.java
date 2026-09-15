@@ -44,9 +44,11 @@ public class MainActivity extends Activity {
     private static final long TTL_SEGUNDOS = 7L * 24 * 3600;
     private static final int REQ_DESBLOQUEO = 39;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.3.0";
+    private static final String VERSION = "0.3.1";
+    /** Portal público de transparencia verificable. Se abre en el navegador: x39 sigue sin permiso de internet. */
+    private static final String URL_TRANSPARENCIA = "https://sevilla.x39matrix.org";
 
-    private enum Pestana { CHATS, CONTACTOS, WALLET, SEGURIDAD }
+    private enum Pestana { CHATS, CONTACTOS, ACTAS, SEGURIDAD }
 
     private Boveda boveda;
     private Almacen almacen;
@@ -201,7 +203,7 @@ public class MainActivity extends Activity {
         View v;
         switch (p) {
             case CONTACTOS: v = pantallaContactos(); break;
-            case WALLET: v = pantallaWallet(); break;
+            case ACTAS: v = pantallaActas(); break;
             case SEGURIDAD: v = pantallaSeguridad(); break;
             default: v = pantallaChats(); break;
         }
@@ -240,7 +242,7 @@ public class MainActivity extends Activity {
         barra.setBackgroundColor(Ui.FONDO);
         barra.addView(itemNavegacion(Pestana.CHATS, Icono.Tipo.CHAT, "Chats"), Ui.peso(1));
         barra.addView(itemNavegacion(Pestana.CONTACTOS, Icono.Tipo.CONTACTOS, "Contactos"), Ui.peso(1));
-        barra.addView(itemNavegacion(Pestana.WALLET, Icono.Tipo.WALLET, "Wallet"), Ui.peso(1));
+        barra.addView(itemNavegacion(Pestana.ACTAS, Icono.Tipo.ACTAS, "Actas"), Ui.peso(1));
         barra.addView(itemNavegacion(Pestana.SEGURIDAD, Icono.Tipo.ESCUDO, "Seguridad"), Ui.peso(1));
         return barra;
     }
@@ -663,11 +665,52 @@ public class MainActivity extends Activity {
         return raizCol;
     }
 
-    private View pantallaWallet() {
+    private View pantallaActas() {
         ScrollView sv = new ScrollView(this);
         LinearLayout col = Ui.columna(this);
         col.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 24));
-        col.addView(Ui.texto(this, "Wallet", 24, Ui.TEXTO, true));
+        col.addView(Ui.texto(this, "Actas", 24, Ui.TEXTO, true));
+        TextView sub = Ui.texto(this, "Transparencia verificable", 13, Ui.SUAVE, false);
+        sub.setPadding(0, Ui.dp(this, 2), 0, 0);
+        col.addView(sub);
+
+        LinearLayout t = tarjeta(col, "Documentos públicos que cualquiera puede comprobar");
+        t.addView(Ui.icono(this, Icono.Tipo.ACTAS, Ui.ROJO, 28));
+        TextView d = Ui.texto(this,
+                "Cada acta, contrato o licitación se publica con su huella SHA-256 y un doble sello de tiempo: "
+                        + "uno anclado en Bitcoin y otro cualificado europeo (eIDAS). "
+                        + "Cualquier persona puede comprobar que el documento existía en esa fecha y que no se ha alterado, "
+                        + "sin pedir permiso a nadie.", 14, Ui.TEXTO_2, false);
+        d.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 14));
+        t.addView(d);
+        t.addView(Ui.boton(this, "Abrir sevilla.x39matrix.org", true, v -> abrirEnlace(URL_TRANSPARENCIA)));
+        TextView nota = Ui.texto(this, "Se abre en tu navegador. x39 sigue sin permiso de internet.", 12, Ui.TENUE, false);
+        nota.setPadding(0, Ui.dp(this, 8), 0, 0);
+        t.addView(nota);
+
+        LinearLayout prox = tarjeta(col, "Próximamente en la app");
+        prox.addView(Ui.texto(this, "Sellar un documento desde el móvil: calcular su huella, firmarla con ML-DSA-87 y enviar el recibo al portal.", 14, Ui.TEXTO_2, false));
+
+        LinearLayout w = tarjeta(col, null);
+        LinearLayout fw = Ui.fila(this);
+        fw.addView(Ui.icono(this, Icono.Tipo.WALLET, Ui.SUAVE, 20));
+        TextView tw = Ui.texto(this, "Wallet · desactivada en esta versión", 14, Ui.TEXTO_2, false);
+        tw.setPadding(Ui.dp(this, 10), 0, 0, 0);
+        fw.addView(tw, Ui.peso(1));
+        fw.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18));
+        w.addView(fw);
+        w.setOnClickListener(v -> abrirSecundaria(() -> mostrar(pantallaWallet(), false)));
+        Ui.clicable(w);
+        sv.addView(col);
+        return sv;
+    }
+
+    private View pantallaWallet() {
+        LinearLayout raizCol = Ui.columna(this);
+        raizCol.addView(cabeceraSecundaria("Wallet", () -> mostrarPestana(pestana)));
+        ScrollView sv = new ScrollView(this);
+        LinearLayout col = Ui.columna(this);
+        col.setPadding(Ui.dp(this, 16), Ui.dp(this, 4), Ui.dp(this, 16), Ui.dp(this, 24));
         LinearLayout t = tarjeta(col, "Desactivada en esta versión");
         t.addView(Ui.icono(this, Icono.Tipo.WALLET, Ui.ROJO, 28));
         TextView d = Ui.texto(this,
@@ -678,7 +721,8 @@ public class MainActivity extends Activity {
         d.setPadding(0, Ui.dp(this, 10), 0, 0);
         t.addView(d);
         sv.addView(col);
-        return sv;
+        raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        return raizCol;
     }
 
     private View pantallaSeguridad() {
@@ -921,6 +965,15 @@ public class MainActivity extends Activity {
                     mostrarPestana(pestana);
                 })
                 .show();
+    }
+
+    /** Abre una web en el navegador del sistema. La app no necesita permiso de internet para esto. */
+    private void abrirEnlace(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)));
+        } catch (android.content.ActivityNotFoundException e) {
+            aviso("No hay ningún navegador en este móvil. La dirección es " + url);
+        }
     }
 
     private void compartir(String texto, String titulo) {

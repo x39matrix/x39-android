@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 
 /** Iconos de trazo dibujados sobre una rejilla de 24 unidades, coherentes con el diseño. */
 final class Icono extends Drawable {
-    enum Tipo { CHAT, CONTACTOS, WALLET, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON }
+    enum Tipo { CHAT, CONTACTOS, WALLET, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
 
     private final Tipo tipo;
     private final Paint pincel = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -46,6 +46,17 @@ final class Icono extends Drawable {
                 p.addRoundRect(new RectF(3, 6, 21, 20), 2, 2, Path.Direction.CW);
                 p.moveTo(3, 10); p.lineTo(21, 10);
                 p.moveTo(16, 15); p.lineTo(18, 15);
+                break;
+            case ACTAS:
+                // Documento con esquina doblada y un sello (check) abajo.
+                p.moveTo(6, 3); p.lineTo(14, 3); p.lineTo(19, 8); p.lineTo(19, 21); p.lineTo(6, 21); p.close();
+                p.moveTo(14, 3); p.lineTo(14, 8); p.lineTo(19, 8);
+                p.moveTo(9, 15); p.lineTo(11.5f, 17.5f); p.lineTo(16, 12);
+                break;
+            case ENLACE:
+                p.moveTo(14, 4); p.lineTo(20, 4); p.lineTo(20, 10);
+                p.moveTo(20, 4); p.lineTo(11, 13);
+                p.moveTo(17, 13); p.lineTo(17, 20); p.lineTo(4, 20); p.lineTo(4, 7); p.lineTo(11, 7);
                 break;
             case ESCUDO:
             case ESCUDO_OK:
