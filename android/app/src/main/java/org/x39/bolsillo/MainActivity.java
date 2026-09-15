@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.7.0";
+    private static final String VERSION = "0.7.1";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -660,8 +660,21 @@ public class MainActivity extends Activity {
 
     private void comprobarInvitacion(String texto) {
         byte[] pk = autoridad();
-        if (pk == null || texto.trim().isEmpty()) {
+        String s = texto.trim();
+        if (pk == null || s.isEmpty()) {
             aviso("Pega primero la invitación.");
+            return;
+        }
+        if (s.startsWith("X39ID1:") || s.startsWith("X39PK1:")) {
+            aviso("Esto es la clave de un contacto, no una invitación. Va en Contactos › Añadir.");
+            return;
+        }
+        if (s.startsWith("X39MSG1:")) {
+            aviso("Esto es un mensaje cifrado, no una invitación. Va en Chats › Abrir mensaje copiado.");
+            return;
+        }
+        if (!s.startsWith("X39INV1:")) {
+            aviso("La invitación tiene que empezar por X39INV1. Copia el texto entero que te envió el Ayuntamiento.");
             return;
         }
         String hoy = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(new Date());
@@ -1133,6 +1146,18 @@ public class MainActivity extends Activity {
             huellaCaja.removeAllViews();
             String t = clave.getText().toString().trim();
             if (t.isEmpty()) { estado.setText(""); return; }
+            // Lo más habitual al equivocarse de sitio: pegar aquí un mensaje o una invitación.
+            if (t.startsWith("X39MSG1:")) {
+                estado.setTextColor(Ui.AVISO);
+                estado.setText("⚠ Esto es un mensaje cifrado, no la clave de un contacto. Va en Chats.");
+                huellaCaja.addView(Ui.boton(this, "Abrir el mensaje en Chats", true, v -> procesarTexto(t)));
+                return;
+            }
+            if (t.startsWith("X39INV1:")) {
+                estado.setTextColor(Ui.AVISO);
+                estado.setText("⚠ Esto es una invitación del Ayuntamiento, no la clave de un contacto. Va en «Soy personal del Ayuntamiento».");
+                return;
+            }
             try {
                 Almacen.Contacto leido = Almacen.leerTexto(t);
                 if (Arrays.equals(leido.clave, clavePublica)) {

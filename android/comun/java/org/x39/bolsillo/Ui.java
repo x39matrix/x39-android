@@ -225,6 +225,8 @@ final class Ui {
 
     static String mensaje(Exception e) {
         String m = e.getMessage();
-        return (m == null || m.isEmpty()) ? e.getClass().getSimpleName() : m;
+        if (m == null || m.isEmpty()) return e.getClass().getSimpleName();
+        // El puente JNI antepone «Rust error: »; al usuario solo le importa el motivo.
+        return m.startsWith("Rust error: ") ? m.substring("Rust error: ".length()) : m;
     }
 }
