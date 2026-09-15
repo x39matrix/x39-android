@@ -3,6 +3,7 @@ x39-jni/target/
 android/.gradle/
 android/build/
 android/app/build/
+android/evidencia/build/
 android/app/src/main/jniLibs/
 android/local.properties
 vectores/rust_sealed.json
