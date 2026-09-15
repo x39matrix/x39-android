@@ -28,12 +28,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,12 +44,14 @@ import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * x39 v0.4 · transparencia verificable y canal seguro para el Ayuntamiento.
+ * x39 v0.6 · transparencia verificable y canal seguro para el Ayuntamiento.
  * Ciudadanos: consultan plenos, distritos y organismos y comprueban documentos, sin clave ni cuenta.
+ * Plenos tiene la misma estructura y los mismos colores que sevilla.x39matrix.org.
  * Personal: además, mensajes cifrados con ML-KEM-1024 y firmados con ML-DSA-87.
  * Sin permiso de internet: los PDF se abren en el navegador y los mensajes se comparten a mano.
  */
@@ -55,7 +60,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.5.0";
+    private static final String VERSION = "0.6.0";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -245,6 +250,16 @@ public class MainActivity extends Activity {
     }
 
     private void mostrar(View contenido, boolean conNavegacion) {
+        mostrar(contenido, conNavegacion, false);
+    }
+
+    /** @param granate fondo del portal de Sevilla (pestaña Plenos); si no, el grafito del resto de la app. */
+    private void mostrar(View contenido, boolean conNavegacion, boolean granate) {
+        if (granate) {
+            raiz.setBackground(Portal.fondo());
+        } else {
+            raiz.setBackgroundColor(Ui.FONDO);
+        }
         raiz.removeAllViews();
         LinearLayout col = Ui.columna(this);
         col.addView(contenido, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -269,7 +284,7 @@ public class MainActivity extends Activity {
             case SEGURIDAD: v = pantallaSeguridad(); break;
             default: v = pantallaInicio(); break;
         }
-        mostrar(conBarraSuperior(v), clavePublica != null);
+        mostrar(conBarraSuperior(v), clavePublica != null, p == Pestana.PLENOS);
     }
 
     /** Barra superior de las pantallas principales: la marca «x39» en rojo, a la derecha. */
@@ -1098,68 +1113,134 @@ public class MainActivity extends Activity {
     // ------------------------------------------------------------------ plenos: transparencia verificable
 
     /** Plenos, distritos, organismos y empresas del registro incluido en la app, y la comprobación de documentos. */
+    // ------------------------------------------------------------------ Plenos, como sevilla.x39matrix.org
+
+    private static final int DESPLAZAR_NADA = 0;
+    private static final int DESPLAZAR_RESULTADO = 1;
+    private static final int DESPLAZAR_AREAS = 2;
+    private static final int DESPLAZAR_DOCUMENTOS = 3;
+
+    /** Filtro del registro, como en el portal: «todas» o el identificador de un área. */
+    private String filtroArea = "todas";
+    /** «Ver registro completo»: la lista con todos los documentos, sin filtro. */
+    private boolean vistaCompleta;
+    /** Área elegida en el selector de «Compruebe un documento». */
+    private String areaElegida = "todas";
+    /** Última comprobación: se muestra en la propia pantalla, como en el portal. */
+    private boolean hayComprobacion;
+    private String compArchivo;
+    private String compHuella;
+    private Registro.Documento compDocumento;
+    private int desplazarPlenos = DESPLAZAR_NADA;
+
+    /**
+     * Misma estructura que el portal: «Compruebe un documento» (con selector de área) arriba, «Áreas» con su
+     * contador debajo y, al pulsar un área, «Mostrando: …» y los documentos anclados de esa área.
+     * Al comprobar un documento que está en el registro, la pantalla salta sola a su área.
+     */
     private View pantallaPlenos() {
         ScrollView sv = new ScrollView(this);
         LinearLayout col = Ui.columna(this);
-        col.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 28));
+        col.setPadding(Ui.dp(this, 18), Ui.dp(this, 6), Ui.dp(this, 18), Ui.dp(this, 28));
+        View destino = null;
 
-        LinearLayout cab = Ui.fila(this);
-        LinearLayout titulos = Ui.columna(this);
-        titulos.addView(Ui.texto(this, "Plenos", 24, Ui.TEXTO, true));
-        titulos.addView(Ui.texto(this, "Transparencia verificable · Sevilla", 13, Ui.SUAVE, false));
-        cab.addView(titulos, Ui.peso(1));
-        col.addView(cab);
-
-        LinearLayout comprobar = tarjeta(col, null);
-        LinearLayout fc = Ui.fila(this);
-        fc.setGravity(Gravity.TOP);
-        FrameLayout caja = new FrameLayout(this);
-        caja.setBackground(Ui.redondeado(this, Ui.CAJA, 12));
-        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.TEXTO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
-        fc.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
-        LinearLayout tc = Ui.columna(this);
-        tc.setPadding(Ui.dp(this, 12), 0, 0, 0);
-        tc.addView(Ui.texto(this, "Comprobar un documento", 16, Ui.TEXTO, true));
-        tc.addView(Ui.texto(this, "Elige un PDF: x39 calcula su huella en tu móvil y la compara con el registro. El archivo no sale del teléfono.", 13, Ui.TEXTO_2, false));
-        fc.addView(tc, Ui.peso(1));
-        comprobar.addView(fc);
-        comprobar.addView(Ui.boton(this, "Elegir documento", true, v -> elegirDocumento()),
-                Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
+        TextView etiqueta = Portal.texto(this, "TRANSPARENCIA VERIFICABLE · SEVILLA", 11, Portal.TINTA_2);
+        etiqueta.setLetterSpacing(0.08f);
+        col.addView(etiqueta);
+        col.addView(Portal.titulo(this, "Plenos", 30));
 
         Registro r = registro();
+
+        // ---- Compruebe un documento
+        col.addView(Portal.titulo(this, "Compruebe un documento", 22), margenArriba(20));
+        col.addView(Portal.texto(this, "Elija un archivo y su huella SHA-256 se calculará en su propio móvil: el documento no sale del teléfono. "
+                + "Al instante se contrasta con el registro de esta maqueta. Funciona también sin conexión.", 14, Portal.TINTA_2), margenArriba(6));
+
+        LinearLayout zona = Ui.columna(this);
+        zona.setGravity(Gravity.CENTER_HORIZONTAL);
+        zona.setPadding(Ui.dp(this, 20), Ui.dp(this, 28), Ui.dp(this, 20), Ui.dp(this, 28));
+        zona.setBackground(Portal.punteada(this));
+        TextView flecha = Portal.texto(this, "⬇", 18, Portal.TINTA_2);
+        flecha.setGravity(Gravity.CENTER);
+        zona.addView(flecha);
+        TextView toque = Portal.texto(this, "Toque aquí para elegir el documento", 15, Portal.TINTA_2);
+        toque.setGravity(Gravity.CENTER);
+        toque.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 12));
+        zona.addView(toque);
+        zona.addView(Portal.boton(this, "Elegir archivo", v -> elegirDocumento()),
+                Ui.margen(this, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 0));
+        zona.setContentDescription("Elegir el documento que se quiere comprobar");
+        zona.setOnClickListener(v -> elegirDocumento());
+        col.addView(zona, margenArriba(14));
+
+        LinearLayout barraArea = Ui.fila(this);
+        barraArea.addView(Portal.texto(this, "Área:", 14, Portal.TINTA_2));
+        LinearLayout.LayoutParams lpSelector = new LinearLayout.LayoutParams(0, Ui.dp(this, 44), 1f);
+        lpSelector.setMargins(Ui.dp(this, 10), 0, 0, 0);
+        barraArea.addView(selectorArea(r), lpSelector);
+        col.addView(barraArea, margenArriba(12));
+
+        if (hayComprobacion) {
+            View resultado = tarjetaComprobacion(r);
+            col.addView(resultado, margenArriba(14));
+            if (desplazarPlenos == DESPLAZAR_RESULTADO) destino = resultado;
+        }
+
+        TextView nota = Portal.texto(this, "Esta comprobación contrasta la huella con el registro de la maqueta: cómoda e inmediata. "
+                + "La verificación independiente completa de los sellos, sin confiar en esta app, se hace con las herramientas públicas del portal.", 13, Portal.TINTA_2);
+        nota.setPadding(Ui.dp(this, 12), 0, 0, 0);
+        col.addView(nota, margenArriba(12));
+
         if (r == null) {
-            TextView e = Ui.texto(this, "⚠ No se pudo leer el registro incluido en la app: " + errorRegistro, 14, Ui.AVISO, false);
-            col.addView(e, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 16, 0, 0));
+            col.addView(Portal.texto(this, "⚠ No se pudo leer el registro incluido en la app: " + errorRegistro, 14, Portal.TINTA), margenArriba(20));
         } else {
-            TextView info = Ui.texto(this, r.total + " documentos anclados · registro del " + r.actualizadoVisible(), 12, Ui.TENUE, false);
-            info.setPadding(Ui.dp(this, 4), Ui.dp(this, 14), 0, 0);
-            col.addView(info);
-            for (Registro.Grupo g : r.grupos) {
-                TextView tg = Ui.texto(this, g.nombre, 13, Ui.SUAVE, true);
-                tg.setLetterSpacing(0.04f);
-                tg.setPadding(Ui.dp(this, 4), Ui.dp(this, 22), 0, 0);
-                col.addView(tg);
-                LinearLayout lista = Ui.columna(this);
-                lista.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
-                lista.setBackground(Ui.degradado(this, 24));
-                for (int i = 0; i < g.areas.size(); i++) {
-                    if (i > 0) {
-                        View linea = new View(this);
-                        linea.setBackgroundColor(Ui.LINEA);
-                        LinearLayout.LayoutParams lpl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
-                        lpl.setMargins(Ui.dp(this, 16), 0, 0, 0);
-                        lista.addView(linea, lpl);
-                    }
-                    lista.addView(filaArea(g.areas.get(i)));
+            // ---- Áreas
+            View tituloAreas = Portal.titulo(this, "Áreas", 22);
+            col.addView(tituloAreas, margenArriba(30));
+            if (desplazarPlenos == DESPLAZAR_AREAS) destino = tituloAreas;
+            col.addView(Portal.texto(this, "El grupo municipal completo: órganos, distritos, organismos autónomos y empresas, según el censo de sevilla.org. "
+                    + "Pulse cualquier área para ver sus documentos; el contador indica los anclados en esta maqueta.", 14, Portal.TINTA_2), margenArriba(6));
+            for (Registro.Area a : r.areasPortal()) col.addView(ente(a), margenArriba(8));
+            col.addView(Portal.enlace(this, "Ver registro completo (" + r.total + " documentos)", v -> {
+                filtroArea = "todas";
+                vistaCompleta = true;
+                refrescarPlenos(DESPLAZAR_DOCUMENTOS);
+            }), margenArriba(10));
+
+            if (!"todas".equals(filtroArea)) {
+                Registro.Area fa = r.areas.get(filtroArea);
+                String nombre = fa != null ? fa.nombre : filtroArea;
+                TextView mostrando = Portal.texto(this, "Mostrando: " + nombre, 14, Portal.ORO);
+                mostrando.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
+                col.addView(mostrando, margenArriba(12));
+                col.addView(Portal.enlace(this, "Ver todas las áreas", v -> {
+                    filtroArea = "todas";
+                    vistaCompleta = false;
+                    refrescarPlenos(DESPLAZAR_AREAS);
+                }));
+                if (fa != null && fa.documentos.isEmpty()) {
+                    col.addView(Portal.texto(this, "Esta área aún no tiene documentos anclados en la maqueta: el registro los incorpora progresivamente, "
+                            + "y el piloto cubre el grupo municipal completo.", 13, Portal.TINTA_2), margenArriba(6));
                 }
-                col.addView(lista, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 8, 0, 0));
+            }
+
+            // ---- Documentos anclados
+            if (!"todas".equals(filtroArea) || vistaCompleta) {
+                View tituloDocs = Portal.titulo(this, "Documentos anclados", 22);
+                col.addView(tituloDocs, margenArriba(30));
+                if (desplazarPlenos == DESPLAZAR_DOCUMENTOS) destino = tituloDocs;
+                col.addView(Portal.texto(this, "Registro público de esta maqueta. Solo se muestra lo emitido y comprobado: nada se anticipa.", 14, Portal.TINTA_2), margenArriba(6));
+                for (Registro.Documento d : r.documentos) {
+                    if (vistaCompleta || d.area.equals(filtroArea)) col.addView(filaDocumento(d), margenArriba(10));
+                }
+                col.addView(Portal.texto(this, "Toque un documento para abrir su PDF congelado en el navegador (necesita conexión).", 12, Portal.TINTA_2), margenArriba(10));
             }
         }
 
         LinearLayout portal = Ui.fila(this);
-        portal.setPadding(Ui.dp(this, 4), Ui.dp(this, 22), 0, Ui.dp(this, 10));
-        portal.addView(Ui.icono(this, Icono.Tipo.ENLACE, Ui.TEXTO, 18));
-        TextView tp = Ui.texto(this, "Abrir sevilla.x39matrix.org", 15, Ui.TEXTO, true);
+        portal.setPadding(0, Ui.dp(this, 26), 0, Ui.dp(this, 10));
+        portal.addView(Ui.icono(this, Icono.Tipo.ENLACE, Portal.ORO, 18));
+        TextView tp = Portal.texto(this, "Abrir sevilla.x39matrix.org", 15, Portal.ORO);
         tp.setPadding(Ui.dp(this, 10), 0, 0, 0);
         portal.addView(tp, Ui.peso(1));
         portal.setOnClickListener(v -> abrirEnlace(Registro.PORTAL));
@@ -1167,124 +1248,220 @@ public class MainActivity extends Activity {
         col.addView(portal);
 
         if (clavePublica == null) {
-            TextView acceso = Ui.texto(this, "¿Eres personal del Ayuntamiento? Activar acceso", 15, Ui.TEXTO, true);
-            acceso.setPadding(Ui.dp(this, 4), Ui.dp(this, 10), 0, Ui.dp(this, 10));
+            TextView acceso = Portal.texto(this, "¿Es usted personal del Ayuntamiento? Activar acceso", 15, Portal.TINTA);
+            acceso.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
             acceso.setOnClickListener(v -> activarAccesoPersonal());
             Ui.clicable(acceso);
             col.addView(acceso);
         }
 
-        TextView aviso = Ui.texto(this, "Maqueta con documentos públicos de sevilla.org. No es un portal oficial del Ayuntamiento de Sevilla.", 12, Ui.TENUE, false);
+        TextView aviso = Portal.texto(this, "Maqueta con documentos públicos de sevilla.org. No es un portal oficial del Ayuntamiento de Sevilla.", 12, Portal.TINTA_2);
+        aviso.setAlpha(0.75f);
         aviso.setGravity(Gravity.CENTER);
         aviso.setPadding(Ui.dp(this, 8), Ui.dp(this, 18), Ui.dp(this, 8), 0);
         col.addView(aviso, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         if (clavePublica == null) {
-            TextView ver = Ui.texto(this, "x39 " + VERSION, 12, Ui.TENUE, false);
+            TextView ver = Portal.texto(this, "x39 " + VERSION, 12, Portal.TINTA_2);
+            ver.setAlpha(0.75f);
             ver.setGravity(Gravity.CENTER);
             ver.setPadding(0, Ui.dp(this, 6), 0, 0);
             col.addView(ver, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         }
         sv.addView(col);
+
+        desplazarPlenos = DESPLAZAR_NADA;
+        if (destino != null) {
+            final View objetivo = destino;
+            sv.post(() -> sv.scrollTo(0, Math.max(0, objetivo.getTop() - Ui.dp(this, 12))));
+        }
         return sv;
     }
 
-    private View filaArea(Registro.Area a) {
-        int n = a.documentos.size();
-        LinearLayout f = Ui.fila(this);
-        f.setMinimumHeight(Ui.dp(this, 52));
-        f.setPadding(Ui.dp(this, 16), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
-        f.addView(Ui.texto(this, a.nombre, 15, n > 0 ? Ui.TEXTO : Ui.TENUE, false), Ui.peso(1));
-        if (n > 0) {
-            TextView cnt = Ui.texto(this, String.valueOf(n), 13, Ui.TEXTO, true);
-            cnt.setGravity(Gravity.CENTER);
-            cnt.setMinWidth(Ui.dp(this, 30));
-            cnt.setPadding(Ui.dp(this, 8), Ui.dp(this, 2), Ui.dp(this, 8), Ui.dp(this, 2));
-            cnt.setBackground(Ui.redondeado(this, Ui.CAJA, 10));
-            f.addView(cnt);
-            ImageView ch = Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18);
-            ((LinearLayout.LayoutParams) ch.getLayoutParams()).setMargins(Ui.dp(this, 6), 0, 0, 0);
-            f.addView(ch);
-            f.setContentDescription(a.nombre + ", " + n + (n == 1 ? " documento" : " documentos"));
-            f.setOnClickListener(v -> abrirArea(a.slug));
-            Ui.clicable(f);
-        } else {
-            f.addView(Ui.texto(this, "Sin documentos", 12, Ui.TENUE, false));
-        }
-        return f;
+    private void refrescarPlenos(int desplazar) {
+        desplazarPlenos = desplazar;
+        mostrarPestana(Pestana.PLENOS);
     }
 
-    private void abrirArea(String slug) {
-        abrirSecundaria(() -> {
-            Registro r = registro();
-            Registro.Area a = r == null ? null : r.areas.get(slug);
-            if (a == null) { mostrarPestana(Pestana.PLENOS); return; }
-            mostrar(pantallaArea(a), false);
+    private LinearLayout.LayoutParams margenArriba(int dp) {
+        return Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, dp, 0, 0);
+    }
+
+    /** Selector «Área» del portal: «Todas las áreas» y las 28 áreas en el mismo orden. */
+    private Spinner selectorArea(Registro r) {
+        final List<String> slugs = new ArrayList<>();
+        final List<String> nombres = new ArrayList<>();
+        slugs.add("todas");
+        nombres.add("Todas las áreas");
+        if (r != null) {
+            for (Registro.Area a : r.areasPortal()) {
+                slugs.add(a.slug);
+                nombres.add(a.nombre);
+            }
+        }
+        Spinner s = new Spinner(this, Spinner.MODE_DROPDOWN);
+        s.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, nombres) {
+            @Override
+            public View getView(int posicion, View reciclada, ViewGroup padre) {
+                return filaSelector(nombres.get(posicion), false);
+            }
+
+            @Override
+            public View getDropDownView(int posicion, View reciclada, ViewGroup padre) {
+                return filaSelector(nombres.get(posicion), slugs.get(posicion).equals(areaElegida));
+            }
         });
+        s.setBackground(Portal.caja(this, Portal.SELECTOR, Portal.LINEA, 1, 8));
+        s.setPopupBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Portal.SELECTOR));
+        s.setSelection(Math.max(0, slugs.indexOf(areaElegida)), false);
+        s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> padre, View vista, int posicion, long id) {
+                areaElegida = slugs.get(posicion);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> padre) {
+                // Sin cambios.
+            }
+        });
+        s.setContentDescription("Área");
+        return s;
     }
 
-    /** Documentos de un área, del más reciente al más antiguo. Tocar uno abre su PDF congelado. */
-    private View pantallaArea(Registro.Area a) {
-        LinearLayout raizCol = Ui.columna(this);
-        raizCol.addView(cabeceraSecundaria(a.nombre, () -> mostrarPestana(Pestana.PLENOS)));
-        ScrollView sv = new ScrollView(this);
-        LinearLayout col = Ui.columna(this);
-        col.setPadding(Ui.dp(this, 16), 0, Ui.dp(this, 16), Ui.dp(this, 28));
+    private TextView filaSelector(String texto, boolean elegido) {
+        TextView t = Portal.texto(this, texto, 14, elegido ? Portal.ORO : Portal.TINTA);
+        t.setSingleLine(true);
+        t.setEllipsize(TextUtils.TruncateAt.END);
+        t.setGravity(Gravity.CENTER_VERTICAL);
+        t.setPadding(Ui.dp(this, 12), Ui.dp(this, 11), Ui.dp(this, 12), Ui.dp(this, 11));
+        return t;
+    }
+
+    /** Casilla de la cuadrícula «Áreas»: nombre y contador; la elegida lleva borde dorado. */
+    private View ente(Registro.Area a) {
         int n = a.documentos.size();
-        col.addView(Ui.texto(this, n + (n == 1 ? " documento anclado" : " documentos anclados") + " · del más reciente al más antiguo", 13, Ui.SUAVE, false));
-
-        for (Registro.Documento d : a.documentos) {
-            LinearLayout card = Ui.columna(this);
-            card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14));
-            card.setBackground(Ui.degradado(this, 24));
-            LinearLayout arriba = Ui.fila(this);
-            arriba.setGravity(Gravity.TOP);
-            arriba.addView(Ui.texto(this, d.nombreVisible(), 15, Ui.TEXTO, true), Ui.peso(1));
-            ImageView enlace = Ui.icono(this, Icono.Tipo.ENLACE, Ui.SUAVE, 18);
-            ((LinearLayout.LayoutParams) enlace.getLayoutParams()).setMargins(Ui.dp(this, 10), Ui.dp(this, 2), 0, 0);
-            arriba.addView(enlace);
-            card.addView(arriba);
-            TextView sesion = Ui.texto(this, "Sesión del " + d.sesionVisible() + " · anclado el " + d.anclajeVisible(), 13, Ui.TEXTO_2, false);
-            sesion.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 6));
-            card.addView(sesion);
-            card.addView(datoBitcoin(d));
-            card.addView(datoSello(d));
-            TextView huella = Ui.mono(this, "huella " + d.huellaCorta(), 12, Ui.TENUE);
-            huella.setPadding(0, Ui.dp(this, 8), 0, 0);
-            card.addView(huella);
-            card.setContentDescription(d.nombreVisible() + ". Abrir PDF");
-            card.setOnClickListener(v -> abrirEnlace(d.urlPdf()));
-            Ui.clicable(card);
-            col.addView(card, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
-        }
-
-        TextView nota = Ui.texto(this, "Al tocar un documento se abre su PDF congelado en el navegador (necesita conexión). Descárgalo y compruébalo desde Plenos › Comprobar un documento.", 12, Ui.TENUE, false);
-        nota.setPadding(Ui.dp(this, 4), Ui.dp(this, 16), Ui.dp(this, 4), 0);
-        col.addView(nota);
-        sv.addView(col);
-        raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        return raizCol;
-    }
-
-    private View datoBitcoin(Registro.Documento d) {
-        return d.bloqueVerificado()
-                ? dato(Icono.Tipo.CHECK, Ui.TEXTO, "Anclado en Bitcoin · bloque " + d.bloque)
-                : dato(Icono.Tipo.AVISO, Ui.AVISO, "Bitcoin · bloque " + d.bloque + " sin verificar con nodo propio");
-    }
-
-    private View datoSello(Registro.Documento d) {
-        return d.selloCualificado()
-                ? dato(Icono.Tipo.CHECK, Ui.TEXTO, "Sello de tiempo cualificado · " + d.qtst.replace('-', '/'))
-                : dato(Icono.Tipo.AVISO, Ui.AVISO, "Sello de tiempo cualificado en proceso");
-    }
-
-    private View dato(Icono.Tipo tipo, int color, String texto) {
+        boolean elegida = a.slug.equals(filtroArea);
         LinearLayout f = Ui.fila(this);
-        f.setPadding(0, Ui.dp(this, 3), 0, 0);
-        f.addView(Ui.icono(this, tipo, color, 14));
-        TextView t = Ui.texto(this, texto, 13, color == Ui.AVISO ? Ui.AVISO : Ui.TEXTO_2, false);
-        t.setPadding(Ui.dp(this, 8), 0, 0, 0);
-        f.addView(t, Ui.peso(1));
+        f.setMinimumHeight(Ui.dp(this, 46));
+        f.setPadding(Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 10));
+        f.setBackground(Portal.caja(this, Portal.TARJETA, elegida ? Portal.ORO : Portal.LINEA, elegida ? 2 : 1, 10));
+        f.addView(Portal.texto(this, a.nombre, 14, Portal.TINTA), Ui.peso(1));
+        TextView cnt = Portal.texto(this, String.valueOf(n), 16, n > 0 ? Portal.ORO : Portal.TINTA_2);
+        cnt.setTypeface(android.graphics.Typeface.SERIF);
+        if (n == 0) cnt.setAlpha(0.5f);
+        cnt.setGravity(Gravity.END);
+        cnt.setMinWidth(Ui.dp(this, 24));
+        cnt.setPadding(Ui.dp(this, 10), 0, 0, 0);
+        f.addView(cnt);
+        f.setContentDescription(a.nombre + ", " + n + (n == 1 ? " documento" : " documentos"));
+        f.setOnClickListener(v -> {
+            boolean quitar = a.slug.equals(filtroArea);
+            filtroArea = quitar ? "todas" : a.slug;
+            vistaCompleta = false;
+            refrescarPlenos(quitar ? DESPLAZAR_AREAS : DESPLAZAR_DOCUMENTOS);
+        });
+        Ui.clicable(f);
         return f;
+    }
+
+    /** Fila de «Documentos anclados»: documento, publicado, huella y las píldoras de bloque y sello. */
+    private View filaDocumento(Registro.Documento d) {
+        LinearLayout card = Ui.columna(this);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Portal.tarjeta(this));
+        card.addView(Portal.texto(this, d.nombreVisible() + " — sesión de " + d.sesion, 15, Portal.TINTA));
+        LinearLayout datos = Ui.fila(this);
+        datos.addView(Portal.texto(this, "Publicado ", 12, Portal.TINTA_2));
+        datos.addView(Portal.mono(this, d.sesion, 12, Portal.TINTA_2));
+        datos.addView(Portal.mono(this, "   " + d.huellaCorta(), 12, Portal.TINTA_2));
+        LinearLayout.LayoutParams lpDatos = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lpDatos.setMargins(0, Ui.dp(this, 6), 0, 0);
+        card.addView(datos, lpDatos);
+        LinearLayout pildoras = Ui.fila(this);
+        pildoras.addView(Portal.pildora(this, textoBloque(d), !d.bloqueEnCurso()));
+        LinearLayout.LayoutParams lpSello = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lpSello.setMargins(Ui.dp(this, 8), 0, 0, 0);
+        pildoras.addView(Portal.pildora(this, textoSello(d), d.selloCualificado()), lpSello);
+        LinearLayout.LayoutParams lpPildoras = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lpPildoras.setMargins(0, Ui.dp(this, 10), 0, 0);
+        card.addView(pildoras, lpPildoras);
+        card.setContentDescription(d.nombreVisible() + ". Abrir PDF");
+        card.setOnClickListener(v -> abrirEnlace(d.urlPdf()));
+        Ui.clicable(card);
+        return card;
+    }
+
+    private static String textoBloque(Registro.Documento d) {
+        if (d.bloqueEnCurso()) return "anclaje en curso";
+        return "bloque " + d.bloque + (d.bloqueVerificado() ? " ✓" : "");
+    }
+
+    private static String textoSello(Registro.Documento d) {
+        if (!d.selloCualificado()) return "en proceso";
+        return "sello " + d.qtst + (d.qtstTsa.isEmpty() ? "" : " ✓");
+    }
+
+    private static String bloqueDetalle(Registro.Documento d) {
+        if (d.bloqueEnCurso()) return "en curso";
+        if (d.bloqueVerificado()) return d.bloque + " (verificado contra nodo propio el " + d.verificadoEnVisible() + ")";
+        if (!d.verificadoBloque.isEmpty()) return d.bloque + " declarado, pero el nodo propio confirma el " + d.verificadoBloque + " — DISCREPANCIA";
+        return d.bloque + " (pendiente de verificar contra nodo propio)";
+    }
+
+    /** Resultado de «Compruebe un documento», con los mismos textos que el portal. */
+    private View tarjetaComprobacion(Registro r) {
+        final Registro.Documento m = compDocumento;
+        LinearLayout card = Ui.columna(this);
+        card.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
+        card.setBackground(Portal.caja(this, Portal.TARJETA, m != null ? Portal.ORO : Portal.AMBAR, 1, 14));
+        if (m != null) {
+            card.addView(Portal.titulo(this, "✓ Coincide con el registro", 18));
+            card.addView(Portal.texto(this, m.nombreVisible() + " · sesión de " + m.sesion, 15, Portal.TINTA), margenArriba(8));
+            Registro.Area area = r == null ? null : r.areas.get(m.area);
+            String nombreArea = area != null ? area.nombre : m.area;
+            String lineaArea = "Área: " + nombreArea;
+            if (!"todas".equals(areaElegida) && !areaElegida.equals(m.area)) {
+                Registro.Area elegida = r == null ? null : r.areas.get(areaElegida);
+                lineaArea += " (usted seleccionó " + (elegida != null ? elegida.nombre : areaElegida)
+                        + "; el documento pertenece a " + nombreArea + ")";
+            }
+            card.addView(Portal.texto(this, lineaArea, 14, Portal.TINTA_2), margenArriba(6));
+            card.addView(Portal.mono(this, "huella: " + m.huellaCorta(), 12, Portal.TINTA_2), margenArriba(6));
+            card.addView(Portal.texto(this, "Anclado el " + m.anclaje + " · bloque Bitcoin: " + bloqueDetalle(m)
+                    + " · sello cualificado: " + m.qtst, 13, Portal.TINTA_2), margenArriba(6));
+            LinearLayout enlaces = Ui.columna(this);
+            enlaces.addView(Portal.enlace(this, "PDF congelado", v -> abrirEnlace(m.urlPdf())));
+            if (!m.ots.isEmpty()) enlaces.addView(Portal.enlace(this, "Sello soberano (.ots)", v -> abrirEnlace(m.url(m.ots))));
+            if (!m.fuente.isEmpty()) enlaces.addView(Portal.enlace(this, "Procedencia", v -> abrirEnlace(m.url(m.fuente))));
+            if (!m.tsr.isEmpty()) enlaces.addView(Portal.enlace(this, "Sello cualificado (.tsr)", v -> abrirEnlace(m.url(m.tsr))));
+            enlaces.addView(Portal.enlace(this, "Ver su área", v -> {
+                filtroArea = m.area;
+                vistaCompleta = false;
+                refrescarPlenos(DESPLAZAR_DOCUMENTOS);
+            }));
+            card.addView(enlaces, margenArriba(8));
+        } else {
+            TextView t = Portal.titulo(this, "✗ No coincide con el registro", 18);
+            t.setTextColor(Portal.AMBAR);
+            card.addView(t);
+            String ambito;
+            if ("todas".equals(areaElegida)) {
+                ambito = "ningún documento anclado en esta maqueta";
+            } else {
+                Registro.Area elegida = r == null ? null : r.areas.get(areaElegida);
+                ambito = "ningún documento del área " + (elegida != null ? elegida.nombre : areaElegida) + " (ni del resto del registro)";
+            }
+            card.addView(Portal.texto(this, "El archivo " + compArchivo + " no es idéntico a " + ambito
+                    + ": o es otro documento, o ha sido modificado. Un solo byte cambia la huella por completo.", 14, Portal.TINTA_2), margenArriba(8));
+            if (compHuella != null && compHuella.length() == 64) {
+                card.addView(Portal.mono(this, "huella calculada: " + compHuella.substring(0, 8) + "…" + compHuella.substring(56), 12, Portal.TINTA_2), margenArriba(6));
+            }
+            if (r != null) {
+                card.addView(Portal.texto(this, "El registro de esta app es del " + r.actualizadoVisible()
+                        + ". Si el documento es más reciente, puede no estar incluido todavía.", 12, Portal.TINTA_2), margenArriba(8));
+            }
+        }
+        return card;
     }
 
     private void elegirDocumento() {
@@ -1327,7 +1504,17 @@ public class MainActivity extends Activity {
                 }
                 Registro r = registro();
                 Registro.Documento doc = r == null ? null : r.buscar(h);
-                abrirSecundaria(() -> mostrar(pantallaResultado(archivo, h, doc), false));
+                // Como en el portal: el resultado aparece en la propia pantalla y, si el documento está en el
+                // registro, la lista salta sola a su área.
+                hayComprobacion = true;
+                compArchivo = archivo;
+                compHuella = h;
+                compDocumento = doc;
+                if (doc != null) {
+                    filtroArea = doc.area;
+                    vistaCompleta = false;
+                }
+                refrescarPlenos(DESPLAZAR_RESULTADO);
             });
         }, "x39-huella").start();
     }
@@ -1360,66 +1547,6 @@ public class MainActivity extends Activity {
         d.setPadding(0, Ui.dp(this, 6), 0, 0);
         col.addView(d);
         return col;
-    }
-
-    private View pantallaResultado(String archivo, String huella, Registro.Documento d) {
-        LinearLayout raizCol = Ui.columna(this);
-        raizCol.addView(cabeceraSecundaria("Comprobar documento", () -> mostrarPestana(Pestana.PLENOS)));
-        ScrollView sv = new ScrollView(this);
-        LinearLayout col = Ui.columna(this);
-        col.setPadding(Ui.dp(this, 20), Ui.dp(this, 4), Ui.dp(this, 20), Ui.dp(this, 24));
-
-        FrameLayout caja = new FrameLayout(this);
-        caja.setBackground(Ui.redondeado(this, Ui.CAJA, 18));
-        caja.addView(Ui.icono(this, d != null ? Icono.Tipo.ESCUDO_OK : Icono.Tipo.AVISO, d != null ? Ui.TEXTO : Ui.AVISO, 30),
-                new FrameLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30), Gravity.CENTER));
-        col.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 60), Ui.dp(this, 60)));
-        TextView t = Ui.texto(this, d != null ? "Coincide con el registro" : "No coincide con el registro", 24, Ui.TEXTO, true);
-        t.setPadding(0, Ui.dp(this, 16), 0, Ui.dp(this, 4));
-        col.addView(t);
-        col.addView(Ui.texto(this, "Archivo: " + archivo, 13, Ui.SUAVE, false));
-
-        if (d != null) {
-            TextView desc = Ui.texto(this, "Es idéntico, byte a byte, a este documento anclado:", 15, Ui.TEXTO_2, false);
-            desc.setPadding(0, Ui.dp(this, 14), 0, 0);
-            col.addView(desc);
-            LinearLayout card = Ui.columna(this);
-            card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-            card.setBackground(Ui.degradado(this, 24));
-            card.addView(Ui.texto(this, d.nombreVisible(), 16, Ui.TEXTO, true));
-            Registro r = registro();
-            Registro.Area area = r == null ? null : r.areas.get(d.area);
-            TextView sub = Ui.texto(this, (area != null ? area.nombre + " · " : "") + "sesión del " + d.sesionVisible(), 13, Ui.TEXTO_2, false);
-            sub.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 6));
-            card.addView(sub);
-            card.addView(datoBitcoin(d));
-            card.addView(datoSello(d));
-            col.addView(card, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 14));
-            col.addView(Ui.boton(this, "Abrir el PDF del portal", true, v -> abrirEnlace(d.urlPdf())));
-        } else {
-            TextView desc = Ui.texto(this, "No es idéntico a ningún documento del registro: o es otro documento, o ha sido modificado. Un solo byte distinto cambia la huella por completo.", 15, Ui.TEXTO_2, false);
-            desc.setPadding(0, Ui.dp(this, 14), 0, Ui.dp(this, 8));
-            col.addView(desc);
-            Registro r = registro();
-            if (r != null) {
-                col.addView(Ui.texto(this, "El registro de esta app es del " + r.actualizadoVisible() + ". Si el acta es más reciente, puede no estar incluida todavía.", 13, Ui.SUAVE, false));
-            }
-        }
-
-        TextView et = Ui.texto(this, "Huella SHA-256 calculada en este móvil", 13, Ui.SUAVE, true);
-        et.setPadding(0, Ui.dp(this, 18), 0, Ui.dp(this, 4));
-        col.addView(et);
-        col.addView(Ui.mono(this, huella, 12, Ui.TEXTO_2));
-
-        View esp = new View(this);
-        col.addView(esp, new LinearLayout.LayoutParams(1, Ui.dp(this, 18)));
-        col.addView(Ui.boton(this, "Comprobar otro documento", false, v -> elegirDocumento()));
-        TextView honesto = Ui.texto(this, "Esta comprobación compara la huella con la copia del registro que lleva la app. La verificación completa de los sellos (Bitcoin y eIDAS) se hace con las herramientas del portal.", 12, Ui.TENUE, false);
-        honesto.setPadding(0, Ui.dp(this, 14), 0, 0);
-        col.addView(honesto);
-        sv.addView(col);
-        raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        return raizCol;
     }
 
     private View pantallaSeguridad() {

@@ -23,9 +23,11 @@ import java.util.Map;
  */
 final class Registro {
     static final String PORTAL = "https://sevilla.x39matrix.org/";
+    /** Rutas de ficheros del portal que se aceptan del registro: solo dentro de actas/. */
+    private static final String RUTA_ACTAS = "actas/[A-Za-z0-9._-]+";
 
     static final class Documento {
-        String id, area, nombre, sesion, anclaje, sha256, bloque, verificadoBloque, qtst, qtstTsa, pdf;
+        String id, area, nombre, sesion, anclaje, sha256, bloque, verificadoBloque, verificadoEn, qtst, qtstTsa, pdf, ots, fuente, tsr;
 
         /** «10o Acta del Pleno» → «10.º Acta del Pleno». */
         String nombreVisible() {
@@ -40,6 +42,10 @@ final class Registro {
             return anclaje.replace('-', '/');
         }
 
+        boolean bloqueEnCurso() {
+            return "en curso".equals(bloque);
+        }
+
         boolean bloqueVerificado() {
             return !verificadoBloque.isEmpty() && verificadoBloque.equals(bloque);
         }
@@ -48,8 +54,19 @@ final class Registro {
             return !qtst.isEmpty() && !"en proceso".equals(qtst);
         }
 
+        /** «2026-09-12T16:12:48Z» → «12/09/2026». */
+        String verificadoEnVisible() {
+            if (verificadoEn.length() < 10) return verificadoEn;
+            String[] p = verificadoEn.substring(0, 10).split("-");
+            return p.length == 3 ? p[2] + "/" + p[1] + "/" + p[0] : verificadoEn;
+        }
+
         String urlPdf() {
             return PORTAL + pdf;
+        }
+
+        String url(String ruta) {
+            return PORTAL + ruta;
         }
 
         String huellaCorta() {
@@ -85,40 +102,53 @@ final class Registro {
         }
     }
 
-    /** Grupo municipal según el censo de sevilla.org: {grupo, identificador del portal, nombre}. */
+    /**
+     * Grupo municipal según el censo de sevilla.org: {grupo, identificador del portal, nombre}.
+     * Los nombres son exactamente los de sevilla.x39matrix.org (app.js, CATALOGO).
+     */
     private static final String[][] CATALOGO = {
             {"Gobierno y contratación", "pleno", "Pleno Municipal"},
             {"Gobierno y contratación", "junta", "Junta de Gobierno"},
             {"Gobierno y contratación", "contratacion", "Contratación"},
-            {"Gobierno y contratación", "juridica", "Relevancia jurídica"},
-            {"Distritos", "d-bellavista", "Bellavista-La Palmera"},
-            {"Distritos", "d-casco-antiguo", "Casco Antiguo"},
-            {"Distritos", "d-cerro-amate", "Cerro-Amate"},
-            {"Distritos", "d-este", "Este-Alcosa-Torreblanca"},
-            {"Distritos", "d-los-remedios", "Los Remedios"},
-            {"Distritos", "d-macarena", "Macarena"},
-            {"Distritos", "d-nervion", "Nervión"},
-            {"Distritos", "d-norte", "Norte"},
-            {"Distritos", "d-san-pablo", "San Pablo-Santa Justa"},
-            {"Distritos", "d-sur", "Sur"},
-            {"Distritos", "d-triana", "Triana"},
+            {"Gobierno y contratación", "juridica", "Relevancia Jurídica"},
+            {"Distritos", "d-bellavista", "Distrito Bellavista-La Palmera"},
+            {"Distritos", "d-casco-antiguo", "Distrito Casco Antiguo"},
+            {"Distritos", "d-cerro-amate", "Distrito Cerro-Amate"},
+            {"Distritos", "d-este", "Distrito Este-Alcosa-Torreblanca"},
+            {"Distritos", "d-los-remedios", "Distrito Los Remedios"},
+            {"Distritos", "d-macarena", "Distrito Macarena"},
+            {"Distritos", "d-nervion", "Distrito Nervión"},
+            {"Distritos", "d-norte", "Distrito Norte"},
+            {"Distritos", "d-san-pablo", "Distrito San Pablo-Santa Justa"},
+            {"Distritos", "d-sur", "Distrito Sur"},
+            {"Distritos", "d-triana", "Distrito Triana"},
             {"Organismos y servicios", "agencia-tributaria", "Agencia Tributaria de Sevilla"},
             {"Organismos y servicios", "gerencia-urbanismo", "Gerencia de Urbanismo"},
             {"Organismos y servicios", "icas", "Instituto de la Cultura y las Artes"},
             {"Organismos y servicios", "imd", "Instituto Municipal de Deportes"},
             {"Organismos y servicios", "alcazar", "Patronato del Real Alcázar"},
-            {"Organismos y servicios", "omic", "OMIC · Consumo"},
+            {"Organismos y servicios", "omic", "OMIC - Consumo"},
             {"Organismos y servicios", "film-office", "Sevilla Film Office"},
             {"Organismos y servicios", "fundacion-ajb", "Fundación Alberto Jiménez Becerril"},
             {"Empresas municipales", "emasesa", "Emasesa"},
             {"Empresas municipales", "emvisesa", "Emvisesa"},
             {"Empresas municipales", "lipasam", "Lipasam"},
             {"Empresas municipales", "tussam", "Tussam"},
-            {"Empresas municipales", "contursa", "Contursa · Fibes"},
+            {"Empresas municipales", "contursa", "Contursa - Fibes"},
+    };
+
+    /** Orden de la cuadrícula «Áreas» y del selector del portal (alfabético, como app.js). */
+    private static final String[] ORDEN_PORTAL = {
+            "agencia-tributaria", "contratacion", "contursa", "d-bellavista", "d-casco-antiguo", "d-cerro-amate",
+            "d-este", "d-los-remedios", "d-macarena", "d-nervion", "d-norte", "d-san-pablo", "d-sur", "d-triana",
+            "emasesa", "emvisesa", "fundacion-ajb", "gerencia-urbanismo", "icas", "imd", "junta", "lipasam", "omic",
+            "alcazar", "pleno", "juridica", "film-office", "tussam",
     };
 
     final List<Grupo> grupos = new ArrayList<>();
     final Map<String, Area> areas = new LinkedHashMap<>();
+    /** Todos los documentos en el orden del registro (el de la tabla «Documentos anclados» del portal). */
+    final List<Documento> documentos = new ArrayList<>();
     private final Map<String, Documento> porHuella = new HashMap<>();
     final String actualizado;
     final int total;
@@ -149,11 +179,15 @@ final class Registro {
             d.sha256 = o.optString("sha256").toLowerCase(Locale.ROOT);
             d.bloque = o.optString("bloque");
             d.verificadoBloque = o.optString("verificado_bloque");
+            d.verificadoEn = o.optString("verificado_en");
             d.qtst = o.optString("qtst");
             d.qtstTsa = o.optString("qtst_tsa");
             d.pdf = o.optString("pdf");
+            d.ots = rutaActas(o.optString("ots"));
+            d.fuente = rutaActas(o.optString("fuente"));
+            d.tsr = rutaActas(o.optString("tsr"));
             // Mismas reglas que el script de actualización: huella completa y PDF dentro de actas/.
-            if (!d.sha256.matches("[0-9a-f]{64}") || !d.pdf.matches("actas/[A-Za-z0-9._-]+\\.pdf")) continue;
+            if (!d.sha256.matches("[0-9a-f]{64}") || !d.pdf.matches(RUTA_ACTAS + "\\.pdf")) continue;
             Area a = areas.get(d.area);
             if (a == null) {
                 // Área nueva en el portal que esta versión de la app todavía no conoce.
@@ -168,6 +202,7 @@ final class Registro {
                 areas.put(a.slug, a);
             }
             a.documentos.add(d);
+            documentos.add(d);
             porHuella.put(d.sha256, d);
         }
         for (Area a : areas.values()) {
@@ -175,6 +210,10 @@ final class Registro {
         }
         total = porHuella.size();
         actualizado = raiz.optString("actualizado", "");
+    }
+
+    private static String rutaActas(String ruta) {
+        return ruta.matches(RUTA_ACTAS) ? ruta : "";
     }
 
     static Registro cargar(Context contexto) throws Exception {
@@ -185,6 +224,19 @@ final class Registro {
             while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
             return new Registro(new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8)));
         }
+    }
+
+    /** Áreas en el orden del portal; las que el portal aún no tenía van al final. */
+    List<Area> areasPortal() {
+        List<Area> l = new ArrayList<>();
+        for (String slug : ORDEN_PORTAL) {
+            Area a = areas.get(slug);
+            if (a != null) l.add(a);
+        }
+        for (Area a : areas.values()) {
+            if (!l.contains(a)) l.add(a);
+        }
+        return l;
     }
 
     /** Documento cuya huella SHA-256 (hex) coincide, o null. */
