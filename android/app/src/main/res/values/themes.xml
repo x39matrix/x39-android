@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Paleta x39: fondo oscuro y acento rojo. Regla del proyecto: NINGÚN verde. -->
+<!-- Paleta x39: grafito; el rojo es solo la marca «x39». Regla del proyecto: NINGÚN verde. -->
 <resources>
-    <color name="x39_fondo">#0D0D0D</color>
-    <color name="x39_superficie">#1A1A1A</color>
-    <color name="x39_rojo">#E53935</color>
-    <color name="x39_rojo_oscuro">#8E1B18</color>
+    <color name="x39_fondo">#1B1B1D</color>
+    <color name="x39_superficie">#2B2B2F</color>
+    <color name="x39_acento">#F2F2F2</color>
+    <color name="x39_seleccion">#4A4A52</color>
     <color name="x39_texto">#F2F2F2</color>
-    <color name="x39_texto_suave">#9E9E9E</color>
+    <color name="x39_texto_suave">#9A9AA1</color>
 
     <style name="Tema.X39" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:colorPrimary">@color/x39_fondo</item>
         <item name="android:colorPrimaryDark">@color/x39_fondo</item>
-        <item name="android:colorAccent">@color/x39_rojo</item>
-        <item name="android:colorControlActivated">@color/x39_rojo</item>
+        <item name="android:colorAccent">@color/x39_acento</item>
+        <item name="android:colorControlActivated">@color/x39_acento</item>
         <item name="android:windowBackground">@color/x39_fondo</item>
         <item name="android:statusBarColor">@color/x39_fondo</item>
         <item name="android:navigationBarColor">@color/x39_fondo</item>
         <item name="android:textColorPrimary">@color/x39_texto</item>
         <item name="android:textColorSecondary">@color/x39_texto_suave</item>
-        <item name="android:textColorHighlight">@color/x39_rojo_oscuro</item>
+        <item name="android:textColorHighlight">@color/x39_seleccion</item>
         <item name="android:alertDialogTheme">@style/Tema.X39.Dialogo</item>
         <item name="android:colorControlNormal">@color/x39_texto_suave</item>
     </style>
 
-    <!-- Diálogos con el acento rojo (el tema Material por defecto usa un acento verdoso). -->
+    <!-- Diálogos grafito con acento blanco (el tema Material por defecto usa un acento verdoso). -->
     <style name="Tema.X39.Dialogo" parent="@android:style/Theme.Material.Dialog.Alert">
-        <item name="android:colorAccent">@color/x39_rojo</item>
+        <item name="android:colorAccent">@color/x39_acento</item>
         <item name="android:colorBackground">@color/x39_superficie</item>
         <item name="android:textColorPrimary">@color/x39_texto</item>
         <item name="android:textColorSecondary">@color/x39_texto_suave</item>

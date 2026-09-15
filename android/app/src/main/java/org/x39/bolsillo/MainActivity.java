@@ -55,14 +55,14 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.4.0";
+    private static final String VERSION = "0.5.0";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
     /** El usuario eligió entrar como ciudadano: sin claves, solo plenos y comprobación. */
     private static final String PREF_CIUDADANO = "modo_ciudadano";
 
-    private enum Pestana { CHATS, CONTACTOS, PLENOS, SEGURIDAD }
+    private enum Pestana { INICIO, CHATS, CONTACTOS, PLENOS, SEGURIDAD }
 
     private Boveda boveda;
     private Almacen almacen;
@@ -78,7 +78,7 @@ public class MainActivity extends Activity {
     private String errorRegistro;
 
     private FrameLayout raiz;
-    private Pestana pestana = Pestana.CHATS;
+    private Pestana pestana = Pestana.INICIO;
     private Runnable pantallaSecundaria;
     private boolean desbloqueado;
     private boolean esperandoDesbloqueo;
@@ -249,8 +249,8 @@ public class MainActivity extends Activity {
         LinearLayout col = Ui.columna(this);
         col.addView(contenido, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         if (conNavegacion) {
-            col.addView(Ui.separador(this));
-            col.addView(barraNavegacion(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
+            // Barra flotante en forma de píldora, separada de los bordes.
+            col.addView(barraNavegacion(), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 64), 16, 6, 16, 12));
         }
         raiz.addView(col, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         raiz.requestApplyInsets();
@@ -263,12 +263,25 @@ public class MainActivity extends Activity {
         pantallaSecundaria = null;
         View v;
         switch (p) {
+            case CHATS: v = pantallaChats(); break;
             case CONTACTOS: v = pantallaContactos(); break;
             case PLENOS: v = pantallaPlenos(); break;
             case SEGURIDAD: v = pantallaSeguridad(); break;
-            default: v = pantallaChats(); break;
+            default: v = pantallaInicio(); break;
         }
-        mostrar(v, clavePublica != null);
+        mostrar(conBarraSuperior(v), clavePublica != null);
+    }
+
+    /** Barra superior de las pantallas principales: la marca «x39» en rojo, a la derecha. */
+    private View conBarraSuperior(View contenido) {
+        LinearLayout col = Ui.columna(this);
+        LinearLayout barra = Ui.fila(this);
+        barra.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), 0);
+        barra.addView(new View(this), Ui.peso(1));
+        barra.addView(Ui.marca(this));
+        col.addView(barra);
+        col.addView(contenido, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        return col;
     }
 
     /** Pantalla encima de una pestaña. Si se está pidiendo el desbloqueo, se muestra al volver. */
@@ -301,7 +314,10 @@ public class MainActivity extends Activity {
 
     private View barraNavegacion() {
         LinearLayout barra = Ui.fila(this);
-        barra.setBackgroundColor(Ui.FONDO);
+        barra.setBackground(Ui.redondeado(this, Ui.SUPERFICIE_2, 32));
+        barra.setElevation(Ui.dp(this, 8));
+        barra.setPadding(Ui.dp(this, 6), 0, Ui.dp(this, 6), 0);
+        barra.addView(itemNavegacion(Pestana.INICIO, Icono.Tipo.INICIO, "Inicio"), Ui.peso(1));
         barra.addView(itemNavegacion(Pestana.CHATS, Icono.Tipo.CHAT, "Chats"), Ui.peso(1));
         barra.addView(itemNavegacion(Pestana.CONTACTOS, Icono.Tipo.CONTACTOS, "Contactos"), Ui.peso(1));
         barra.addView(itemNavegacion(Pestana.PLENOS, Icono.Tipo.ACTAS, "Plenos"), Ui.peso(1));
@@ -311,18 +327,14 @@ public class MainActivity extends Activity {
 
     private View itemNavegacion(Pestana p, Icono.Tipo tipo, String etiqueta) {
         boolean activa = p == pestana && pantallaSecundaria == null;
-        int color = activa ? Ui.ROJO : 0xFF8A8A90;
-        LinearLayout item = Ui.columna(this);
-        item.setGravity(Gravity.CENTER);
-        item.setMinimumHeight(Ui.dp(this, 64));
-        FrameLayout pastilla = new FrameLayout(this);
-        pastilla.setPadding(Ui.dp(this, 18), Ui.dp(this, 4), Ui.dp(this, 18), Ui.dp(this, 4));
-        if (activa) pastilla.setBackground(Ui.redondeado(this, Ui.ROJO_SUAVE, 14));
-        pastilla.addView(Ui.icono(this, tipo, color, 22));
-        item.addView(pastilla);
-        TextView t = Ui.texto(this, etiqueta, 12, color, activa);
-        t.setPadding(0, Ui.dp(this, 3), 0, 0);
-        item.addView(t);
+        // Activa: icono blanco dentro de un cuadrado oscuro. Resto: icono gris sobre la píldora.
+        FrameLayout item = new FrameLayout(this);
+        item.setMinimumHeight(Ui.dp(this, 58));
+        FrameLayout cuadro = new FrameLayout(this);
+        if (activa) cuadro.setBackground(Ui.redondeado(this, Ui.FONDO, 15));
+        cuadro.addView(Ui.icono(this, tipo, activa ? Ui.BLANCO : Ui.SUAVE, 22),
+                new FrameLayout.LayoutParams(Ui.dp(this, 22), Ui.dp(this, 22), Gravity.CENTER));
+        item.addView(cuadro, new FrameLayout.LayoutParams(Ui.dp(this, 46), Ui.dp(this, 46), Gravity.CENTER));
         item.setContentDescription(etiqueta);
         item.setOnClickListener(v -> mostrarPestana(p));
         Ui.clicable(item);
@@ -359,7 +371,7 @@ public class MainActivity extends Activity {
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.ic_launcher_frente);
         marca.addView(logo, new LinearLayout.LayoutParams(Ui.dp(this, 64), Ui.dp(this, 64)));
-        marca.addView(Ui.texto(this, "x39", 40, Ui.TEXTO, true));
+        marca.addView(Ui.texto(this, "x39", 40, Ui.ROJO, true));
         col.addView(marca);
         TextView lema = Ui.texto(this, "Transparencia verificable y canal seguro del Ayuntamiento.", 17, Ui.TEXTO_2, false);
         lema.setPadding(Ui.dp(this, 4), Ui.dp(this, 2), 0, Ui.dp(this, 14));
@@ -373,12 +385,12 @@ public class MainActivity extends Activity {
             LinearLayout av = Ui.columna(this);
             av.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
             android.graphics.drawable.GradientDrawable borde = new android.graphics.drawable.GradientDrawable();
-            borde.setColor(0x26E53935);
+            borde.setColor(0x14FFFFFF);
             borde.setCornerRadius(Ui.dp(this, 14));
-            borde.setStroke(Ui.dp(this, 1), 0x73E53935);
+            borde.setStroke(Ui.dp(this, 1), 0x66FFFFFF);
             av.setBackground(borde);
             LinearLayout avTit = Ui.fila(this);
-            avTit.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.ROJO, 18));
+            avTit.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.AVISO, 18));
             TextView avT = Ui.texto(this, "Tu móvil no tiene bloqueo de pantalla", 14, Ui.TEXTO, true);
             avT.setPadding(Ui.dp(this, 10), 0, 0, 0);
             avTit.addView(avT, Ui.peso(1));
@@ -386,7 +398,7 @@ public class MainActivity extends Activity {
             TextView avD = Ui.texto(this, "Si eres personal del Ayuntamiento, actívalo antes de crear tu clave: sin él, cualquiera que coja el móvil entra en tus mensajes.", 13, Ui.TEXTO_2, false);
             avD.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 8));
             av.addView(avD);
-            TextView ajustes = Ui.texto(this, "Activar bloqueo de pantalla", 14, Ui.ROJO, true);
+            TextView ajustes = Ui.texto(this, "Activar bloqueo de pantalla", 14, Ui.AVISO, true);
             ajustes.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 2));
             ajustes.setOnClickListener(v -> abrirAjustesSeguridad());
             Ui.clicable(ajustes);
@@ -414,8 +426,8 @@ public class MainActivity extends Activity {
         f.setGravity(Gravity.TOP);
         f.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
         FrameLayout caja = new FrameLayout(this);
-        caja.setBackground(Ui.redondeado(this, 0x40E53935, 12));
-        caja.addView(Ui.icono(this, tipo, Ui.ROJO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
+        caja.setBackground(Ui.redondeado(this, Ui.CAJA, 12));
+        caja.addView(Ui.icono(this, tipo, Ui.TEXTO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
         f.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
         LinearLayout t = Ui.columna(this);
         t.setPadding(Ui.dp(this, 14), 0, 0, 0);
@@ -434,7 +446,7 @@ public class MainActivity extends Activity {
         col.addView(logo, new LinearLayout.LayoutParams(Ui.dp(this, 96), Ui.dp(this, 96)));
         ProgressBar pb = new ProgressBar(this);
         pb.setIndeterminate(true);
-        pb.setIndeterminateTintList(ColorStateList.valueOf(Ui.ROJO));
+        pb.setIndeterminateTintList(ColorStateList.valueOf(Ui.BLANCO));
         col.addView(pb, Ui.margen(this, Ui.dp(this, 40), Ui.dp(this, 40), 0, 16, 0, 16));
         TextView t = Ui.texto(this, "Creando tus claves…", 20, Ui.TEXTO, true);
         t.setGravity(Gravity.CENTER);
@@ -453,8 +465,8 @@ public class MainActivity extends Activity {
         LinearLayout col = Ui.columna(this);
         col.setPadding(Ui.dp(this, 24), Ui.dp(this, 40), Ui.dp(this, 24), Ui.dp(this, 16));
         FrameLayout caja = new FrameLayout(this);
-        caja.setBackground(Ui.redondeado(this, Ui.ROJO_SUAVE, 18));
-        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.ROJO, 30), new FrameLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30), Gravity.CENTER));
+        caja.setBackground(Ui.redondeado(this, Ui.CAJA, 18));
+        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.TEXTO, 30), new FrameLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30), Gravity.CENTER));
         col.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 60), Ui.dp(this, 60)));
         TextView t = Ui.texto(this, "Tu clave está lista", 26, Ui.TEXTO, true);
         t.setPadding(0, Ui.dp(this, 18), 0, Ui.dp(this, 8));
@@ -462,12 +474,12 @@ public class MainActivity extends Activity {
         col.addView(Ui.texto(this, "Esta es tu huella de seguridad. Cuando añadas a alguien, comparad estos 60 dígitos en persona: si coinciden, nadie se ha puesto en medio.", 15, Ui.TEXTO_2, false));
         LinearLayout marcoHuella = Ui.columna(this);
         marcoHuella.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-        marcoHuella.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
+        marcoHuella.setBackground(Ui.degradado(this, 24));
         marcoHuella.addView(Ui.huella(this, miHuella(), 18));
         col.addView(marcoHuella, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 20, 0, 14));
         col.addView(Ui.texto(this, "Puedes volver a verla en Contactos › Mi clave.", 13, Ui.SUAVE, false));
         if (!movilConBloqueo()) {
-            TextView b = Ui.texto(this, "⚠ Recuerda activar el bloqueo de pantalla del móvil.", 13, Ui.ROJO, false);
+            TextView b = Ui.texto(this, "⚠ Recuerda activar el bloqueo de pantalla del móvil.", 13, Ui.AVISO, false);
             b.setPadding(0, Ui.dp(this, 10), 0, 0);
             col.addView(b);
         }
@@ -475,7 +487,7 @@ public class MainActivity extends Activity {
         raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         TextView entrar = Ui.boton(this, "Entrar", true, v -> {
             enBienvenida = false;
-            mostrarPestana(Pestana.CHATS);
+            mostrarPestana(Pestana.INICIO);
             procesarPendiente();
         });
         raizCol.addView(entrar, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 24, 8, 24, 20));
@@ -553,6 +565,140 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    // ------------------------------------------------------------------ inicio
+
+    /** Inicio: tarjeta de identidad (sin correo ni contraseña: la identidad es la clave) y menú en cuadrícula. */
+    private View pantallaInicio() {
+        ScrollView sv = new ScrollView(this);
+        LinearLayout col = Ui.columna(this);
+        col.setPadding(Ui.dp(this, 16), Ui.dp(this, 4), Ui.dp(this, 16), Ui.dp(this, 24));
+
+        LinearLayout perfil = Ui.columna(this);
+        perfil.setGravity(Gravity.CENTER_HORIZONTAL);
+        perfil.setPadding(Ui.dp(this, 20), Ui.dp(this, 22), Ui.dp(this, 20), Ui.dp(this, 18));
+        perfil.setBackground(Ui.degradado(this, 28));
+
+        FrameLayout aro = new FrameLayout(this);
+        android.graphics.drawable.GradientDrawable circulo = new android.graphics.drawable.GradientDrawable();
+        circulo.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        circulo.setColor(Ui.CAJA);
+        circulo.setStroke(Ui.dp(this, 2), Ui.BLANCO);
+        aro.setBackground(circulo);
+        aro.addView(Ui.icono(this, Icono.Tipo.LLAVE, Ui.BLANCO, 34), new FrameLayout.LayoutParams(Ui.dp(this, 34), Ui.dp(this, 34), Gravity.CENTER));
+        perfil.addView(aro, new LinearLayout.LayoutParams(Ui.dp(this, 84), Ui.dp(this, 84)));
+
+        TextView nombre = Ui.texto(this, "Mi identidad", 20, Ui.TEXTO, true);
+        nombre.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 2));
+        perfil.addView(nombre);
+        String[] grupos = miHuella().split(" ");
+        String resumen = grupos.length >= 3 ? grupos[0] + " " + grupos[1] + " " + grupos[2] + " …" : "";
+        perfil.addView(Ui.mono(this, "huella " + resumen, 13, Ui.SUAVE));
+
+        int mensajes = 0;
+        for (Almacen.Contacto c : almacen.contactos) mensajes += c.mensajes.size();
+        Registro r = registro();
+        LinearLayout cifras = Ui.fila(this);
+        cifras.setPadding(0, Ui.dp(this, 18), 0, 0);
+        cifras.addView(cifra(String.valueOf(almacen.contactos.size()), "Contactos"), Ui.peso(1));
+        cifras.addView(cifra(String.valueOf(mensajes), "Mensajes"), Ui.peso(1));
+        cifras.addView(cifra(r == null ? "—" : String.valueOf(r.total), "Actas"), Ui.peso(1));
+        perfil.addView(cifras, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        perfil.setContentDescription("Mi identidad. Abrir mi clave");
+        perfil.setOnClickListener(v -> mostrarPestana(Pestana.CONTACTOS));
+        Ui.clicable(perfil);
+        col.addView(perfil);
+
+        LinearLayout menu = Ui.columna(this);
+        menu.setPadding(Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 10));
+        menu.setBackground(Ui.degradado(this, 28));
+        TextView tm = Ui.texto(this, "Menú", 15, Ui.TEXTO_2, false);
+        tm.setGravity(Gravity.CENTER);
+        tm.setPadding(0, 0, 0, Ui.dp(this, 8));
+        menu.addView(tm, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        menu.addView(filaBaldosas(
+                baldosa(Icono.Tipo.CHAT, "Chats", () -> mostrarPestana(Pestana.CHATS)),
+                baldosa(Icono.Tipo.CONTACTOS, "Contactos", () -> mostrarPestana(Pestana.CONTACTOS)),
+                baldosa(Icono.Tipo.ACTAS, "Plenos", () -> mostrarPestana(Pestana.PLENOS))));
+        menu.addView(filaBaldosas(
+                baldosa(Icono.Tipo.ESCUDO_OK, "Comprobar", this::elegirDocumento),
+                baldosa(Icono.Tipo.ESCUDO, "Seguridad", () -> mostrarPestana(Pestana.SEGURIDAD)),
+                baldosa(Icono.Tipo.ENLACE, "Portal", () -> abrirEnlace(Registro.PORTAL))));
+        col.addView(menu, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
+
+        LinearLayout cripto = Ui.columna(this);
+        cripto.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 12));
+        cripto.setBackground(Ui.degradado(this, 28));
+        cripto.addView(Ui.texto(this, "Criptografía", 16, Ui.TEXTO, true));
+        TextView subCripto = Ui.texto(this, "Lo que usa esta app, en tu móvil y sin servidores", 12, Ui.SUAVE, false);
+        subCripto.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 8));
+        cripto.addView(subCripto);
+        cripto.addView(filaAlgoritmo("ML-KEM-1024", "cifra los mensajes · NIST FIPS 203"));
+        cripto.addView(filaAlgoritmo("ML-DSA-87", "firma al remitente · NIST FIPS 204"));
+        cripto.addView(filaAlgoritmo("AES-256-GCM", "protege el contenido y el almacén"));
+        cripto.addView(filaAlgoritmo("SHA-256", "huella de las actas que compruebas"));
+        cripto.setOnClickListener(v -> mostrarPestana(Pestana.SEGURIDAD));
+        Ui.clicable(cripto);
+        col.addView(cripto, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
+
+        col.addView(franjaProteccion(), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0));
+        sv.addView(col);
+        return sv;
+    }
+
+    private View filaAlgoritmo(String algoritmo, String uso) {
+        LinearLayout f = Ui.fila(this);
+        f.setPadding(0, Ui.dp(this, 5), 0, Ui.dp(this, 5));
+        TextView chip = Ui.mono(this, algoritmo, 12, Ui.BLANCO);
+        chip.setGravity(Gravity.CENTER);
+        chip.setMinWidth(Ui.dp(this, 112));
+        chip.setPadding(Ui.dp(this, 10), Ui.dp(this, 5), Ui.dp(this, 10), Ui.dp(this, 5));
+        chip.setBackground(Ui.redondeado(this, Ui.CAJA, 10));
+        f.addView(chip);
+        TextView t = Ui.texto(this, uso, 13, Ui.TEXTO_2, false);
+        t.setPadding(Ui.dp(this, 12), 0, 0, 0);
+        f.addView(t, Ui.peso(1));
+        return f;
+    }
+
+    private View cifra(String valor, String etiqueta) {
+        LinearLayout c = Ui.columna(this);
+        c.setGravity(Gravity.CENTER_HORIZONTAL);
+        TextView v = Ui.texto(this, valor, 22, Ui.TEXTO, true);
+        v.setGravity(Gravity.CENTER);
+        c.addView(v);
+        TextView e = Ui.texto(this, etiqueta, 12, Ui.SUAVE, false);
+        e.setGravity(Gravity.CENTER);
+        c.addView(e);
+        return c;
+    }
+
+    private View filaBaldosas(View... baldosas) {
+        LinearLayout f = Ui.fila(this);
+        for (View b : baldosas) {
+            LinearLayout.LayoutParams lp = Ui.peso(1);
+            lp.setMargins(Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5));
+            f.addView(b, lp);
+        }
+        return f;
+    }
+
+    private View baldosa(Icono.Tipo tipo, String etiqueta, Runnable accion) {
+        LinearLayout t = Ui.columna(this);
+        t.setGravity(Gravity.CENTER);
+        t.setMinimumHeight(Ui.dp(this, 96));
+        t.setPadding(Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 12));
+        t.setBackground(Ui.redondeado(this, Ui.CAJA, 22));
+        t.addView(Ui.icono(this, tipo, Ui.BLANCO, 28));
+        TextView e = Ui.texto(this, etiqueta, 12, Ui.TEXTO_2, false);
+        e.setGravity(Gravity.CENTER);
+        e.setPadding(0, Ui.dp(this, 8), 0, 0);
+        t.addView(e);
+        t.setContentDescription(etiqueta);
+        t.setOnClickListener(v -> accion.run());
+        Ui.clicable(t);
+        return t;
+    }
+
     // ------------------------------------------------------------------ pantallas
 
     private View pantallaChats() {
@@ -560,12 +706,8 @@ public class MainActivity extends Activity {
         LinearLayout col = Ui.columna(this);
 
         LinearLayout cab = Ui.fila(this);
-        cab.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 6));
-        ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.ic_launcher_frente);
-        cab.addView(logo, new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48)));
-        cab.addView(Ui.texto(this, "x39", 24, Ui.TEXTO, true));
-        cab.addView(new View(this), Ui.peso(1));
+        cab.setPadding(Ui.dp(this, 20), Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 6));
+        cab.addView(Ui.texto(this, "Chats", 24, Ui.TEXTO, true), Ui.peso(1));
         cab.addView(Ui.botonIcono(this, Icono.Tipo.PEGAR, Ui.TEXTO, "Abrir mensaje copiado", v -> procesarTexto(portapapeles())));
         col.addView(cab);
 
@@ -573,7 +715,7 @@ public class MainActivity extends Activity {
 
         LinearLayout tit = Ui.fila(this);
         tit.setPadding(Ui.dp(this, 20), Ui.dp(this, 22), Ui.dp(this, 20), Ui.dp(this, 6));
-        tit.addView(Ui.texto(this, "Chats", 17, Ui.TEXTO, true), Ui.peso(1));
+        tit.addView(Ui.texto(this, "Conversaciones", 17, Ui.TEXTO, true), Ui.peso(1));
         tit.addView(Ui.texto(this, almacen.contactos.size() + (almacen.contactos.size() == 1 ? " contacto" : " contactos"), 12, Ui.SUAVE, false));
         col.addView(tit);
 
@@ -591,10 +733,10 @@ public class MainActivity extends Activity {
         marco.addView(col);
 
         FrameLayout fab = new FrameLayout(this);
-        fab.setBackground(Ui.redondeado(this, Ui.ROJO, 18));
+        fab.setBackground(Ui.redondeado(this, Ui.BLANCO, 20));
         fab.setElevation(Ui.dp(this, 6));
         ImageView mas = new ImageView(this);
-        mas.setImageDrawable(new Icono(Icono.Tipo.MAS, 0xFFFFFFFF));
+        mas.setImageDrawable(new Icono(Icono.Tipo.MAS, Ui.FONDO));
         fab.addView(mas, new FrameLayout.LayoutParams(Ui.dp(this, 24), Ui.dp(this, 24), Gravity.CENTER));
         fab.setContentDescription("Añadir contacto");
         fab.setOnClickListener(v -> abrirAgregar(""));
@@ -608,10 +750,10 @@ public class MainActivity extends Activity {
     private View franjaProteccion() {
         LinearLayout f = Ui.fila(this);
         f.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
-        f.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 16));
+        f.setBackground(Ui.degradado(this, 22));
         FrameLayout caja = new FrameLayout(this);
-        caja.setBackground(Ui.redondeado(this, Ui.ROJO_SUAVE, 12));
-        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.ROJO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
+        caja.setBackground(Ui.redondeado(this, Ui.CAJA, 12));
+        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.TEXTO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
         f.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 38), Ui.dp(this, 38)));
         LinearLayout textos = Ui.columna(this);
         textos.setPadding(Ui.dp(this, 12), 0, 0, 0);
@@ -654,11 +796,11 @@ public class MainActivity extends Activity {
             ((LinearLayout.LayoutParams) ok.getLayoutParams()).setMargins(Ui.dp(this, 6), 0, 0, 0);
             nombre.addView(ok);
         } else {
-            TextView chip = Ui.texto(this, "Sin verificar", 11, Ui.ROJO, false);
+            TextView chip = Ui.texto(this, "Sin verificar", 11, Ui.AVISO, false);
             chip.setPadding(Ui.dp(this, 6), Ui.dp(this, 1), Ui.dp(this, 6), Ui.dp(this, 1));
             android.graphics.drawable.GradientDrawable borde = new android.graphics.drawable.GradientDrawable();
             borde.setCornerRadius(Ui.dp(this, 6));
-            borde.setStroke(Ui.dp(this, 1), 0x73E53935);
+            borde.setStroke(Ui.dp(this, 1), 0x66FFFFFF);
             chip.setBackground(borde);
             nombre.addView(chip, Ui.margen(this, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 8, 0, 0, 0));
         }
@@ -702,7 +844,7 @@ public class MainActivity extends Activity {
         if (c.claveFirma == null) subTexto = "Clave antigua sin firma · toca para ver";
         else subTexto = c.verificado ? "Verificado · cifrado y firmado" : "Sin verificar · toca para comparar la huella";
         boolean subBien = c.claveFirma != null && c.verificado;
-        TextView sub = Ui.texto(this, subTexto, 12, subBien ? Ui.SUAVE : Ui.ROJO, false);
+        TextView sub = Ui.texto(this, subTexto, 12, subBien ? Ui.SUAVE : Ui.AVISO, false);
         textos.addView(sub);
         textos.setOnClickListener(v -> abrirVerificar(c));
         Ui.clicable(textos);
@@ -737,10 +879,10 @@ public class MainActivity extends Activity {
         FrameLayout enviar = new FrameLayout(this);
         android.graphics.drawable.GradientDrawable circulo = new android.graphics.drawable.GradientDrawable();
         circulo.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        circulo.setColor(Ui.ROJO);
+        circulo.setColor(Ui.BLANCO);
         enviar.setBackground(circulo);
         ImageView flecha = new ImageView(this);
-        flecha.setImageDrawable(new Icono(Icono.Tipo.ENVIAR, 0xFFFFFFFF));
+        flecha.setImageDrawable(new Icono(Icono.Tipo.ENVIAR, Ui.FONDO));
         enviar.addView(flecha, new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
         enviar.setContentDescription("Cifrar y compartir");
         enviar.setOnClickListener(v -> enviar(c, et));
@@ -805,7 +947,7 @@ public class MainActivity extends Activity {
         LinearLayout tit = Ui.fila(this);
         tit.setPadding(0, Ui.dp(this, 22), 0, Ui.dp(this, 8));
         tit.addView(Ui.texto(this, "Tus contactos", 17, Ui.TEXTO, true), Ui.peso(1));
-        TextView anadir = Ui.texto(this, "Añadir", 15, Ui.ROJO, true);
+        TextView anadir = Ui.texto(this, "Añadir", 15, Ui.TEXTO, true);
         anadir.setPadding(Ui.dp(this, 12), Ui.dp(this, 12), 0, Ui.dp(this, 12));
         anadir.setOnClickListener(v -> abrirAgregar(""));
         Ui.clicable(anadir);
@@ -823,7 +965,7 @@ public class MainActivity extends Activity {
             t.setPadding(Ui.dp(this, 12), 0, 0, 0);
             t.addView(Ui.texto(this, c.nombre, 16, Ui.TEXTO, true));
             String estadoContacto = c.claveFirma == null ? "Clave antigua sin firma" : (c.verificado ? "Verificado" : "Sin verificar");
-            t.addView(Ui.texto(this, estadoContacto, 13, c.claveFirma != null && c.verificado ? Ui.SUAVE : Ui.ROJO, false));
+            t.addView(Ui.texto(this, estadoContacto, 13, c.claveFirma != null && c.verificado ? Ui.SUAVE : Ui.AVISO, false));
             f.addView(t, Ui.peso(1));
             f.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18));
             f.setOnClickListener(v -> abrirVerificar(c));
@@ -868,12 +1010,12 @@ public class MainActivity extends Activity {
             try {
                 Almacen.Contacto leido = Almacen.leerTexto(t);
                 if (Arrays.equals(leido.clave, clavePublica)) {
-                    estado.setTextColor(Ui.ROJO);
+                    estado.setTextColor(Ui.AVISO);
                     estado.setText("⚠ Esa es tu propia clave.");
                     return;
                 }
                 if (leido.claveFirma == null) {
-                    estado.setTextColor(Ui.ROJO);
+                    estado.setTextColor(Ui.AVISO);
                     estado.setText("⚠ Clave antigua de x39 0.2, sin firma: podrás escribirle, pero no comprobar que sus mensajes son suyos. Pídele que actualice y te comparta su clave nueva. Su huella:");
                 } else {
                     estado.setTextColor(Ui.SUAVE);
@@ -882,7 +1024,7 @@ public class MainActivity extends Activity {
                 huellaVista[0] = Ui.huella(this, leido.huella(), 16);
                 huellaCaja.addView(huellaVista[0]);
             } catch (RuntimeException e) {
-                estado.setTextColor(Ui.ROJO);
+                estado.setTextColor(Ui.AVISO);
                 estado.setText("⚠ " + e.getMessage());
             }
         };
@@ -923,17 +1065,17 @@ public class MainActivity extends Activity {
         col.addView(Ui.texto(this, "Pide a " + c.nombre + " que abra x39 › Contactos › Mi clave. Si sus 60 dígitos son idénticos a estos, nadie se ha puesto en medio.", 15, Ui.TEXTO_2, false));
         LinearLayout caja = Ui.columna(this);
         caja.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-        caja.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
+        caja.setBackground(Ui.degradado(this, 24));
         caja.addView(Ui.huella(this, c.huella(), 20));
         col.addView(caja, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 18, 0, 18));
 
         if (c.claveFirma == null) {
             TextView antigua = Ui.texto(this, "⚠ Tienes su clave antigua de x39 0.2, sin firma. Puedes escribirle, pero sus mensajes llegarán como «remitente declarado». "
-                    + "Pídele que actualice x39 y te comparta su clave nueva: al pegarla se conserva la conversación.", 14, Ui.ROJO, false);
+                    + "Pídele que actualice x39 y te comparta su clave nueva: al pegarla se conserva la conversación.", 14, Ui.AVISO, false);
             col.addView(antigua, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 14));
         }
 
-        TextView estado = Ui.texto(this, c.verificado ? "Marcado como verificado." : "Todavía sin verificar.", 14, c.verificado ? Ui.SUAVE : Ui.ROJO, false);
+        TextView estado = Ui.texto(this, c.verificado ? "Marcado como verificado." : "Todavía sin verificar.", 14, c.verificado ? Ui.SUAVE : Ui.AVISO, false);
         col.addView(estado, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 14));
 
         col.addView(Ui.boton(this, c.verificado ? "Quitar verificación" : "Los dígitos coinciden · marcar verificado", !c.verificado, v -> {
@@ -962,11 +1104,6 @@ public class MainActivity extends Activity {
         col.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 28));
 
         LinearLayout cab = Ui.fila(this);
-        if (clavePublica == null) {
-            ImageView logo = new ImageView(this);
-            logo.setImageResource(R.drawable.ic_launcher_frente);
-            cab.addView(logo, new LinearLayout.LayoutParams(Ui.dp(this, 44), Ui.dp(this, 44)));
-        }
         LinearLayout titulos = Ui.columna(this);
         titulos.addView(Ui.texto(this, "Plenos", 24, Ui.TEXTO, true));
         titulos.addView(Ui.texto(this, "Transparencia verificable · Sevilla", 13, Ui.SUAVE, false));
@@ -977,8 +1114,8 @@ public class MainActivity extends Activity {
         LinearLayout fc = Ui.fila(this);
         fc.setGravity(Gravity.TOP);
         FrameLayout caja = new FrameLayout(this);
-        caja.setBackground(Ui.redondeado(this, Ui.ROJO_SUAVE, 12));
-        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.ROJO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
+        caja.setBackground(Ui.redondeado(this, Ui.CAJA, 12));
+        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.TEXTO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
         fc.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
         LinearLayout tc = Ui.columna(this);
         tc.setPadding(Ui.dp(this, 12), 0, 0, 0);
@@ -991,7 +1128,7 @@ public class MainActivity extends Activity {
 
         Registro r = registro();
         if (r == null) {
-            TextView e = Ui.texto(this, "⚠ No se pudo leer el registro incluido en la app: " + errorRegistro, 14, Ui.ROJO, false);
+            TextView e = Ui.texto(this, "⚠ No se pudo leer el registro incluido en la app: " + errorRegistro, 14, Ui.AVISO, false);
             col.addView(e, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 16, 0, 0));
         } else {
             TextView info = Ui.texto(this, r.total + " documentos anclados · registro del " + r.actualizadoVisible(), 12, Ui.TENUE, false);
@@ -1004,7 +1141,7 @@ public class MainActivity extends Activity {
                 col.addView(tg);
                 LinearLayout lista = Ui.columna(this);
                 lista.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
-                lista.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
+                lista.setBackground(Ui.degradado(this, 24));
                 for (int i = 0; i < g.areas.size(); i++) {
                     if (i > 0) {
                         View linea = new View(this);
@@ -1021,8 +1158,8 @@ public class MainActivity extends Activity {
 
         LinearLayout portal = Ui.fila(this);
         portal.setPadding(Ui.dp(this, 4), Ui.dp(this, 22), 0, Ui.dp(this, 10));
-        portal.addView(Ui.icono(this, Icono.Tipo.ENLACE, Ui.ROJO, 18));
-        TextView tp = Ui.texto(this, "Abrir sevilla.x39matrix.org", 15, Ui.ROJO, true);
+        portal.addView(Ui.icono(this, Icono.Tipo.ENLACE, Ui.TEXTO, 18));
+        TextView tp = Ui.texto(this, "Abrir sevilla.x39matrix.org", 15, Ui.TEXTO, true);
         tp.setPadding(Ui.dp(this, 10), 0, 0, 0);
         portal.addView(tp, Ui.peso(1));
         portal.setOnClickListener(v -> abrirEnlace(Registro.PORTAL));
@@ -1062,7 +1199,7 @@ public class MainActivity extends Activity {
             cnt.setGravity(Gravity.CENTER);
             cnt.setMinWidth(Ui.dp(this, 30));
             cnt.setPadding(Ui.dp(this, 8), Ui.dp(this, 2), Ui.dp(this, 8), Ui.dp(this, 2));
-            cnt.setBackground(Ui.redondeado(this, Ui.ROJO_SUAVE, 10));
+            cnt.setBackground(Ui.redondeado(this, Ui.CAJA, 10));
             f.addView(cnt);
             ImageView ch = Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18);
             ((LinearLayout.LayoutParams) ch.getLayoutParams()).setMargins(Ui.dp(this, 6), 0, 0, 0);
@@ -1098,7 +1235,7 @@ public class MainActivity extends Activity {
         for (Registro.Documento d : a.documentos) {
             LinearLayout card = Ui.columna(this);
             card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14));
-            card.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
+            card.setBackground(Ui.degradado(this, 24));
             LinearLayout arriba = Ui.fila(this);
             arriba.setGravity(Gravity.TOP);
             arriba.addView(Ui.texto(this, d.nombreVisible(), 15, Ui.TEXTO, true), Ui.peso(1));
@@ -1131,20 +1268,20 @@ public class MainActivity extends Activity {
     private View datoBitcoin(Registro.Documento d) {
         return d.bloqueVerificado()
                 ? dato(Icono.Tipo.CHECK, Ui.TEXTO, "Anclado en Bitcoin · bloque " + d.bloque)
-                : dato(Icono.Tipo.AVISO, Ui.ROJO, "Bitcoin · bloque " + d.bloque + " sin verificar con nodo propio");
+                : dato(Icono.Tipo.AVISO, Ui.AVISO, "Bitcoin · bloque " + d.bloque + " sin verificar con nodo propio");
     }
 
     private View datoSello(Registro.Documento d) {
         return d.selloCualificado()
                 ? dato(Icono.Tipo.CHECK, Ui.TEXTO, "Sello de tiempo cualificado · " + d.qtst.replace('-', '/'))
-                : dato(Icono.Tipo.AVISO, Ui.ROJO, "Sello de tiempo cualificado en proceso");
+                : dato(Icono.Tipo.AVISO, Ui.AVISO, "Sello de tiempo cualificado en proceso");
     }
 
     private View dato(Icono.Tipo tipo, int color, String texto) {
         LinearLayout f = Ui.fila(this);
         f.setPadding(0, Ui.dp(this, 3), 0, 0);
         f.addView(Ui.icono(this, tipo, color, 14));
-        TextView t = Ui.texto(this, texto, 13, color == Ui.ROJO ? Ui.ROJO : Ui.TEXTO_2, false);
+        TextView t = Ui.texto(this, texto, 13, color == Ui.AVISO ? Ui.AVISO : Ui.TEXTO_2, false);
         t.setPadding(Ui.dp(this, 8), 0, 0, 0);
         f.addView(t, Ui.peso(1));
         return f;
@@ -1213,7 +1350,7 @@ public class MainActivity extends Activity {
         col.setPadding(Ui.dp(this, 32), 0, Ui.dp(this, 32), 0);
         ProgressBar pb = new ProgressBar(this);
         pb.setIndeterminate(true);
-        pb.setIndeterminateTintList(ColorStateList.valueOf(Ui.ROJO));
+        pb.setIndeterminateTintList(ColorStateList.valueOf(Ui.BLANCO));
         col.addView(pb, Ui.margen(this, Ui.dp(this, 40), Ui.dp(this, 40), 0, 0, 0, 16));
         TextView t = Ui.texto(this, "Calculando la huella…", 20, Ui.TEXTO, true);
         t.setGravity(Gravity.CENTER);
@@ -1233,8 +1370,8 @@ public class MainActivity extends Activity {
         col.setPadding(Ui.dp(this, 20), Ui.dp(this, 4), Ui.dp(this, 20), Ui.dp(this, 24));
 
         FrameLayout caja = new FrameLayout(this);
-        caja.setBackground(Ui.redondeado(this, Ui.ROJO_SUAVE, 18));
-        caja.addView(Ui.icono(this, d != null ? Icono.Tipo.ESCUDO_OK : Icono.Tipo.AVISO, Ui.ROJO, 30),
+        caja.setBackground(Ui.redondeado(this, Ui.CAJA, 18));
+        caja.addView(Ui.icono(this, d != null ? Icono.Tipo.ESCUDO_OK : Icono.Tipo.AVISO, d != null ? Ui.TEXTO : Ui.AVISO, 30),
                 new FrameLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30), Gravity.CENTER));
         col.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 60), Ui.dp(this, 60)));
         TextView t = Ui.texto(this, d != null ? "Coincide con el registro" : "No coincide con el registro", 24, Ui.TEXTO, true);
@@ -1248,7 +1385,7 @@ public class MainActivity extends Activity {
             col.addView(desc);
             LinearLayout card = Ui.columna(this);
             card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-            card.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
+            card.setBackground(Ui.degradado(this, 24));
             card.addView(Ui.texto(this, d.nombreVisible(), 16, Ui.TEXTO, true));
             Registro r = registro();
             Registro.Area area = r == null ? null : r.areas.get(d.area);
@@ -1323,12 +1460,12 @@ public class MainActivity extends Activity {
         LinearLayout aviso = Ui.columna(this);
         aviso.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
         android.graphics.drawable.GradientDrawable borde = new android.graphics.drawable.GradientDrawable();
-        borde.setColor(0x0FE53935);
+        borde.setColor(0x0AFFFFFF);
         borde.setCornerRadius(Ui.dp(this, 18));
-        borde.setStroke(Ui.dp(this, 1), 0x59E53935);
+        borde.setStroke(Ui.dp(this, 1), 0x33FFFFFF);
         aviso.setBackground(borde);
         LinearLayout avTit = Ui.fila(this);
-        avTit.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.ROJO, 18));
+        avTit.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.AVISO, 18));
         TextView avT = Ui.texto(this, "Lo que aún no está cubierto", 14, Ui.TEXTO, true);
         avT.setPadding(Ui.dp(this, 10), 0, 0, 0);
         avTit.addView(avT);
@@ -1352,7 +1489,7 @@ public class MainActivity extends Activity {
     private void mostrarError() {
         LinearLayout col = Ui.columna(this);
         col.setPadding(Ui.dp(this, 24), Ui.dp(this, 48), Ui.dp(this, 24), 0);
-        col.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.ROJO, 32));
+        col.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.AVISO, 32));
         TextView t = Ui.texto(this, "No se pudieron abrir tus claves", 18, Ui.TEXTO, true);
         t.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 8));
         col.addView(t);
@@ -1365,7 +1502,7 @@ public class MainActivity extends Activity {
     private LinearLayout tarjeta(LinearLayout padre, String titulo) {
         LinearLayout card = Ui.columna(this);
         card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 16));
-        card.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
+        card.setBackground(Ui.degradado(this, 24));
         if (titulo != null) {
             TextView t = Ui.texto(this, titulo, 16, Ui.TEXTO, true);
             t.setPadding(0, 0, 0, Ui.dp(this, 8));
@@ -1379,8 +1516,8 @@ public class MainActivity extends Activity {
         LinearLayout f = Ui.fila(this);
         f.setMinimumHeight(Ui.dp(this, 44));
         f.addView(Ui.texto(this, etiqueta, 14, Ui.TEXTO_2, false), Ui.peso(1));
-        f.addView(Ui.icono(this, bien ? Icono.Tipo.CHECK : Icono.Tipo.AVISO, bien ? Ui.TEXTO : Ui.ROJO, 15));
-        TextView v = Ui.texto(this, valor, 14, bien ? Ui.TEXTO : Ui.ROJO, false);
+        f.addView(Ui.icono(this, bien ? Icono.Tipo.CHECK : Icono.Tipo.AVISO, bien ? Ui.TEXTO : Ui.AVISO, 15));
+        TextView v = Ui.texto(this, valor, 14, bien ? Ui.TEXTO : Ui.AVISO, false);
         v.setPadding(Ui.dp(this, 6), 0, 0, 0);
         f.addView(v);
         lista.addView(f);

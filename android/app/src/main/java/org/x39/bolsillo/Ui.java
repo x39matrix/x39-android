@@ -20,21 +20,32 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-/** Paleta y piezas de interfaz de x39. Solo widgets de Android, sin librerías. Regla: ningún verde. */
+/**
+ * Paleta y piezas de interfaz de x39. Solo widgets de Android, sin librerías.
+ * Grafito con tarjetas en degradado. El rojo es SOLO la marca «x39»; los avisos van en blanco
+ * con icono ⚠, nunca solo por color. Regla: ningún verde.
+ */
 final class Ui {
-    static final int FONDO = 0xFF0D0D0D;
-    static final int SUPERFICIE = 0xFF17171A;
-    static final int SUPERFICIE_2 = 0xFF222226;
-    static final int BURBUJA_ENTRANTE = 0xFF1C1C20;
-    static final int BURBUJA_SALIENTE = 0xFFA3231F;
+    static final int FONDO = 0xFF1B1B1D;
+    static final int SUPERFICIE = 0xFF2B2B2F;
+    static final int SUPERFICIE_2 = 0xFF3A3A40;
+    /** Fondo de las cajas de icono y de las baldosas del menú. */
+    static final int CAJA = 0xFF3C3C42;
+    static final int BURBUJA_ENTRANTE = 0xFF2E2E33;
+    static final int BURBUJA_SALIENTE = 0xFF4A4A52;
+    /** Solo para la marca «x39». */
     static final int ROJO = 0xFFE53935;
-    static final int ROJO_SUAVE = 0x29E53935;
+    /** Avisos: blanco, siempre acompañado de icono o del signo ⚠. */
+    static final int AVISO = 0xFFFFFFFF;
+    static final int BLANCO = 0xFFF2F2F2;
     static final int TEXTO = 0xFFF2F2F2;
-    static final int TEXTO_2 = 0xFFB5B5BA;
-    static final int SUAVE = 0xFF9E9E9E;
-    static final int TENUE = 0xFF6B6B70;
+    static final int TEXTO_2 = 0xFFB8B8BE;
+    static final int SUAVE = 0xFF9A9AA1;
+    static final int TENUE = 0xFF6E6E75;
     static final int LINEA = 0x14FFFFFF;
-    private static final int[] AVATARES = {0xFF3A1D1C, 0xFF2B2226, 0xFF26262B, 0xFF2A2320, 0xFF2E1F2A, 0xFF232329};
+    private static final int DEGRADADO_CLARO = 0xFF46464D;
+    private static final int DEGRADADO_OSCURO = 0xFF2A2A2F;
+    private static final int[] AVATARES = {0xFF3C3C42, 0xFF45454C, 0xFF34343A, 0xFF4A4A52, 0xFF3F3F46, 0xFF2F2F35};
 
     private Ui() {}
 
@@ -63,6 +74,21 @@ final class Ui {
         g.setColor(color);
         g.setCornerRadius(dp(c, radioDp));
         return g;
+    }
+
+    /** Tarjeta en degradado grafito, de la esquina superior izquierda (clara) a la inferior derecha. */
+    static GradientDrawable degradado(Context c, float radioDp) {
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{DEGRADADO_CLARO, DEGRADADO_OSCURO});
+        g.setCornerRadius(dp(c, radioDp));
+        return g;
+    }
+
+    /** La marca «x39» en rojo, arriba a la derecha de las pantallas principales. */
+    static TextView marca(Context c) {
+        TextView t = texto(c, "x39", 22, ROJO, true);
+        t.setLetterSpacing(0.02f);
+        t.setContentDescription("x39");
+        return t;
     }
 
     static LinearLayout columna(Context c) {
@@ -121,11 +147,12 @@ final class Ui {
     }
 
     static TextView boton(Context c, String s, boolean primario, View.OnClickListener accion) {
-        TextView b = texto(c, s, 15, primario ? 0xFFFFFFFF : TEXTO, true);
+        // Principal: píldora blanca con texto oscuro. Secundario: píldora grafito.
+        TextView b = texto(c, s, 15, primario ? FONDO : TEXTO, true);
         b.setGravity(Gravity.CENTER);
         b.setMinHeight(dp(c, 50));
-        b.setPadding(dp(c, 16), 0, dp(c, 16), 0);
-        b.setBackground(redondeado(c, primario ? ROJO : SUPERFICIE_2, 14));
+        b.setPadding(dp(c, 18), 0, dp(c, 18), 0);
+        b.setBackground(redondeado(c, primario ? BLANCO : SUPERFICIE_2, 26));
         b.setOnClickListener(accion);
         clicable(b);
         return b;

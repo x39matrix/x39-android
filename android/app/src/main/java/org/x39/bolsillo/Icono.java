@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 
 /** Iconos de trazo dibujados sobre una rejilla de 24 unidades, coherentes con el diseño. */
 final class Icono extends Drawable {
-    enum Tipo { CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
+    enum Tipo { INICIO, CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
 
     private final Tipo tipo;
     private final Paint pincel = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -33,6 +33,11 @@ final class Icono extends Drawable {
         c.scale(b.width() / 24f, b.height() / 24f);
         Path p = new Path();
         switch (tipo) {
+            case INICIO:
+                p.moveTo(3.5f, 11); p.lineTo(12, 4); p.lineTo(20.5f, 11);
+                p.addRoundRect(new RectF(6, 10, 18, 20.5f), 2, 2, Path.Direction.CW);
+                p.moveTo(10, 20.5f); p.lineTo(10, 15.5f); p.lineTo(14, 15.5f); p.lineTo(14, 20.5f);
+                break;
             case CHAT:
                 p.moveTo(4, 5); p.lineTo(20, 5); p.lineTo(20, 16); p.lineTo(9, 16); p.lineTo(4, 20); p.close();
                 break;
