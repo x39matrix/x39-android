@@ -33,8 +33,8 @@ final class Buzon {
     static final String PREF_ACTIVO = "buzon_activo";
     static final String PREF_URL = "buzon_url";
     static final String PREF_DESDE = "buzon_desde";
-    /** Se rellena al desplegar el canister; vacío = sin buzón hasta que se configure en Seguridad. */
-    static final String URL_POR_DEFECTO = "";
+    /** Canister buzon desplegado el 15/09/2026 (canister/buzon/canister_ids.json). Se puede cambiar en Seguridad. */
+    static final String URL_POR_DEFECTO = "https://gx4ic-yqaaa-aaaah-qu43a-cai.raw.icp0.io";
     private static final int MAX_RESPUESTA = 256 * 1024;
     private static final int MAX_REGISTRO = 30;
     private static final ArrayDeque<String> REGISTRO = new ArrayDeque<>();
