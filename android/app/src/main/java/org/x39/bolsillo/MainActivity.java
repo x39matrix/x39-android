@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.8.1";
+    private static final String VERSION = "0.8.2";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -107,7 +107,9 @@ public class MainActivity extends Activity {
         public void run() {
             if (!sondeando) return;
             sincronizarBuzon();
-            sondeador.postDelayed(this, 8_000);
+            // Con una conversación o Chats delante se pregunta más a menudo; el resto del tiempo, menos.
+            boolean atento = pantallaSecundaria != null || pestana == Pestana.CHATS;
+            sondeador.postDelayed(this, atento ? 3_000 : 10_000);
         }
     };
 
@@ -1052,7 +1054,7 @@ public class MainActivity extends Activity {
         ImageView flecha = new ImageView(this);
         flecha.setImageDrawable(new Icono(Icono.Tipo.ENVIAR, Ui.FONDO));
         enviar.addView(flecha, new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
-        enviar.setContentDescription("Cifrar y compartir");
+        enviar.setContentDescription("Enviar");
         enviar.setOnClickListener(v -> enviar(c, et));
         Ui.clicable(enviar);
         compositor.addView(enviar, Ui.margen(this, Ui.dp(this, 48), Ui.dp(this, 48), 8, 0, 0, 0));
