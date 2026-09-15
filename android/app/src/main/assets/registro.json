@@ -1,6 +1,6 @@
 {
  "version": 1,
- "actualizado": "2026-09-14T22:00:47Z",
+ "actualizado": "2026-09-15T10:59:52Z",
  "fuente": "https://api.x39matrix.org/registro/registro.json",
  "documentos": [
   {
@@ -376,8 +376,8 @@
    "sha256": "c480c60279dc38ca96ff0ffe11575fe7378fb0dda78a2c31bfc3d3dc7bd3948d",
    "bloque": "966979",
    "verificado_bloque": "966979",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/ACTA-DE-LA-JUNTA-MUNICIPAL-DEL-DISTRITO-NORTE-2026-02-26.pdf"
   },
   {
@@ -389,8 +389,8 @@
    "sha256": "d6492150070707b4bb4e2b80af8139ab10b38883018a839d5367f51a73f077e4",
    "bloque": "966979",
    "verificado_bloque": "966979",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/CONVOCATORIA-DE-LA-JUNTA-MUNICIPAL-DEL-DISTRITO-SUR-2026-01-26.pdf"
   },
   {
@@ -402,8 +402,8 @@
    "sha256": "db4a1fed4b61d1ac116c3677c1a476bc73d5c0625d682e35ba9f5cd9c51cbb23",
    "bloque": "966979",
    "verificado_bloque": "966979",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/CONVOCATORIA-DE-LA-JUNTA-MUNICIPAL-DEL-DISTRITO-SAN-PABLO-SANTA-JUSTA-2026-03-18.pdf"
   },
   {
@@ -415,8 +415,8 @@
    "sha256": "d9723283374373c2a2be5bc68fa420a5367b3c77866c562ca2024d4c11990720",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/CUENTAS-ANUALES-2024-CONTURSA-2024-12-31.pdf"
   },
   {
@@ -428,8 +428,8 @@
    "sha256": "fb4e89cfb48a303f5c7630f529b9cc103cd4476ace55251fc77be42a09995799",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/ACUERDO-APROBACION-PRESUPUESTO-2026-EMASESA-2026-01-01.pdf"
   },
   {
@@ -441,8 +441,8 @@
    "sha256": "6a9e36ae10b462803b50595a7e4cb789c5610fe763379ac31f40e6aef14987c0",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/PRESUPUESTO-2026-LIPASAM-2026-01-01.pdf"
   },
   {
@@ -454,9 +454,22 @@
    "sha256": "eb43d03c6d55d28cc5a5a754579c43760b2b8597231e9b986b1e13f35e636096",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/PRESUPUESTO-2026-PATRONATO-DEL-REAL-ALCAZAR-2026-01-01.pdf"
+  },
+  {
+   "id": "presupuesto-2026-imd-2026-01-01",
+   "area": "imd",
+   "nombre": "Presupuesto 2026 IMD",
+   "sesion": "01-01-2026",
+   "anclaje": "14-09-2026",
+   "sha256": "3958e3dcd6163d920fe6d85d25d01cd6212c6add5dda4fdd7b9890b7c5af315f",
+   "bloque": "967007",
+   "verificado_bloque": "967007",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
+   "pdf": "actas/PRESUPUESTO-2026-IMD-2026-01-01.pdf"
   },
   {
    "id": "ordenanza-servicio-emasesa-bop-74-de-2024-2024-04-17",
@@ -467,8 +480,8 @@
    "sha256": "da212905f3ee94cf8d16f1153e58dc5540d21a822212bdbcde8f77da37a11b57",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/ORDENANZA-SERVICIO-EMASESA-BOP-74-DE-2024-2024-04-17.pdf"
   },
   {
@@ -480,8 +493,8 @@
    "sha256": "b6508caffa41567ad159a0a5a8c7cbfdd2ae743fb4377cb7a959f8833458d27c",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/GUIA-DE-RODAJES-DE-SEVILLA-2023-01-01.pdf"
   },
   {
@@ -493,8 +506,8 @@
    "sha256": "662999785131770bb4d4f488b2f97a91c22c121f374dfa25ff9d85289b28e416",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/PRESUPUESTO-2026-TUSSAM-2026-01-01.pdf"
   },
   {
@@ -506,8 +519,8 @@
    "sha256": "528c0a6dfe9d03cfc203a60b76cf60bbc4a38b2e0d6111a6794fb2c8d375d1dd",
    "bloque": "967007",
    "verificado_bloque": "967007",
-   "qtst": "en proceso",
-   "qtst_tsa": "",
+   "qtst": "15-09-2026",
+   "qtst_tsa": "ANF AC Qualified TSA",
    "pdf": "actas/PRESUPUESTO-2026-ICAS-2026-01-01.pdf"
   }
  ]
