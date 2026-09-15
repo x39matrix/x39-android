@@ -449,6 +449,44 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_invitationVerify<'c>(
         .resolve::<ThrowRuntimeExAndDefault>()
 }
 
+/// Acreditación: firma la invitación con la semilla ML-DSA-87 del titular. Devuelve «X39ACR1:…».
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_accreditationCreate<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    seed: JByteArray<'c>,
+    invitation: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let seed = seed_from(env, &seed)?;
+            let acr = invitacion::acreditar(&seed, &invitation.to_string())?;
+            Ok(env.new_string(acr)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Verifica una acreditación «X39ACR1:…» con la clave de la autoridad y la clave de firma del titular.
+/// Devuelve "caduca|nombre"; si alguna firma falla o ha caducado, lanza la excepción.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_accreditationVerify<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    authority_key: JByteArray<'c>,
+    holder_signing_key: JByteArray<'c>,
+    text: JString<'c>,
+    today: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let aut = signing_public_key_from(env, &authority_key)?;
+            let titular = signing_public_key_from(env, &holder_signing_key)?;
+            let inv = invitacion::verificar_acreditacion(&aut, &titular, &text.to_string(), &today.to_string())?;
+            Ok(env.new_string(format!("{}|{}", inv.caduca, inv.nombre))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
 /// Calendarios pendientes, una línea por cada uno: "uri mensaje_hex".
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_org_x39_bolsillo_X39Core_otsPending<'c>(

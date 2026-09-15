@@ -61,6 +61,26 @@ fn texto_alterado_se_rechaza() {
 }
 
 #[test]
+fn acreditacion_une_el_nombre_a_la_clave_del_titular() {
+    let (seed_aut, pk_aut) = autoridad();
+    let (seed_titular, pk_titular) = autoridad();
+    let (_, pk_otro) = autoridad();
+    let inv = invitacion::emitir(&seed_aut, "2026-12-31", "María López · Cultura").unwrap();
+    let acr = invitacion::acreditar(&seed_titular, &inv).unwrap();
+    assert!(acr.starts_with("X39ACR1:"));
+    let i = invitacion::verificar_acreditacion(&pk_aut, &pk_titular, &acr, "2026-09-15").unwrap();
+    assert_eq!(i.nombre, "María López · Cultura");
+    // Con otra clave de titular no vale: la acreditación no se puede reutilizar con otra identidad.
+    assert_eq!(invitacion::verificar_acreditacion(&pk_aut, &pk_otro, &acr, "2026-09-15"), Err(Error::Firma));
+    // Con otra autoridad tampoco.
+    assert_eq!(invitacion::verificar_acreditacion(&pk_otro, &pk_titular, &acr, "2026-09-15"), Err(Error::Firma));
+    // Caducada.
+    assert_eq!(invitacion::verificar_acreditacion(&pk_aut, &pk_titular, &acr, "2027-01-01"), Err(Error::Caducada));
+    // Solo se acredita una invitación, no cualquier texto.
+    assert_eq!(invitacion::acreditar(&seed_titular, "X39MSG1:abcd"), Err(Error::Formato));
+}
+
+#[test]
 fn entradas_invalidas_al_emitir() {
     let (seed, _) = autoridad();
     assert_eq!(invitacion::emitir(&seed, "31-12-2026", "Alguien"), Err(Error::Formato));

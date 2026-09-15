@@ -45,7 +45,18 @@ final class Almacen {
         byte[] claveFirma;
         boolean verificado;
         long creado;
+        /** Acreditación «X39ACR1:…» que venía con su clave, o null. */
+        String acreditacionTexto;
+        /** Nombre acreditado por el Ayuntamiento y último día de validez (AAAA-MM-DD), solo si la acreditación verificó. */
+        String acreditadoNombre;
+        String acreditadoHasta;
         final List<Mensaje> mensajes = new ArrayList<>();
+
+        String acreditadoHastaVisible() {
+            if (acreditadoHasta == null || acreditadoHasta.length() != 10) return acreditadoHasta;
+            String[] p = acreditadoHasta.split("-");
+            return p.length == 3 ? p[2] + "/" + p[1] + "/" + p[0] : acreditadoHasta;
+        }
 
         long ultimaActividad() {
             return mensajes.isEmpty() ? creado : mensajes.get(mensajes.size() - 1).ts;
@@ -56,10 +67,19 @@ final class Almacen {
         }
     }
 
-    /** Lee un texto X39ID1 (cifrado + firma) o X39PK1 (solo cifrado). Lanza RuntimeException si no es válido. */
+    /**
+     * Lee un texto X39ID1 (cifrado + firma) o X39PK1 (solo cifrado), opcionalmente seguido de una
+     * acreditación X39ACR1 (separada por espacio o salto de línea). Lanza RuntimeException si no es válido.
+     */
     static Contacto leerTexto(String texto) {
         Contacto c = new Contacto();
         String t = texto.trim();
+        String acr = null;
+        int corte = t.indexOf("X39ACR1:");
+        if (corte > 0) {
+            acr = t.substring(corte).trim();
+            t = t.substring(0, corte).trim();
+        }
         if (t.startsWith("X39ID1:")) {
             byte[] ambas = X39Core.identityFromText(t);
             c.clave = Arrays.copyOfRange(ambas, 0, X39Core.PK_LEN);
@@ -68,6 +88,7 @@ final class Almacen {
             c.clave = X39Core.publicKeyFromText(t);
         }
         c.claveTexto = t;
+        c.acreditacionTexto = acr;
         return c;
     }
 
@@ -112,6 +133,9 @@ final class Almacen {
                 c.claveFirma = leido.claveFirma;
                 c.verificado = o.optBoolean("verificado", false);
                 c.creado = o.optLong("creado", System.currentTimeMillis());
+                c.acreditacionTexto = o.has("acr") ? o.optString("acr") : null;
+                c.acreditadoNombre = o.has("acr_nombre") ? o.optString("acr_nombre") : null;
+                c.acreditadoHasta = o.has("acr_hasta") ? o.optString("acr_hasta") : null;
                 JSONArray ms = o.optJSONArray("mensajes");
                 if (ms != null) {
                     for (int k = 0; k < ms.length(); k++) {
@@ -141,6 +165,9 @@ final class Almacen {
                     .put("clave", c.claveTexto)
                     .put("verificado", c.verificado)
                     .put("creado", c.creado)
+                    .put("acr", c.acreditacionTexto == null ? JSONObject.NULL : c.acreditacionTexto)
+                    .put("acr_nombre", c.acreditadoNombre == null ? JSONObject.NULL : c.acreditadoNombre)
+                    .put("acr_hasta", c.acreditadoHasta == null ? JSONObject.NULL : c.acreditadoHasta)
                     .put("mensajes", ms));
         }
         byte[] plano = new JSONObject().put("version", 1).put("contactos", cs).toString().getBytes(StandardCharsets.UTF_8);
@@ -188,6 +215,12 @@ final class Almacen {
             c.claveTexto = leido.claveTexto;
             c.clave = leido.clave;
             c.claveFirma = leido.claveFirma;
+        }
+        if (leido.acreditacionTexto != null) {
+            // La acreditación se comprueba fuera (hace falta la clave de la autoridad): aquí solo se guarda.
+            c.acreditacionTexto = leido.acreditacionTexto;
+            c.acreditadoNombre = null;
+            c.acreditadoHasta = null;
         }
         c.nombre = nombre;
         return c;

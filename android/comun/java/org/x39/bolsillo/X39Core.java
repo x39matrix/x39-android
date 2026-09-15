@@ -71,6 +71,12 @@ final class X39Core {
      */
     static native String invitationVerify(byte[] authorityKey, String text, String today);
 
+    /** Acreditación: la invitación firmada con la semilla ML-DSA-87 del titular («X39ACR1:…»). */
+    static native String accreditationCreate(byte[] seed, String invitation);
+
+    /** Verifica una acreditación con la clave de la autoridad y la clave de firma del titular. Devuelve "caduca|nombre" o lanza. */
+    static native String accreditationVerify(byte[] authorityKey, byte[] holderSigningKey, String text, String today);
+
     /** clave_pública(1568) || clave_secreta(3168). */
     static native byte[] generateKeypair();
 

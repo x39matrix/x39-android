@@ -61,6 +61,45 @@ pub fn verificar(pk: &[u8; DSA_PK_LEN], texto: &str, hoy: &str) -> Result<Invita
     Ok(Invitacion { caduca: caduca.to_string(), nombre: nombre.to_string() })
 }
 
+pub const PREFIX_ACR: &str = "X39ACR1:";
+pub const ACR_CTX: &[u8] = b"x39-acreditacion-v1";
+
+/// Acreditación: el titular firma su invitación con su propia clave ML-DSA-87.
+/// `"X39ACR1:" + base64url(firma_titular(4627) || invitación UTF-8 || check)`.
+/// Quien la recibe junto a la identidad comprueba que (1) la invitación la firmó el Ayuntamiento y
+/// (2) la acreditación la firmó la clave de ese contacto: el nombre de la invitación queda unido a la clave.
+/// Límite: la invitación funciona como una llave; si se difunde, otra clave podría acreditarse con ese nombre.
+pub fn acreditar(seed_titular: &[u8; DSA_SEED_LEN], invitacion: &str) -> Result<String, Error> {
+    let compacta: String = invitacion.chars().filter(|c| !c.is_whitespace()).collect();
+    if !compacta.starts_with(PREFIX_INV) {
+        return Err(Error::Formato);
+    }
+    let sig = firma::sign(seed_titular, compacta.as_bytes(), ACR_CTX)?;
+    let mut datos = Vec::with_capacity(SIG_LEN + compacta.len());
+    datos.extend_from_slice(&sig);
+    datos.extend_from_slice(compacta.as_bytes());
+    Ok(share::encode(PREFIX_ACR, &datos))
+}
+
+/// Verifica una acreditación contra la clave de la autoridad y la clave de firma del titular.
+pub fn verificar_acreditacion(
+    pk_autoridad: &[u8; DSA_PK_LEN],
+    pk_titular: &[u8; DSA_PK_LEN],
+    texto: &str,
+    hoy: &str,
+) -> Result<Invitacion, Error> {
+    let datos = share::decode(PREFIX_ACR, texto)?;
+    if datos.len() <= SIG_LEN {
+        return Err(Error::Formato);
+    }
+    let (sig, inv) = datos.split_at(SIG_LEN);
+    if !firma::verify(pk_titular, inv, ACR_CTX, sig) {
+        return Err(Error::Firma);
+    }
+    let inv = std::str::from_utf8(inv).map_err(|_| Error::Formato)?;
+    verificar(pk_autoridad, inv, hoy)
+}
+
 fn validar_fecha(f: &str) -> Result<(), Error> {
     let b = f.as_bytes();
     if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {

@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.8.2";
+    private static final String VERSION = "0.9.0";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -578,6 +578,7 @@ public class MainActivity extends Activity {
                     render();
                     return;
                 }
+                crearAcreditacion();
                 modoCiudadano = false;
                 prefs().edit().remove(PREF_CIUDADANO).apply();
                 enBienvenida = true;
@@ -616,6 +617,10 @@ public class MainActivity extends Activity {
     private static final String ASSET_AUTORIDAD = "autoridad.pk";
     private static final String PREF_INV_NOMBRE = "invitacion_nombre";
     private static final String PREF_INV_CADUCA = "invitacion_caduca";
+    private static final String PREF_INV_TEXTO = "invitacion_texto";
+    private static final String PREF_ACREDITACION = "acreditacion";
+    /** true: la invitación pegada acredita la clave que ya existe en este móvil, no crea una nueva. */
+    private boolean invitacionParaAcreditar;
 
     /** Clave pública ML-DSA-87 de la autoridad (el Ayuntamiento), incluida en la app; null si esta compilación no la lleva. */
     private byte[] autoridad() {
@@ -638,6 +643,11 @@ public class MainActivity extends Activity {
      * autoridad del Ayuntamiento (texto «X39INV1:…» que llega por cualquier canal). Sin servidor.
      */
     private void pedirInvitacion() {
+        pedirInvitacion(false);
+    }
+
+    private void pedirInvitacion(boolean paraAcreditar) {
+        invitacionParaAcreditar = paraAcreditar;
         if (autoridad() == null) {
             aviso("Esta versión de la app no lleva la clave de la autoridad del Ayuntamiento, así que no puede "
                     + "comprobar invitaciones. Pide una compilación que la incluya.");
@@ -719,18 +729,85 @@ public class MainActivity extends Activity {
         final String nombre = sep > 0 ? resultado.substring(sep + 1) : "";
         String[] p = caduca.split("-");
         String caducaVisible = p.length == 3 ? p[2] + "/" + p[1] + "/" + p[0] : caduca;
+        final String invitacion = s;
+        if (invitacionParaAcreditar) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Invitación válida")
+                    .setMessage("Emitida para: " + nombre + "\nVálida hasta el " + caducaVisible + ".\n\n"
+                            + "Ese nombre se unirá a la clave que ya tienes en este móvil, firmándolo con ella. "
+                            + "Quien te añada verá el nombre acreditado por el Ayuntamiento.")
+                    .setNegativeButton("Cancelar", null)
+                    .setPositiveButton("Acreditar mi clave", (dlg, w) -> {
+                        prefs().edit().putString(PREF_INV_NOMBRE, nombre).putString(PREF_INV_CADUCA, caduca).putString(PREF_INV_TEXTO, invitacion).apply();
+                        crearAcreditacion();
+                        pantallaSecundaria = null;
+                        mostrarPestana(Pestana.CONTACTOS);
+                    })
+                    .show();
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setTitle("Invitación válida")
                 .setMessage("Emitida para: " + nombre + "\nVálida hasta el " + caducaVisible + ".\n\n"
-                        + "Se creará tu clave en este móvil (ML-KEM-1024 y ML-DSA-87). "
+                        + "Se creará tu clave en este móvil (ML-KEM-1024 y ML-DSA-87) y ese nombre quedará unido a ella. "
                         + "Los chats solo funcionan entre personas que hayan comparado su huella en persona.")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Crear mi clave", (dlg, w) -> {
-                    prefs().edit().putString(PREF_INV_NOMBRE, nombre).putString(PREF_INV_CADUCA, caduca).apply();
+                    prefs().edit().putString(PREF_INV_NOMBRE, nombre).putString(PREF_INV_CADUCA, caduca).putString(PREF_INV_TEXTO, invitacion).apply();
                     pantallaSecundaria = null;
                     crearIdentidad();
                 })
                 .show();
+    }
+
+    /** Si hay una invitación pendiente, la firma con la clave de este móvil y guarda la acreditación. */
+    private void crearAcreditacion() {
+        String inv = prefs().getString(PREF_INV_TEXTO, null);
+        if (inv == null || clavePublica == null) return;
+        byte[] semilla = null;
+        try {
+            semilla = boveda.semillaFirma();
+            String acr = X39Core.accreditationCreate(semilla, inv);
+            prefs().edit().putString(PREF_ACREDITACION, acr).remove(PREF_INV_TEXTO).apply();
+        } catch (Exception e) {
+            aviso("No se pudo crear la acreditación: " + Ui.mensaje(e));
+        } finally {
+            if (semilla != null) Arrays.fill(semilla, (byte) 0);
+        }
+    }
+
+    private String miAcreditacion() {
+        return prefs().getString(PREF_ACREDITACION, null);
+    }
+
+    /** Comprueba la acreditación que vino con la clave del contacto: firma del Ayuntamiento y firma del propio contacto. */
+    private void acreditarContacto(Almacen.Contacto c) {
+        c.acreditadoNombre = null;
+        c.acreditadoHasta = null;
+        if (c.acreditacionTexto == null || c.claveFirma == null) return;
+        byte[] pk = autoridad();
+        if (pk == null) return;
+        try {
+            String hoy = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(new Date());
+            String r = X39Core.accreditationVerify(pk, c.claveFirma, c.acreditacionTexto, hoy);
+            int sep = r.indexOf('|');
+            if (sep > 0) {
+                c.acreditadoHasta = r.substring(0, sep);
+                c.acreditadoNombre = r.substring(sep + 1);
+            }
+        } catch (Exception ignorado) {
+            // Se conserva el texto: no verifica hoy (firma, fecha o esta compilación sin clave de la autoridad).
+        }
+    }
+
+    private static String etiquetaAcreditado(Almacen.Contacto c) {
+        return c.acreditadoNombre + " · acreditación del Ayuntamiento hasta el " + c.acreditadoHastaVisible();
+    }
+
+    private static String fechaVisible(String iso) {
+        if (iso == null || iso.length() != 10) return iso == null ? "" : iso;
+        String[] p = iso.split("-");
+        return p.length == 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso;
     }
 
     // ------------------------------------------------------------------ inicio
@@ -973,6 +1050,7 @@ public class MainActivity extends Activity {
             nombre.addView(chip, Ui.margen(this, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 8, 0, 0, 0));
         }
         textos.addView(nombre);
+        if (c.acreditadoNombre != null) textos.addView(Ui.texto(this, c.acreditadoNombre + " · acreditación del Ayuntamiento", 12, Ui.SUAVE, false));
         String vista;
         if (c.mensajes.isEmpty()) {
             vista = "Sin mensajes todavía";
@@ -1011,6 +1089,7 @@ public class MainActivity extends Activity {
         String subTexto;
         if (c.claveFirma == null) subTexto = "Clave antigua sin firma · toca para ver";
         else subTexto = c.verificado ? "Verificado · cifrado y firmado" : "Sin verificar · toca para comparar la huella";
+        if (c.acreditadoNombre != null) subTexto = c.acreditadoNombre + " · " + subTexto;
         boolean subBien = c.claveFirma != null && c.verificado;
         TextView sub = Ui.texto(this, subTexto, 12, subBien ? Ui.SUAVE : Ui.AVISO, false);
         textos.addView(sub);
@@ -1113,6 +1192,16 @@ public class MainActivity extends Activity {
         lpc.setMargins(Ui.dp(this, 10), 0, 0, 0);
         botones.addView(copiar, lpc);
         mia.addView(botones);
+        String acrNombre = prefs().getString(PREF_INV_NOMBRE, null);
+        if (miAcreditacion() != null && acrNombre != null) {
+            TextView acr = Ui.texto(this, "Acreditado por el Ayuntamiento como " + acrNombre + " · hasta el "
+                    + fechaVisible(prefs().getString(PREF_INV_CADUCA, "")) + ". La acreditación viaja con tu clave al compartirla.", 13, Ui.SUAVE, false);
+            acr.setPadding(0, Ui.dp(this, 12), 0, 0);
+            mia.addView(acr);
+        } else {
+            mia.addView(Ui.boton(this, "Acreditar mi clave con una invitación", false, v -> pedirInvitacion(true)),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
+        }
 
         LinearLayout tit = Ui.fila(this);
         tit.setPadding(0, Ui.dp(this, 22), 0, Ui.dp(this, 8));
@@ -1134,6 +1223,7 @@ public class MainActivity extends Activity {
             LinearLayout t = Ui.columna(this);
             t.setPadding(Ui.dp(this, 12), 0, 0, 0);
             t.addView(Ui.texto(this, c.nombre, 16, Ui.TEXTO, true));
+            if (c.acreditadoNombre != null) t.addView(Ui.texto(this, etiquetaAcreditado(c), 13, Ui.TEXTO_2, false));
             String estadoContacto = c.claveFirma == null ? "Clave antigua sin firma" : (c.verificado ? "Verificado" : "Sin verificar");
             t.addView(Ui.texto(this, estadoContacto, 13, c.claveFirma != null && c.verificado ? Ui.SUAVE : Ui.AVISO, false));
             f.addView(t, Ui.peso(1));
@@ -1205,6 +1295,13 @@ public class MainActivity extends Activity {
                 }
                 huellaVista[0] = Ui.huella(this, leido.huella(), 16);
                 huellaCaja.addView(huellaVista[0]);
+                if (leido.acreditacionTexto != null) {
+                    acreditarContacto(leido);
+                    boolean ok = leido.acreditadoNombre != null;
+                    huellaCaja.addView(Ui.texto(this, ok
+                            ? "Acreditado por el Ayuntamiento como " + leido.acreditadoNombre + " · hasta el " + leido.acreditadoHastaVisible()
+                            : "⚠ Trae una acreditación que no verifica (firma o fecha).", 13, ok ? Ui.SUAVE : Ui.AVISO, false));
+                }
             } catch (RuntimeException e) {
                 estado.setTextColor(Ui.AVISO);
                 estado.setText("⚠ " + e.getMessage());
@@ -1226,6 +1323,7 @@ public class MainActivity extends Activity {
             try {
                 if (Arrays.equals(Almacen.leerTexto(t).clave, clavePublica)) { aviso("No puedes añadir tu propia clave como contacto."); return; }
                 Almacen.Contacto c = almacen.agregar(n, t);
+                acreditarContacto(c);
                 almacen.guardar();
                 abrirVerificar(c);
             } catch (Exception e) {
@@ -1250,6 +1348,15 @@ public class MainActivity extends Activity {
         caja.setBackground(Ui.degradado(this, 24));
         caja.addView(Ui.huella(this, c.huella(), 20));
         col.addView(caja, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 18, 0, 18));
+
+        if (c.acreditadoNombre != null) {
+            TextView acr = Ui.texto(this, "Acreditado por el Ayuntamiento como " + c.acreditadoNombre + " · hasta el " + c.acreditadoHastaVisible()
+                    + ". El Ayuntamiento firmó su invitación y esta misma clave la firmó a su vez.", 14, Ui.TEXTO_2, false);
+            col.addView(acr, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 14));
+        } else if (c.acreditacionTexto != null) {
+            TextView acr = Ui.texto(this, "⚠ Su clave traía una acreditación que no verifica (firma o fecha). No se muestra ningún nombre acreditado.", 14, Ui.AVISO, false);
+            col.addView(acr, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 14));
+        }
 
         if (c.claveFirma == null) {
             TextView antigua = Ui.texto(this, "⚠ Tienes su clave antigua de x39 0.2, sin firma. Puedes escribirle, pero sus mensajes llegarán como «remitente declarado». "
@@ -1879,7 +1986,10 @@ public class MainActivity extends Activity {
 
     /** Mi identidad para compartir: X39ID1 = clave de cifrado + clave de firma. */
     private String miIdentidad() {
-        return X39Core.identityToText(clavePublica, claveFirma);
+        String id = X39Core.identityToText(clavePublica, claveFirma);
+        String acr = miAcreditacion();
+        // La acreditación viaja con la clave: quien la pegue en Añadir contacto verá el nombre acreditado.
+        return acr == null ? id : id + "\n" + acr;
     }
 
     private String miHuella() {
