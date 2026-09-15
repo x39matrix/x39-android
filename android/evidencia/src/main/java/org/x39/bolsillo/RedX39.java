@@ -95,7 +95,7 @@ final class RedX39 {
             con.setUseCaches(false);
             con.setRequestMethod(metodo);
             con.setRequestProperty("Accept", "application/vnd.opentimestamps.v1");
-            con.setRequestProperty("User-Agent", "x39-evidencia/" + EvidenciaActivity.VERSION);
+            con.setRequestProperty("User-Agent", "x39/" + EvidenciaActivity.VERSION);
             if (cuerpo != null) {
                 con.setDoOutput(true);
                 con.setFixedLengthStreamingMode(cuerpo.length);

@@ -16,12 +16,31 @@ android {
         versionName '0.1.1'
     }
 
+    // Firma de publicación de X-39. Nada secreto en este fichero: scripts/build_evidencia_release.sh pide la
+    // contraseña sin eco y la pasa solo al proceso de Gradle. Sin X39_KEYSTORE sale un APK release sin firmar.
+    signingConfigs {
+        release {
+            def almacen = System.getenv('X39_KEYSTORE')
+            if (almacen) {
+                storeFile file(almacen)
+                storePassword System.getenv('X39_STORE_PASS')
+                keyAlias System.getenv('X39_KEY_ALIAS') ?: 'x39'
+                keyPassword System.getenv('X39_KEY_PASS') ?: System.getenv('X39_STORE_PASS')
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix '.debug'
         }
         release {
+            // Sin R8: no hay dependencias que recortar y los nativos JNI dependen de los nombres de X39Core.
             minifyEnabled false
+            debuggable false
+            if (System.getenv('X39_KEYSTORE')) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 

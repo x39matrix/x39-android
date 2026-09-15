@@ -1091,7 +1091,7 @@ public class EvidenciaActivity extends Activity {
             red.addView(t);
         }
 
-        TextView ver = Ui.texto(this, "x39 · Evidencia " + VERSION, 12, Ui.TENUE, false);
+        TextView ver = Ui.texto(this, "x39 " + VERSION, 12, Ui.TENUE, false);
         ver.setGravity(Gravity.CENTER);
         ver.setPadding(0, dp(18), 0, 0);
         col.addView(ver, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
