@@ -25,7 +25,8 @@ import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Cliente del buzón del Ayuntamiento (canister/buzon): el ÚNICO uso de internet de la app.
- * Sube cápsulas ya cifradas y firmadas y recoge las dirigidas a este móvil. Solo HTTPS, solo al
+ * Sube cápsulas ya cifradas y firmadas y recoge las dirigidas a este móvil; desde 0.10 también publica
+ * la entrada de este móvil en el directorio y busca las de otros por código corto. Solo HTTPS, solo al
  * dominio configurado, sin redirecciones, respuestas de 256 kB como máximo. Cada conexión queda en
  * el registro que enseña Seguridad. El buzón ve direcciones, tamaños y horas; nunca el contenido.
  */
@@ -38,6 +39,13 @@ final class Buzon {
     private static final int MAX_RESPUESTA = 256 * 1024;
     private static final int MAX_REGISTRO = 30;
     private static final ArrayDeque<String> REGISTRO = new ArrayDeque<>();
+
+    /** El directorio respondió, pero nadie ha publicado con ese código o dirección. */
+    static final class NoEstaEnDirectorio extends IOException {
+        NoEstaEnDirectorio() {
+            super("No hay nadie con ese código en el directorio. Pídele que abra x39 con el buzón activado: su clave se publica sola.");
+        }
+    }
 
     static final class Recibido {
         final long seq;
@@ -107,6 +115,38 @@ final class Buzon {
         if (!r.has("seq")) throw new IOException("el buzón no confirmó el mensaje");
     }
 
+    /**
+     * Publica en el directorio la entrada «X39DIR1:…» de este móvil (claves públicas + acreditación, firmada).
+     * El canister solo la guarda si verifica. Devuelve el código de contacto que confirma el buzón.
+     */
+    String publicar(String entrada) throws IOException {
+        JSONObject cuerpo = new JSONObject();
+        try {
+            cuerpo.put("entrada", entrada);
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        JSONObject r = pedir("POST", url() + "/publicar", cuerpo.toString().getBytes(StandardCharsets.UTF_8));
+        if (!r.has("codigo")) throw new IOException("el directorio no confirmó la publicación");
+        return r.optString("codigo");
+    }
+
+    /** Entrada del directorio de quien tiene ese código canónico (12 símbolos). IOException si no está. */
+    String buscarPorCodigo(String codigoCanonico) throws IOException {
+        return entradaDe(pedir("GET", url() + "/buscar?codigo=" + URLEncoder.encode(codigoCanonico, "UTF-8"), null));
+    }
+
+    /** Entrada del directorio de quien tiene esa dirección de buzón (o su prefijo de 16+ hex, el id de contacto). */
+    String buscarPorDireccion(String prefijoHex) throws IOException {
+        return entradaDe(pedir("GET", url() + "/buscar?dir=" + URLEncoder.encode(prefijoHex, "UTF-8"), null));
+    }
+
+    private static String entradaDe(JSONObject r) throws IOException {
+        String e = r.optString("entrada", "");
+        if (e.isEmpty()) throw new IOException("el directorio no devolvió ninguna entrada");
+        return e;
+    }
+
     /** Mensajes para `direccion` con seq > desde, en orden. */
     List<Recibido> recoger(String direccion, long desde) throws IOException {
         JSONObject r = pedir("GET", url() + "/recoger?para=" + URLEncoder.encode(direccion, "UTF-8") + "&desde=" + desde, null);
@@ -162,6 +202,7 @@ final class Buzon {
             } catch (Exception e) {
                 throw new IOException("respuesta del buzón no válida (HTTP " + codigo + ")");
             }
+            if (codigo == 404 && "no esta en el directorio".equals(r.optString("error"))) throw new NoEstaEnDirectorio();
             if (codigo != 200) throw new IOException("buzón: " + r.optString("error", "HTTP " + codigo));
             return r;
         } finally {

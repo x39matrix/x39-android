@@ -77,6 +77,23 @@ final class X39Core {
     /** Verifica una acreditación con la clave de la autoridad y la clave de firma del titular. Devuelve "caduca|nombre" o lanza. */
     static native String accreditationVerify(byte[] authorityKey, byte[] holderSigningKey, String text, String today);
 
+    // ---- Directorio: añadir contactos con un código corto (canister/buzon, /publicar y /buscar)
+
+    /** Código de contacto «XXXX-XXXX-XXXX» de una clave de firma ML-DSA-87 (60 bits de su SHA-256). */
+    static native String directoryCode(byte[] signingPublicKey);
+
+    /** Lo tecleado por una persona → código canónico de 12 símbolos. Lanza si no es un código. */
+    static native String directoryNormalizeCode(String text);
+
+    /** Entrada «X39DIR1:…» firmada con la semilla: claves públicas + acreditación (null o vacía si no hay). */
+    static native String directoryEntryCreate(byte[] seed, byte[] kemPublicKey, String accreditation);
+
+    /**
+     * Verifica una entrada del directorio (firma de la clave que lleva dentro y, si se da expectedCode, que el
+     * código coincida) y la devuelve como «X39ID1:… X39ACR1:…», listo para Almacen.leerTexto.
+     */
+    static native String directoryEntryRead(String text, String expectedCode);
+
     /** clave_pública(1568) || clave_secreta(3168). */
     static native byte[] generateKeypair();
 

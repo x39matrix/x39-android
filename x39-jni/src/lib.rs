@@ -7,6 +7,7 @@ use jni::EnvUnowned;
 use jni::errors::ThrowRuntimeExAndDefault;
 use jni::objects::{JByteArray, JClass, JString};
 use jni::sys::{jint, jlong};
+use x39_core::directorio;
 use x39_core::firma::{self, DSA_PK_LEN, DSA_SEED_LEN};
 use x39_core::invitacion;
 use x39_core::ots::Prueba;
@@ -483,6 +484,88 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_accreditationVerify<'c>(
             let titular = signing_public_key_from(env, &holder_signing_key)?;
             let inv = invitacion::verificar_acreditacion(&aut, &titular, &text.to_string(), &today.to_string())?;
             Ok(env.new_string(format!("{}|{}", inv.caduca, inv.nombre))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Código corto de contacto («XXXX-XXXX-XXXX») de una clave de firma ML-DSA-87.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_directoryCode<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    signing_public_key: JByteArray<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = signing_public_key_from(env, &signing_public_key)?;
+            Ok(env.new_string(directorio::codigo_visible(&directorio::codigo(&pk)))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Código tal como lo tecleó alguien → canónico (12 símbolos, sin guiones). Lanza si no es un código.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_directoryNormalizeCode<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    text: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let c = directorio::normalizar_codigo(&text.to_string())
+                .map_err(|_| PuenteError::Datos("El código son 12 letras o números, como XXXX-XXXX-XXXX."))?;
+            Ok(env.new_string(c)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Entrada del directorio «X39DIR1:…» firmada con la semilla del titular: sus claves y su acreditación (o vacía).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_directoryEntryCreate<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    seed: JByteArray<'c>,
+    kem_public_key: JByteArray<'c>,
+    accreditation: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let seed = seed_from(env, &seed)?;
+            let kem = public_key_from(env, &kem_public_key)?;
+            let acr = if accreditation.is_null() { String::new() } else { accreditation.to_string() };
+            let acr = acr.trim();
+            let entrada = directorio::publicar(&seed, &kem, (!acr.is_empty()).then_some(acr))?;
+            Ok(env.new_string(entrada)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Verifica una entrada del directorio y la devuelve como texto de contacto: «X39ID1:… X39ACR1:…»
+/// (lo mismo que se pega en Añadir contacto). Con `expectedCode` no vacío exige además que sea el de ese código.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_directoryEntryRead<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    text: JString<'c>,
+    expected_code: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let esperado = if expected_code.is_null() { String::new() } else { expected_code.to_string() };
+            let e = if esperado.is_empty() {
+                directorio::leer(&text.to_string())?
+            } else {
+                let canonico = directorio::normalizar_codigo(&esperado)
+                    .map_err(|_| PuenteError::Datos("El código son 12 letras o números, como XXXX-XXXX-XXXX."))?;
+                directorio::leer_para_codigo(&text.to_string(), &canonico)
+                    .map_err(|_| PuenteError::Datos("El directorio devolvió una clave que no corresponde a ese código."))?
+            };
+            let mut salida = share::encode_identity(&e.kem_pk, &e.dsa_pk);
+            if let Some(acr) = e.acreditacion {
+                salida.push(' ');
+                salida.push_str(&acr);
+            }
+            Ok(env.new_string(salida)?)
         })
         .resolve::<ThrowRuntimeExAndDefault>()
 }

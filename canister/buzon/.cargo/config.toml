@@ -1,0 +1,4 @@
+# El canister solo VERIFICA firmas (x39-core sin `rng`), pero crypto-common arrastra getrandom, que no
+# compila para wasm32-unknown-unknown sin decirle qué hacer: aquí se le dice que no hay aleatoriedad.
+[target.wasm32-unknown-unknown]
+rustflags = ["--cfg", "getrandom_backend=\"unsupported\""]

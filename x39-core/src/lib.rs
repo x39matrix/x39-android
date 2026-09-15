@@ -10,6 +10,7 @@
 //! El handshake y el ratchet de la app se construyen encima en fases posteriores.
 #![forbid(unsafe_code)]
 
+pub mod directorio;
 pub mod firma;
 pub mod invitacion;
 pub mod ots;
@@ -104,10 +105,17 @@ pub struct TtlPolicy {
     pub ttl: u64,
 }
 
+#[cfg(feature = "rng")]
 fn random<const N: usize>() -> Result<[u8; N], Error> {
     let mut b = [0u8; N];
     getrandom::fill(&mut b).map_err(|_| Error::Rng)?;
     Ok(b)
+}
+
+/// Compilado sin `rng` (canister): nada que necesite aleatoriedad funciona; verificar sí.
+#[cfg(not(feature = "rng"))]
+fn random<const N: usize>() -> Result<[u8; N], Error> {
+    Err(Error::Rng)
 }
 
 fn derive_key(shared: &[u8; 32]) -> Zeroizing<[u8; 32]> {

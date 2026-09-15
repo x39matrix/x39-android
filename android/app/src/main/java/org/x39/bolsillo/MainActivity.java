@@ -53,19 +53,27 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * x39 v0.6 · transparencia verificable y canal seguro para el Ayuntamiento.
+ * x39 v0.10 · transparencia verificable y canal seguro para el Ayuntamiento.
  * Ciudadanos: consultan plenos, distritos y organismos y comprueban documentos, sin clave ni cuenta.
  * Plenos tiene la misma estructura y los mismos colores que sevilla.x39matrix.org.
  * Personal: además, mensajes cifrados con ML-KEM-1024 y firmados con ML-DSA-87.
  * Internet solo para el buzón del Ayuntamiento (canister/buzon), por el que viajan las cápsulas ya cifradas;
  * sin buzón configurado, los mensajes se comparten a mano. Los PDF se abren en el navegador.
+ * Contactos con código corto (0.10): cada móvil publica en el directorio del buzón su entrada firmada
+ * (claves + acreditación) y los demás la piden por «XXXX-XXXX-XXXX»; quien escribe por primera vez se
+ * añade solo si está acreditado por el Ayuntamiento.
  */
 public class MainActivity extends Activity {
     private static final long TTL_SEGUNDOS = 7L * 24 * 3600;
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.9.2";
+    private static final String VERSION = "0.10.0";
+    /** Un código de contacto suelto dentro de un texto compartido («Mi código x39: XXXX-XXXX-XXXX»). */
+    private static final java.util.regex.Pattern CODIGO_EN_TEXTO =
+            java.util.regex.Pattern.compile("(?<![0-9A-Za-z-])[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}(?![0-9A-Za-z-])");
+    /** Entre dos intentos de publicar la entrada en el directorio cuando el buzón falla. */
+    private static final long REINTENTO_DIRECTORIO_MS = 60_000;
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -102,10 +110,17 @@ public class MainActivity extends Activity {
     private boolean sondeando;
     private boolean sincronizando;
     private String estadoBuzon = "Todavía no se ha consultado.";
+    /** Directorio: la entrada de este móvil (claves + acreditación) se publica al arrancar y al acreditarse. */
+    private boolean directorioPublicado;
+    private long ultimoIntentoDirectorio;
+    private String estadoDirectorio = "Todavía no publicado.";
+    /** Remitentes desconocidos que se están buscando en el directorio → cuerpos descifrados a la espera. */
+    private final java.util.Map<String, List<byte[]>> remitentesPendientes = new java.util.HashMap<>();
     private final Runnable sondeo = new Runnable() {
         @Override
         public void run() {
             if (!sondeando) return;
+            if (!directorioPublicado && System.currentTimeMillis() - ultimoIntentoDirectorio > REINTENTO_DIRECTORIO_MS) publicarEnDirectorio();
             sincronizarBuzon();
             // Con una conversación o Chats delante se pregunta más a menudo; el resto del tiempo, menos.
             boolean atento = pantallaSecundaria != null || pestana == Pestana.CHATS;
@@ -233,6 +248,8 @@ public class MainActivity extends Activity {
     private void iniciarSondeo() {
         if (sondeando || clavePublica == null || enBienvenida) return;
         sondeando = true;
+        // Al cambiar el buzón o activarlo, la entrada del directorio se publica en el buzón nuevo.
+        ultimoIntentoDirectorio = 0;
         sondeador.post(sondeo);
     }
 
@@ -361,7 +378,12 @@ public class MainActivity extends Activity {
     }
 
     private void abrirAgregar(String claveInicial) {
-        abrirSecundaria(() -> mostrar(pantallaAgregar(claveInicial), false));
+        abrirSecundaria(() -> mostrar(pantallaAgregar(claveInicial, ""), false));
+    }
+
+    /** Añadir contacto con un código ya conocido (compartido desde otra app): se busca al abrir. */
+    private void abrirAgregarPorCodigo(String codigo) {
+        abrirSecundaria(() -> mostrar(pantallaAgregar("", codigo), false));
     }
 
     private View barraNavegacion() {
@@ -776,6 +798,9 @@ public class MainActivity extends Activity {
             semilla = boveda.semillaFirma();
             String acr = X39Core.accreditationCreate(semilla, inv);
             prefs().edit().putString(PREF_ACREDITACION, acr).remove(PREF_INV_TEXTO).apply();
+            // Con la acreditación nueva, la entrada del directorio se vuelve a publicar (lleva el nombre).
+            directorioPublicado = false;
+            ultimoIntentoDirectorio = 0;
         } catch (Exception e) {
             aviso("No se pudo crear la acreditación: " + Ui.mensaje(e));
         } finally {
@@ -785,6 +810,181 @@ public class MainActivity extends Activity {
 
     private String miAcreditacion() {
         return prefs().getString(PREF_ACREDITACION, null);
+    }
+
+    /** Código de contacto de este móvil: 12 símbolos sacados de la clave de firma. */
+    private String miCodigo() {
+        return X39Core.directoryCode(claveFirma);
+    }
+
+    // ------------------------------------------------------------------ directorio (código corto)
+
+    /**
+     * Publica en el directorio del buzón la entrada de este móvil: claves públicas y acreditación, firmadas
+     * con la clave de firma. Así quien sepa el código puede añadir este contacto sin pegar nada.
+     */
+    private void publicarEnDirectorio() {
+        if (clavePublica == null || claveFirma == null || !buzon.activo()) return;
+        directorioPublicado = true;
+        ultimoIntentoDirectorio = System.currentTimeMillis();
+        String entrada;
+        byte[] semilla = null;
+        try {
+            semilla = boveda.semillaFirma();
+            entrada = X39Core.directoryEntryCreate(semilla, clavePublica, miAcreditacion());
+        } catch (Exception e) {
+            estadoDirectorio = "No se pudo preparar la entrada: " + Ui.mensaje(e);
+            return;
+        } finally {
+            if (semilla != null) Arrays.fill(semilla, (byte) 0);
+        }
+        final String e = entrada;
+        new Thread(() -> {
+            String codigo = null;
+            String fallo = null;
+            try {
+                codigo = buzon.publicar(e);
+            } catch (Exception ex) {
+                fallo = Ui.mensaje(ex);
+            }
+            final String c = codigo;
+            final String f = fallo;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (f != null) {
+                    directorioPublicado = false;
+                    estadoDirectorio = "Sin publicar (se reintenta): " + f;
+                } else {
+                    estadoDirectorio = "Publicado a las " + Ui.hora(System.currentTimeMillis()) + " · código " + c
+                            + (miAcreditacion() == null ? " · sin acreditación" : " · con acreditación");
+                }
+            });
+        }, "x39-directorio-publicar").start();
+    }
+
+    /** Busca en el directorio el código tecleado y deja la clave encontrada en `destino` (la pantalla la valida sola). */
+    private void buscarEnDirectorio(String tecleado, TextView estado, EditText destino) {
+        String canonico;
+        try {
+            canonico = X39Core.directoryNormalizeCode(tecleado);
+        } catch (RuntimeException e) {
+            estado.setTextColor(Ui.AVISO);
+            estado.setText("⚠ " + Ui.mensaje(e));
+            return;
+        }
+        if (canonico.equals(X39Core.directoryNormalizeCode(miCodigo()))) {
+            estado.setTextColor(Ui.AVISO);
+            estado.setText("⚠ Ese es tu propio código.");
+            return;
+        }
+        if (!buzon.activo()) {
+            estado.setTextColor(Ui.AVISO);
+            estado.setText("⚠ El buzón está desactivado en Seguridad; sin él no hay directorio. Puedes pegar su clave completa abajo.");
+            return;
+        }
+        estado.setTextColor(Ui.SUAVE);
+        estado.setText("Buscando en el directorio…");
+        new Thread(() -> {
+            String texto = null;
+            String fallo = null;
+            try {
+                // La entrada viene firmada por la clave que lleva dentro y el código tiene que salir de esa clave.
+                texto = X39Core.directoryEntryRead(buzon.buscarPorCodigo(canonico), canonico);
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            }
+            final String t = texto;
+            final String f = fallo;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed() || !estado.isAttachedToWindow()) return;
+                if (f != null) {
+                    estado.setTextColor(Ui.AVISO);
+                    estado.setText("⚠ " + f);
+                    return;
+                }
+                estado.setTextColor(Ui.SUAVE);
+                estado.setText("Encontrado en el directorio. Comprueba el nombre acreditado y guarda.");
+                destino.setText(t);
+            });
+        }, "x39-directorio-buscar").start();
+    }
+
+    private static boolean esIdDeContacto(String s) {
+        if (s.length() != 16) return false;
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.digit(s.charAt(i), 16) < 0) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Mensaje firmado de alguien que no está en los contactos: se busca su clave en el directorio por su
+     * identificador y se añade SOLO si la clave está acreditada por el Ayuntamiento y firmó el mensaje.
+     * Los cuerpos ya descifrados esperan aquí (la cápsula no se puede abrir dos veces por el anti-replay).
+     */
+    private void resolverRemitente(String de, byte[] cuerpo, boolean interactivo) {
+        List<byte[]> cola = remitentesPendientes.get(de);
+        if (cola != null) {
+            cola.add(cuerpo);
+            return;
+        }
+        cola = new ArrayList<>();
+        cola.add(cuerpo);
+        remitentesPendientes.put(de, cola);
+        estadoBuzon = "Mensaje de alguien nuevo: consultando el directorio…";
+        new Thread(() -> {
+            String texto = null;
+            String fallo = null;
+            try {
+                texto = X39Core.directoryEntryRead(buzon.buscarPorDireccion(de), "");
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            }
+            final String t = texto;
+            final String f = fallo;
+            runOnUiThread(() -> {
+                List<byte[]> cuerpos = remitentesPendientes.remove(de);
+                if (cuerpos == null || isFinishing() || isDestroyed()) return;
+                try {
+                    if (f != null) {
+                        rechazo(interactivo, "Descartado un mensaje de alguien que no está en tus contactos ni en el directorio: " + f);
+                        return;
+                    }
+                    Almacen.Contacto leido = Almacen.leerTexto(t);
+                    if (leido.claveFirma == null || !Almacen.idDeClave(leido.clave).equals(de)) {
+                        rechazo(interactivo, "Descartado un mensaje: el directorio devolvió una clave que no corresponde al remitente.");
+                        return;
+                    }
+                    acreditarContacto(leido);
+                    if (leido.acreditadoNombre == null) {
+                        rechazo(interactivo, "Descartado un mensaje de alguien sin acreditación del Ayuntamiento. Si le conoces, añádele con su código.");
+                        return;
+                    }
+                    // Antes de añadir a nadie: el mensaje tiene que estar firmado por esa clave y dirigido a mí.
+                    try {
+                        Arrays.fill(X39Core.verifySigned(leido.claveFirma, clavePublica, cuerpos.get(0)), (byte) 0);
+                    } catch (RuntimeException e) {
+                        rechazo(interactivo, "Descartado un mensaje: la firma no es de la clave que figura en el directorio.");
+                        return;
+                    }
+                    Almacen.Contacto c = almacen.agregar(leido.acreditadoNombre, t);
+                    acreditarContacto(c);
+                    Almacen.Contacto ultimo = null;
+                    for (byte[] b : cuerpos) {
+                        if (entregar(c, b, false) != null) ultimo = c;
+                    }
+                    almacen.guardar();
+                    Toast.makeText(this, "Nuevo contacto acreditado: " + c.nombre, Toast.LENGTH_LONG).show();
+                    estadoBuzon = "Añadido " + c.nombre + " desde el directorio (acreditación del Ayuntamiento comprobada).";
+                    refrescarTrasRecibir();
+                    if (interactivo && ultimo != null) abrirConversacion(ultimo);
+                } catch (Exception e) {
+                    rechazo(interactivo, Ui.mensaje(e));
+                } finally {
+                    for (byte[] b : cuerpos) Arrays.fill(b, (byte) 0);
+                }
+            });
+        }, "x39-directorio-remitente").start();
     }
 
     /** Comprueba la acreditación que vino con la clave del contacto: firma del Ayuntamiento y firma del propio contacto. */
@@ -1023,10 +1223,11 @@ public class MainActivity extends Activity {
         col.setPadding(Ui.dp(this, 20), Ui.dp(this, 28), Ui.dp(this, 20), 0);
         TextView t = Ui.texto(this, "Aún no tienes contactos", 16, Ui.TEXTO, true);
         col.addView(t);
-        TextView d = Ui.texto(this, "Comparte tu clave con alguien de confianza y añade la suya. Después comparad la huella de seguridad en persona.", 14, Ui.SUAVE, false);
+        TextView d = Ui.texto(this, "Pide su código de contacto (XXXX-XXXX-XXXX) y tecléalo en Añadir, o dale el tuyo: " + miCodigo()
+                + ". Después comparad la huella de seguridad en persona.", 14, Ui.SUAVE, false);
         d.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 16));
         col.addView(d);
-        col.addView(Ui.boton(this, "Compartir mi clave", true, v -> compartir(miIdentidad(), "Compartir mi clave x39")));
+        col.addView(Ui.boton(this, "Compartir mi código", true, v -> compartir("Mi código de contacto en x39: " + miCodigo(), "Compartir mi código x39")));
         View esp = new View(this);
         col.addView(esp, new LinearLayout.LayoutParams(1, Ui.dp(this, 10)));
         col.addView(Ui.boton(this, "Añadir un contacto", false, v -> abrirAgregar("")));
@@ -1187,14 +1388,26 @@ public class MainActivity extends Activity {
         col.addView(Ui.texto(this, "Contactos", 24, Ui.TEXTO, true));
 
         LinearLayout mia = tarjeta(col, "Mi clave");
+        // Lo primero: el código corto. Quien lo teclee en Añadir contacto recibe la clave y la acreditación del directorio.
+        mia.addView(Ui.texto(this, "Tu código de contacto", 13, Ui.SUAVE, false));
+        TextView codigo = Ui.mono(this, miCodigo(), 26, Ui.TEXTO);
+        codigo.setLetterSpacing(0.06f);
+        codigo.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 6));
+        codigo.setOnClickListener(v -> copiar("Código x39", miCodigo(), false));
+        Ui.clicable(codigo);
+        mia.addView(codigo);
+        mia.addView(Ui.texto(this, "Dáselo a quien quiera añadirte: le basta con teclearlo en Añadir contacto. "
+                + (buzon.activo() ? "Tu clave y tu acreditación están en el directorio del buzón." : "Con el buzón desactivado no hay directorio: comparte la clave completa."), 13, Ui.SUAVE, false));
+        mia.addView(Ui.boton(this, "Compartir mi código", true, v -> compartir("Mi código de contacto en x39: " + miCodigo(), "Compartir mi código x39")),
+                Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 18));
         mia.addView(Ui.texto(this, "Tu huella de seguridad. Tus contactos deben ver estos mismos 60 dígitos.", 13, Ui.SUAVE, false));
         View huella = Ui.huella(this, miHuella(), 17);
         huella.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
         mia.addView(huella);
         LinearLayout botones = Ui.fila(this);
-        TextView compartir = Ui.boton(this, "Compartir", true, v -> compartir(miIdentidad(), "Compartir mi clave x39"));
+        TextView compartir = Ui.boton(this, "Compartir clave", false, v -> compartir(miIdentidad(), "Compartir mi clave x39"));
         botones.addView(compartir, Ui.peso(1));
-        TextView copiar = Ui.boton(this, "Copiar", false, v -> copiar("Clave x39", miIdentidad(), false));
+        TextView copiar = Ui.boton(this, "Copiar clave", false, v -> copiar("Clave x39", miIdentidad(), false));
         LinearLayout.LayoutParams lpc = Ui.peso(1);
         lpc.setMargins(Ui.dp(this, 10), 0, 0, 0);
         botones.addView(copiar, lpc);
@@ -1247,22 +1460,41 @@ public class MainActivity extends Activity {
         return sv;
     }
 
-    private View pantallaAgregar(String claveInicial) {
+    private View pantallaAgregar(String claveInicial, String codigoInicial) {
         LinearLayout raizCol = Ui.columna(this);
         raizCol.addView(cabeceraSecundaria("Añadir contacto", () -> mostrarPestana(pestana)));
         ScrollView sv = new ScrollView(this);
         LinearLayout col = Ui.columna(this);
         col.setPadding(Ui.dp(this, 16), Ui.dp(this, 8), Ui.dp(this, 16), Ui.dp(this, 24));
 
-        col.addView(Ui.texto(this, "Nombre", 13, Ui.SUAVE, true));
+        // Los tres campos se crean antes de colocarlos: el botón de buscar necesita el código, el estado y la clave.
+        EditText codigo = Ui.campo(this, "XXXX-XXXX-XXXX", 1, false);
+        codigo.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+                | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        codigo.setTypeface(android.graphics.Typeface.MONOSPACE);
+        codigo.setTextSize(18);
+        codigo.setSingleLine(true);
+        if (!TextUtils.isEmpty(codigoInicial)) codigo.setText(codigoInicial);
+        TextView estadoCodigo = Ui.texto(this, "Lo ve en x39 › Contactos › Mi clave. Con él no hay que pegar nada.", 13, Ui.SUAVE, false);
         EditText nombre = Ui.campo(this, "Cómo quieres llamarle", 1, false);
-        col.addView(nombre, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 16));
-
-        col.addView(Ui.texto(this, "Su clave (X39ID1)", 13, Ui.SUAVE, true));
-        EditText clave = Ui.campo(this, "Pega aquí la clave que te ha compartido", 4, true);
+        EditText clave = Ui.campo(this, "Se rellena sola al buscar el código; también puedes pegarla", 3, true);
         clave.setTextSize(13);
         if (!TextUtils.isEmpty(claveInicial)) clave.setText(claveInicial);
+        Runnable buscar = () -> buscarEnDirectorio(codigo.getText().toString(), estadoCodigo, clave);
+
+        // Camino corto: su código de 12 símbolos → el directorio devuelve su clave y su acreditación.
+        col.addView(Ui.texto(this, "Su código de contacto", 13, Ui.SUAVE, true));
+        col.addView(codigo, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 8));
+        col.addView(Ui.boton(this, "Buscar en el directorio", true, v -> buscar.run()),
+                Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 8));
+        col.addView(estadoCodigo);
+
+        col.addView(Ui.texto(this, "Nombre", 13, Ui.SUAVE, true), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 16, 0, 0));
+        col.addView(nombre, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 16));
+
+        col.addView(Ui.texto(this, "O su clave completa (X39ID1)", 13, Ui.SUAVE, true));
         col.addView(clave, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 8));
+        if (!TextUtils.isEmpty(codigoInicial)) codigo.post(buscar);
 
         TextView estado = Ui.texto(this, "", 13, Ui.SUAVE, false);
         col.addView(estado);
@@ -1305,6 +1537,8 @@ public class MainActivity extends Activity {
                 if (leido.acreditacionTexto != null) {
                     acreditarContacto(leido);
                     boolean ok = leido.acreditadoNombre != null;
+                    // El nombre acreditado sirve de nombre del contacto si no se ha escrito otro.
+                    if (ok && nombre.getText().toString().trim().isEmpty()) nombre.setText(leido.acreditadoNombre);
                     huellaCaja.addView(Ui.texto(this, ok
                             ? "Acreditado por el Ayuntamiento como " + leido.acreditadoNombre + " · hasta el " + leido.acreditadoHastaVisible()
                             : "⚠ Trae una acreditación que no verifica (firma o fecha).", 13, ok ? Ui.SUAVE : Ui.AVISO, false));
@@ -1887,7 +2121,10 @@ public class MainActivity extends Activity {
         bz.addView(Ui.boton(this, "Guardar dirección del buzón", false, v -> {
             try {
                 String u = Buzon.validarUrl(urlCampo.getText().toString());
-                if (!u.equals(buzon.url())) prefs().edit().putString(Buzon.PREF_URL, u).putLong(Buzon.PREF_DESDE, 0).apply();
+                if (!u.equals(buzon.url())) {
+                    prefs().edit().putString(Buzon.PREF_URL, u).putLong(Buzon.PREF_DESDE, 0).apply();
+                    directorioPublicado = false;
+                }
                 Toast.makeText(this, "Buzón guardado", Toast.LENGTH_SHORT).show();
                 iniciarSondeo();
                 mostrarPestana(Pestana.SEGURIDAD);
@@ -1902,6 +2139,15 @@ public class MainActivity extends Activity {
             TextView dir = Ui.mono(this, "Tu dirección de buzón: " + Buzon.direccion(clavePublica).substring(0, 16) + "…", 12, Ui.TENUE);
             dir.setPadding(0, Ui.dp(this, 6), 0, 0);
             bz.addView(dir);
+            TextView cod = Ui.mono(this, "Tu código de contacto: " + miCodigo(), 12, Ui.TENUE);
+            cod.setPadding(0, Ui.dp(this, 4), 0, 0);
+            bz.addView(cod);
+            TextView dirEst = Ui.texto(this, "Directorio: " + estadoDirectorio, 13, Ui.SUAVE, false);
+            dirEst.setPadding(0, Ui.dp(this, 6), 0, 0);
+            bz.addView(dirEst);
+            bz.addView(Ui.texto(this, "El directorio guarda tu clave pública y tu acreditación (nombre y fecha) para quien sepa tu código. "
+                    + "Quien te escriba por primera vez se añade solo si su clave está en el directorio, acreditada por el Ayuntamiento y firmó el mensaje.",
+                    12, Ui.TENUE, false), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 0));
         }
         List<String> registro = Buzon.registro();
         if (!registro.isEmpty()) {
@@ -2131,6 +2377,14 @@ public class MainActivity extends Activity {
             pedirInvitacion(clavePublica != null);
             return;
         }
+        if (!s.startsWith("X39")) {
+            // «Mi código de contacto en x39: XXXX-XXXX-XXXX» compartido desde otra app.
+            java.util.regex.Matcher m = CODIGO_EN_TEXTO.matcher(s);
+            if (m.find()) {
+                abrirAgregarPorCodigo(m.group());
+                return;
+            }
+        }
         if (!s.startsWith("X39MSG1:")) {
             aviso("Ese texto no es un mensaje ni una clave de x39.");
             return;
@@ -2160,8 +2414,14 @@ public class MainActivity extends Activity {
             boolean firmado = X39Core.estaFirmado(cuerpo);
             // Solo sirve para saber quién DICE enviarlo; lo que se guarda sale de la carga verificada.
             JSONObject declarado = Carga.leer(firmado ? X39Core.unverifiedPayload(cuerpo) : cuerpo);
-            Almacen.Contacto c = almacen.porId(declarado.optString("de", ""));
+            String de = declarado.optString("de", "");
+            Almacen.Contacto c = almacen.porId(de);
             if (c == null) {
+                if (firmado && buzon.activo() && esIdDeContacto(de)) {
+                    // Alguien nuevo: su clave se busca en el directorio y solo entra si está acreditado.
+                    resolverRemitente(de, cuerpo.clone(), interactivo);
+                    return null;
+                }
                 if (interactivo) {
                     new AlertDialog.Builder(this)
                             .setTitle("Mensaje de alguien que no está en tus contactos")
@@ -2173,27 +2433,7 @@ public class MainActivity extends Activity {
                 }
                 return null;
             }
-            String contenido = declarado.optString("t", "");
-            boolean firmaVerificada = false;
-            if (c.claveFirma != null) {
-                if (!firmado) {
-                    rechazo(interactivo, "Mensaje descartado: dice venir de " + c.nombre + ", pero no lleva firma y su clave sí firma. Podría ser una suplantación.");
-                    return null;
-                }
-                byte[] cargaVerificada;
-                try {
-                    cargaVerificada = X39Core.verifySigned(c.claveFirma, clavePublica, cuerpo);
-                } catch (RuntimeException e) {
-                    rechazo(interactivo, "Mensaje descartado: la firma no es de " + c.nombre + " o el mensaje se ha manipulado.");
-                    return null;
-                }
-                contenido = Carga.leer(cargaVerificada).optString("t", "");
-                Arrays.fill(cargaVerificada, (byte) 0);
-                firmaVerificada = true;
-            }
-            c.mensajes.add(new Almacen.Mensaje(false, contenido, System.currentTimeMillis(), !firmaVerificada));
-            almacen.guardar();
-            return c;
+            return entregar(c, cuerpo, interactivo);
         } catch (Exception e) {
             rechazo(interactivo, Ui.mensaje(e));
             return null;
@@ -2202,6 +2442,33 @@ public class MainActivity extends Activity {
             if (salida != null) Arrays.fill(salida, (byte) 0);
             if (cuerpo != null) Arrays.fill(cuerpo, (byte) 0);
         }
+    }
+
+    /** Segunda mitad de abrirCapsula: con el remitente ya identificado, comprueba su firma y guarda el mensaje. */
+    private Almacen.Contacto entregar(Almacen.Contacto c, byte[] cuerpo, boolean interactivo) throws Exception {
+        boolean firmado = X39Core.estaFirmado(cuerpo);
+        JSONObject declarado = Carga.leer(firmado ? X39Core.unverifiedPayload(cuerpo) : cuerpo);
+        String contenido = declarado.optString("t", "");
+        boolean firmaVerificada = false;
+        if (c.claveFirma != null) {
+            if (!firmado) {
+                rechazo(interactivo, "Mensaje descartado: dice venir de " + c.nombre + ", pero no lleva firma y su clave sí firma. Podría ser una suplantación.");
+                return null;
+            }
+            byte[] cargaVerificada;
+            try {
+                cargaVerificada = X39Core.verifySigned(c.claveFirma, clavePublica, cuerpo);
+            } catch (RuntimeException e) {
+                rechazo(interactivo, "Mensaje descartado: la firma no es de " + c.nombre + " o el mensaje se ha manipulado.");
+                return null;
+            }
+            contenido = Carga.leer(cargaVerificada).optString("t", "");
+            Arrays.fill(cargaVerificada, (byte) 0);
+            firmaVerificada = true;
+        }
+        c.mensajes.add(new Almacen.Mensaje(false, contenido, System.currentTimeMillis(), !firmaVerificada));
+        almacen.guardar();
+        return c;
     }
 
     private void rechazo(boolean interactivo, String motivo) {

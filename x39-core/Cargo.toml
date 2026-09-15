@@ -3,9 +3,15 @@ name = "x39-core"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["rng"]
+# Sin `rng` no hay generador aleatorio: solo verificar y leer formatos. Así compila en el canister
+# (wasm32-unknown-unknown), que solo necesita comprobar firmas.
+rng = ["dep:getrandom"]
+
 [dependencies]
 aes-gcm = "0.11.1"
-getrandom = "0.4.3"
+getrandom = { version = "0.4.3", optional = true }
 hkdf = "0.13.0"
 hmac = "0.13.0"
 libcrux-ml-kem = "0.0.10"
