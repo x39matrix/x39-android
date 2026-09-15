@@ -1,0 +1,22 @@
+{
+  "canisters": {
+    "buzon": {
+      "type": "rust",
+      "package": "x39_buzon",
+      "candid": "src/buzon.did"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "ic": {
+      "providers": ["https://ic0.app"],
+      "type": "persistent"
+    }
+  },
+  "version": 1
+}

@@ -37,6 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,14 +57,15 @@ import java.util.Locale;
  * Ciudadanos: consultan plenos, distritos y organismos y comprueban documentos, sin clave ni cuenta.
  * Plenos tiene la misma estructura y los mismos colores que sevilla.x39matrix.org.
  * Personal: además, mensajes cifrados con ML-KEM-1024 y firmados con ML-DSA-87.
- * Sin permiso de internet: los PDF se abren en el navegador y los mensajes se comparten a mano.
+ * Internet solo para el buzón del Ayuntamiento (canister/buzon), por el que viajan las cápsulas ya cifradas;
+ * sin buzón configurado, los mensajes se comparten a mano. Los PDF se abren en el navegador.
  */
 public class MainActivity extends Activity {
     private static final long TTL_SEGUNDOS = 7L * 24 * 3600;
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.7.1";
+    private static final String VERSION = "0.8.0";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -94,6 +96,21 @@ public class MainActivity extends Activity {
     private long ultimaSalida;
     private String pendienteCompartido;
 
+    private Buzon buzon;
+    /** Sondeo del buzón cada pocos segundos mientras la app está delante y desbloqueada. */
+    private final android.os.Handler sondeador = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean sondeando;
+    private boolean sincronizando;
+    private String estadoBuzon = "Todavía no se ha consultado.";
+    private final Runnable sondeo = new Runnable() {
+        @Override
+        public void run() {
+            if (!sondeando) return;
+            sincronizarBuzon();
+            sondeador.postDelayed(this, 8_000);
+        }
+    };
+
     // ------------------------------------------------------------------ ciclo de vida
 
     @Override
@@ -112,6 +129,7 @@ public class MainActivity extends Activity {
 
         boveda = new Boveda(this);
         almacen = new Almacen(this, boveda);
+        buzon = new Buzon(this);
         try {
             if (boveda.tieneClaves()) {
                 cargarIdentidad();
@@ -206,6 +224,14 @@ public class MainActivity extends Activity {
     protected void onStop() {
         super.onStop();
         if (!esperandoDesbloqueo) ultimaSalida = System.currentTimeMillis();
+        sondeando = false;
+        sondeador.removeCallbacks(sondeo);
+    }
+
+    private void iniciarSondeo() {
+        if (sondeando || clavePublica == null || enBienvenida) return;
+        sondeando = true;
+        sondeador.post(sondeo);
     }
 
     @Override
@@ -252,6 +278,7 @@ public class MainActivity extends Activity {
         if (pantallaSecundaria != null) pantallaSecundaria.run();
         else mostrarPestana(pestana);
         procesarPendiente();
+        iniciarSondeo();
     }
 
     private void mostrar(View contenido, boolean conNavegacion) {
@@ -402,7 +429,7 @@ public class MainActivity extends Activity {
 
         col.addView(puntoBienvenida(Icono.Tipo.ACTAS, "Plenos y distritos", "Consulta las actas publicadas y comprueba que no se han alterado."));
         col.addView(puntoBienvenida(Icono.Tipo.CANDADO, "Canal seguro del personal", "Mensajes cifrados y firmados con estándares poscuánticos del NIST."));
-        col.addView(puntoBienvenida(Icono.Tipo.ESCUDO_OK, "Nada sale de la app", "Sin cuentas, sin internet y sin capturas de pantalla."));
+        col.addView(puntoBienvenida(Icono.Tipo.ESCUDO_OK, "Sin cuentas ni Google", "Internet solo para el buzón del Ayuntamiento; sin capturas de pantalla."));
 
         if (!movilConBloqueo()) {
             LinearLayout av = Ui.columna(this);
@@ -897,7 +924,7 @@ public class MainActivity extends Activity {
         LinearLayout textos = Ui.columna(this);
         textos.setPadding(Ui.dp(this, 12), 0, 0, 0);
         textos.addView(Ui.texto(this, "Protección activa", 14, Ui.TEXTO, true));
-        textos.addView(Ui.texto(this, "Cifrado y firmado poscuántico · sin internet", 12, Ui.SUAVE, false));
+        textos.addView(Ui.texto(this, "Cifrado y firmado poscuántico · por el buzón del Ayuntamiento", 12, Ui.SUAVE, false));
         f.addView(textos, Ui.peso(1));
         f.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.TENUE, 18));
         f.setOnClickListener(v -> mostrarPestana(Pestana.SEGURIDAD));
@@ -996,7 +1023,9 @@ public class MainActivity extends Activity {
         LinearLayout hilo = Ui.columna(this);
         hilo.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
 
-        TextView aviso = Ui.texto(this, "Cifrado ML-KEM-1024 y firmado ML-DSA-87 en este móvil. Envías compartiendo el texto cifrado por la app que elijas; recibes abriéndolo aquí.", 12, Ui.SUAVE, false);
+        TextView aviso = Ui.texto(this, buzon.activo()
+                ? "Cifrado ML-KEM-1024 y firmado ML-DSA-87 en este móvil. Viaja por el buzón del Ayuntamiento, que no puede leerlo."
+                : "Cifrado ML-KEM-1024 y firmado ML-DSA-87 en este móvil. Sin buzón configurado: envías compartiendo el texto cifrado y recibes abriéndolo aquí.", 12, Ui.SUAVE, false);
         aviso.setGravity(Gravity.CENTER);
         aviso.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 8));
         aviso.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 14));
@@ -1711,7 +1740,7 @@ public class MainActivity extends Activity {
         filaEstado(lista, "Claves en hardware", hw, !"Software".equals(hw) && !"Desconocido".equals(hw));
         filaEstado(lista, "Capturas de pantalla", "Bloqueadas", true);
         filaEstado(lista, "Copiar o reenviar mensajes", "No disponible", true);
-        filaEstado(lista, "Acceso a internet", internet ? "Permitido" : "Sin permiso", !internet);
+        filaEstado(lista, "Acceso a internet", !internet ? "Sin permiso" : (buzon.activo() ? "Solo al buzón del Ayuntamiento" : "Permitido · buzón sin configurar"), true);
         filaEstado(lista, "Servicios de Google", "Ninguno", true);
         filaEstado(lista, "Copias en la nube", copias ? "Activadas" : "Desactivadas", !copias);
         filaEstado(lista, "Bloqueo al abrir", bloqueo ? "Bloqueo del móvil" : "Sin bloqueo de pantalla", bloqueo);
@@ -1719,6 +1748,52 @@ public class MainActivity extends Activity {
 
         LinearLayout huella = tarjeta(col, "Tu huella de seguridad");
         huella.addView(Ui.huella(this, miHuella(), 17));
+
+        LinearLayout bz = tarjeta(col, "Buzón del Ayuntamiento");
+        bz.addView(Ui.texto(this, "Los mensajes viajan cifrados y firmados por un buzón en un canister del Ayuntamiento. "
+                + "El buzón no puede leerlos; sí ve a qué dirección van, su tamaño y cuándo.", 13, Ui.TEXTO_2, false));
+        LinearLayout filaSw = Ui.fila(this);
+        filaSw.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 4));
+        filaSw.addView(Ui.texto(this, "Usar el buzón", 15, Ui.TEXTO, true), Ui.peso(1));
+        Switch sw = new Switch(this);
+        sw.setChecked(prefs().getBoolean(Buzon.PREF_ACTIVO, true));
+        sw.setContentDescription("Usar el buzón");
+        sw.setOnCheckedChangeListener((b, activo) -> {
+            prefs().edit().putBoolean(Buzon.PREF_ACTIVO, activo).apply();
+            if (activo) iniciarSondeo();
+        });
+        filaSw.addView(sw);
+        bz.addView(filaSw);
+        EditText urlCampo = Ui.campo(this, "https://xxxxx-xxxxx-xxxxx-xxxxx-cai.raw.icp0.io", 1, false);
+        urlCampo.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        urlCampo.setText(buzon.url());
+        bz.addView(urlCampo, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 0));
+        bz.addView(Ui.boton(this, "Guardar dirección del buzón", false, v -> {
+            try {
+                String u = Buzon.validarUrl(urlCampo.getText().toString());
+                if (!u.equals(buzon.url())) prefs().edit().putString(Buzon.PREF_URL, u).putLong(Buzon.PREF_DESDE, 0).apply();
+                Toast.makeText(this, "Buzón guardado", Toast.LENGTH_SHORT).show();
+                iniciarSondeo();
+                mostrarPestana(Pestana.SEGURIDAD);
+            } catch (IllegalArgumentException e) {
+                aviso(e.getMessage());
+            }
+        }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
+        TextView est = Ui.texto(this, estadoBuzon, 13, Ui.SUAVE, false);
+        est.setPadding(0, Ui.dp(this, 10), 0, 0);
+        bz.addView(est);
+        if (clavePublica != null) {
+            TextView dir = Ui.mono(this, "Tu dirección de buzón: " + Buzon.direccion(clavePublica).substring(0, 16) + "…", 12, Ui.TENUE);
+            dir.setPadding(0, Ui.dp(this, 6), 0, 0);
+            bz.addView(dir);
+        }
+        List<String> registro = Buzon.registro();
+        if (!registro.isEmpty()) {
+            TextView rt = Ui.texto(this, "Últimas conexiones", 13, Ui.SUAVE, true);
+            rt.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 2));
+            bz.addView(rt);
+            for (String l : registro) bz.addView(Ui.mono(this, l, 11, Ui.TEXTO_2));
+        }
 
         LinearLayout aviso = Ui.columna(this);
         aviso.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
@@ -1735,7 +1810,8 @@ public class MainActivity extends Activity {
         aviso.addView(avTit);
         TextView avD = Ui.texto(this,
                 "Aún no hay forward secrecy: si alguien robara tu clave secreta, podría leer los mensajes cifrados antiguos que hubiera guardado. "
-                        + "Tampoco hay relé automático ni auditoría externa del protocolo. "
+                        + "El buzón ve quién escribe a quién y cuándo (no el contenido) y aún no exige invitación para dejar mensajes. "
+                        + "Tampoco hay auditoría externa del protocolo. "
                         + "Los contactos con clave antigua sin firma no pueden probar que sus mensajes son suyos.", 13, Ui.TEXTO_2, false);
         avD.setPadding(0, Ui.dp(this, 6), 0, 0);
         aviso.addView(avD);
@@ -1813,21 +1889,92 @@ public class MainActivity extends Activity {
         if (texto.isEmpty()) return;
         byte[] carga = null;
         byte[] semilla = null;
+        String cifrada = null;
         try {
             long ahoraMs = System.currentTimeMillis();
             carga = Carga.crear(miId, texto, ahoraMs);
             semilla = boveda.semillaFirma();
-            String capsula = X39Core.sealSigned(c.clave, semilla, carga, ahoraMs / 1000L);
+            cifrada = X39Core.sealSigned(c.clave, semilla, carga, ahoraMs / 1000L);
             c.mensajes.add(new Almacen.Mensaje(true, texto, ahoraMs, false));
             almacen.guardar();
             et.setText("");
-            compartir(capsula, "Enviar mensaje cifrado a " + c.nombre);
         } catch (Exception e) {
             aviso(Ui.mensaje(e));
+            return;
         } finally {
             if (carga != null) Arrays.fill(carga, (byte) 0);
             if (semilla != null) Arrays.fill(semilla, (byte) 0);
         }
+        final String capsula = cifrada;
+        final String nombre = c.nombre;
+        abrirConversacion(c);
+        if (!buzon.activo()) {
+            // Sin buzón configurado: como en las versiones anteriores, el texto cifrado se comparte a mano.
+            compartir(capsula, "Enviar mensaje cifrado a " + nombre);
+            return;
+        }
+        // Por el buzón: la cápsula ya va cifrada y firmada; el buzón solo ve la dirección de destino.
+        final String para = Buzon.direccion(c.clave);
+        new Thread(() -> {
+            String fallo = null;
+            try {
+                buzon.poner(para, capsula);
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            }
+            final String error = fallo;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (error == null) {
+                    Toast.makeText(this, "Enviado por el buzón", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                estadoBuzon = "Error al enviar: " + error;
+                new AlertDialog.Builder(this)
+                        .setTitle("El buzón no responde")
+                        .setMessage(error + "\n\nPuedes enviar el mensaje cifrado por otra app.")
+                        .setNegativeButton("Ahora no", null)
+                        .setPositiveButton("Compartir", (d, w) -> compartir(capsula, "Enviar mensaje cifrado a " + nombre))
+                        .show();
+            });
+        }, "x39-buzon-enviar").start();
+    }
+
+    /** Recoge del buzón lo dirigido a este móvil y lo abre en silencio. */
+    private void sincronizarBuzon() {
+        if (clavePublica == null || sincronizando || !buzon.activo()) return;
+        sincronizando = true;
+        final String miDireccion = Buzon.direccion(clavePublica);
+        final long desde = buzon.desde();
+        new Thread(() -> {
+            List<Buzon.Recibido> lote;
+            try {
+                lote = buzon.recoger(miDireccion, desde);
+            } catch (Exception e) {
+                final String err = Ui.mensaje(e);
+                runOnUiThread(() -> {
+                    sincronizando = false;
+                    estadoBuzon = "Sin conexión con el buzón: " + err;
+                });
+                return;
+            }
+            runOnUiThread(() -> {
+                sincronizando = false;
+                if (isFinishing() || isDestroyed()) return;
+                boolean nuevos = false;
+                for (Buzon.Recibido r : lote) {
+                    if (abrirCapsula(r.msg, false) != null) nuevos = true;
+                    buzon.guardarDesde(Math.max(buzon.desde(), r.seq));
+                }
+                estadoBuzon = "Buzón consultado a las " + Ui.hora(System.currentTimeMillis()) + (lote.isEmpty() ? "" : " · " + lote.size() + " recibidos");
+                if (nuevos) refrescarTrasRecibir();
+            });
+        }, "x39-buzon-recoger").start();
+    }
+
+    private void refrescarTrasRecibir() {
+        if (pantallaSecundaria != null) pantallaSecundaria.run();
+        else if (pestana == Pestana.CHATS || pestana == Pestana.INICIO) mostrarPestana(pestana);
     }
 
     private void guardarCompartido(Intent intent) {
@@ -1863,6 +2010,16 @@ public class MainActivity extends Activity {
             aviso("Ese texto no es un mensaje ni una clave de x39.");
             return;
         }
+        Almacen.Contacto c = abrirCapsula(s, true);
+        if (c != null) abrirConversacion(c);
+    }
+
+    /**
+     * Descifra una cápsula, comprueba la firma del remitente y guarda el mensaje en su conversación.
+     * Devuelve el contacto, o null si se descartó. Con {@code interactivo} explica cada rechazo con un aviso;
+     * en silencio (buzón) solo lo anota en el estado del buzón.
+     */
+    private Almacen.Contacto abrirCapsula(String s, boolean interactivo) {
         byte[] sk = null;
         byte[] salida = null;
         byte[] cuerpo = null;
@@ -1871,8 +2028,8 @@ public class MainActivity extends Activity {
             salida = X39Core.open(sk, s, System.currentTimeMillis() / 1000L, TTL_SEGUNDOS);
             byte[] cid = Arrays.copyOfRange(salida, 0, X39Core.CID_LEN);
             if (!boveda.registrarApertura(cid)) {
-                aviso("Este mensaje ya se abrió una vez. Por seguridad no se vuelve a mostrar.");
-                return;
+                rechazo(interactivo, "Este mensaje ya se abrió una vez. Por seguridad no se vuelve a mostrar.");
+                return null;
             }
             cuerpo = Arrays.copyOfRange(salida, X39Core.CID_LEN, salida.length);
             boolean firmado = X39Core.estaFirmado(cuerpo);
@@ -1880,26 +2037,30 @@ public class MainActivity extends Activity {
             JSONObject declarado = Carga.leer(firmado ? X39Core.unverifiedPayload(cuerpo) : cuerpo);
             Almacen.Contacto c = almacen.porId(declarado.optString("de", ""));
             if (c == null) {
-                new AlertDialog.Builder(this)
-                        .setTitle("Mensaje de alguien que no está en tus contactos")
-                        .setMessage(declarado.optString("t", "") + "\n\nNo se puede comprobar quién lo envía. Añade a esa persona con su clave para guardar la conversación.")
-                        .setPositiveButton("Entendido", null)
-                        .show();
-                return;
+                if (interactivo) {
+                    new AlertDialog.Builder(this)
+                            .setTitle("Mensaje de alguien que no está en tus contactos")
+                            .setMessage(declarado.optString("t", "") + "\n\nNo se puede comprobar quién lo envía. Añade a esa persona con su clave para guardar la conversación.")
+                            .setPositiveButton("Entendido", null)
+                            .show();
+                } else {
+                    estadoBuzon = "Descartado un mensaje de alguien que no está en tus contactos.";
+                }
+                return null;
             }
             String contenido = declarado.optString("t", "");
             boolean firmaVerificada = false;
             if (c.claveFirma != null) {
                 if (!firmado) {
-                    aviso("Mensaje descartado: dice venir de " + c.nombre + ", pero no lleva firma y su clave sí firma. Podría ser una suplantación.");
-                    return;
+                    rechazo(interactivo, "Mensaje descartado: dice venir de " + c.nombre + ", pero no lleva firma y su clave sí firma. Podría ser una suplantación.");
+                    return null;
                 }
                 byte[] cargaVerificada;
                 try {
                     cargaVerificada = X39Core.verifySigned(c.claveFirma, clavePublica, cuerpo);
                 } catch (RuntimeException e) {
-                    aviso("Mensaje descartado: la firma no es de " + c.nombre + " o el mensaje se ha manipulado.");
-                    return;
+                    rechazo(interactivo, "Mensaje descartado: la firma no es de " + c.nombre + " o el mensaje se ha manipulado.");
+                    return null;
                 }
                 contenido = Carga.leer(cargaVerificada).optString("t", "");
                 Arrays.fill(cargaVerificada, (byte) 0);
@@ -1907,14 +2068,20 @@ public class MainActivity extends Activity {
             }
             c.mensajes.add(new Almacen.Mensaje(false, contenido, System.currentTimeMillis(), !firmaVerificada));
             almacen.guardar();
-            abrirConversacion(c);
+            return c;
         } catch (Exception e) {
-            aviso(Ui.mensaje(e));
+            rechazo(interactivo, Ui.mensaje(e));
+            return null;
         } finally {
             if (sk != null) Arrays.fill(sk, (byte) 0);
             if (salida != null) Arrays.fill(salida, (byte) 0);
             if (cuerpo != null) Arrays.fill(cuerpo, (byte) 0);
         }
+    }
+
+    private void rechazo(boolean interactivo, String motivo) {
+        if (interactivo) aviso(motivo);
+        else estadoBuzon = motivo;
     }
 
     private void confirmarEliminar(Almacen.Contacto c) {

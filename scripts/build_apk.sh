@@ -29,8 +29,11 @@ sha256sum "$APK"
 
 echo "### 3. Comprobaciones de privacidad"
 AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
-echo "--- permisos declarados (debe estar vacío o sin INTERNET):"
+echo "--- permisos declarados (desde 0.8: exactamente INTERNET y ACCESS_NETWORK_STATE, para el buzón):"
 "$AAPT2" dump permissions "$APK"
+PERMISOS=$("$AAPT2" dump permissions "$APK" | grep -oP "uses-permission: name='\K[^']+" | sort | tr '\n' ' ')
+[ "$PERMISOS" = "android.permission.ACCESS_NETWORK_STATE android.permission.INTERNET " ] \
+  && echo "✓ permisos exactos" || echo "✗ PERMISOS INESPERADOS: $PERMISOS"
 echo "--- contenido nativo y código:"
 python3 - "$APK" <<'PY'
 import sys, zipfile
