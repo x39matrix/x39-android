@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 
 /** Iconos de trazo dibujados sobre una rejilla de 24 unidades, coherentes con el diseño. */
 final class Icono extends Drawable {
-    enum Tipo { CHAT, CONTACTOS, WALLET, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
+    enum Tipo { CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
 
     private final Tipo tipo;
     private final Paint pincel = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -41,11 +41,6 @@ final class Icono extends Drawable {
                 p.moveTo(3, 20); p.arcTo(new RectF(3, 14, 15, 26), 180, 180, false);
                 p.moveTo(16, 4.5f); p.arcTo(new RectF(12.5f, 4.5f, 19.5f, 11.5f), -90, 180, false);
                 p.moveTo(18, 14); p.quadTo(21, 15.5f, 21, 20);
-                break;
-            case WALLET:
-                p.addRoundRect(new RectF(3, 6, 21, 20), 2, 2, Path.Direction.CW);
-                p.moveTo(3, 10); p.lineTo(21, 10);
-                p.moveTo(16, 15); p.lineTo(18, 15);
                 break;
             case ACTAS:
                 // Documento con esquina doblada y un sello (check) abajo.

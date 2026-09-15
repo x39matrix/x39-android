@@ -5,6 +5,9 @@ source "$HOME/Android/env.sh"
 source "$HOME/.cargo/env"
 cd "$HOME/x39_mensajeria"
 
+echo "### 0. Registro de actas incluido en la app"
+bash scripts/actualizar_registro.sh
+
 echo "### 1. Motor Rust para arm64 (móviles) y x86_64 (emulador)"
 ( cd x39-jni && cargo ndk -t arm64-v8a -t x86_64 --platform 28 -o ../android/app/src/main/jniLibs build --release 2>&1 \
     | grep -vE '^\s+(Compiling|Downloaded|Downloading)' | tail -5 )
