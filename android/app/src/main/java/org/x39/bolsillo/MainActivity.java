@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.9.0";
+    private static final String VERSION = "0.9.1";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -621,6 +621,8 @@ public class MainActivity extends Activity {
     private static final String PREF_ACREDITACION = "acreditacion";
     /** true: la invitación pegada acredita la clave que ya existe en este móvil, no crea una nueva. */
     private boolean invitacionParaAcreditar;
+    /** Invitación que llegó compartida desde otra app; se rellena en la pantalla y se olvida. */
+    private String invitacionInicial;
 
     /** Clave pública ML-DSA-87 de la autoridad (el Ayuntamiento), incluida en la app; null si esta compilación no la lleva. */
     private byte[] autoridad() {
@@ -677,6 +679,10 @@ public class MainActivity extends Activity {
         col.addView(d);
 
         EditText campo = Ui.campo(this, "X39INV1:…", 5, true);
+        if (invitacionInicial != null) {
+            campo.setText(invitacionInicial);
+            invitacionInicial = null;
+        }
         col.addView(campo, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView pegar = Ui.boton(this, "Pegar del portapapeles", false, v -> {
@@ -2116,6 +2122,12 @@ public class MainActivity extends Activity {
         String s = texto.trim();
         if (s.startsWith("X39ID1:") || s.startsWith("X39PK1:")) {
             abrirAgregar(s);
+            return;
+        }
+        if (s.startsWith("X39INV1:")) {
+            // Invitación del Ayuntamiento compartida desde otra app: si ya hay clave, sirve para acreditarla.
+            invitacionInicial = s;
+            pedirInvitacion(clavePublica != null);
             return;
         }
         if (!s.startsWith("X39MSG1:")) {
