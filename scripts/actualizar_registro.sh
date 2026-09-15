@@ -33,6 +33,36 @@ for x in docs:
         descartados.append(f"{ident}: ruta de PDF no permitida ({x.get('pdf', '')!r})")
         continue
     limpios.append({k: str(x.get(k, "")) for k in campos})
+# Solo lo emitido y comprobado: el PDF debe existir en el portal y su SHA-256 coincidir con el registro.
+# (El portal responde 200 con su página HTML para rutas inexistentes, por eso se exige application/pdf.)
+import hashlib, urllib.request
+from concurrent.futures import ThreadPoolExecutor
+
+def comprobar(doc):
+    url = "https://sevilla.x39matrix.org/" + doc["pdf"]
+    try:
+        peticion = urllib.request.Request(url, headers={"User-Agent": "x39-registro"})
+        with urllib.request.urlopen(peticion, timeout=60) as r:
+            tipo = r.headers.get("Content-Type", "")
+            datos = r.read()
+    except Exception as e:
+        return f"{doc['id']}: no se pudo descargar el PDF ({e})"
+    if "application/pdf" not in tipo:
+        return f"{doc['id']}: el PDF no está publicado en el portal"
+    if hashlib.sha256(datos).hexdigest() != doc["sha256"]:
+        return f"{doc['id']}: el PDF publicado no coincide con la huella registrada"
+    return None
+
+with ThreadPoolExecutor(max_workers=6) as grupo:
+    resultados = list(grupo.map(comprobar, limpios))
+verificados = []
+for doc, problema in zip(limpios, resultados):
+    if problema:
+        descartados.append(problema)
+    else:
+        verificados.append(doc)
+limpios = verificados
+
 for motivo in descartados:
     print(f"registro: AVISO, se descarta {motivo}")
 assert limpios, "ningún documento válido"
