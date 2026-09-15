@@ -10,10 +10,12 @@ import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Insets;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -26,6 +28,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,7 +47,9 @@ public class MainActivity extends Activity {
     private static final long TTL_SEGUNDOS = 7L * 24 * 3600;
     private static final int REQ_DESBLOQUEO = 39;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.3.2";
+    private static final String VERSION = "0.3.3";
+    /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
+    private static final long CREACION_MIN_MS = 900;
     /** Portal público de transparencia verificable. Se abre en el navegador: x39 sigue sin permiso de internet. */
     private static final String URL_TRANSPARENCIA = "https://sevilla.x39matrix.org";
 
@@ -56,6 +61,8 @@ public class MainActivity extends Activity {
     private byte[] claveFirma;
     private String miId;
     private String errorInicio;
+    /** Primer arranque: todavía no hay claves y se muestra la portada. */
+    private boolean enBienvenida;
 
     private FrameLayout raiz;
     private Pestana pestana = Pestana.CHATS;
@@ -84,26 +91,38 @@ public class MainActivity extends Activity {
         boveda = new Boveda(this);
         almacen = new Almacen(this, boveda);
         try {
-            if (!boveda.tieneClaves()) {
-                boveda.crearClaves();
+            if (boveda.tieneClaves()) {
+                cargarIdentidad();
+            } else {
+                enBienvenida = true;
             }
-            clavePublica = boveda.clavePublica();
-            if (!boveda.tieneFirma()) {
-                boveda.crearFirma();
-            }
-            claveFirma = boveda.clavePublicaFirma();
-            miId = Almacen.idDeClave(clavePublica);
-            almacen.cargar();
         } catch (Exception e) {
             errorInicio = Ui.mensaje(e);
         }
         guardarCompartido(getIntent());
     }
 
+    /** Lee las claves existentes. Quien viene de x39 0.2 recibe aquí su clave de firma. */
+    private void cargarIdentidad() throws Exception {
+        clavePublica = boveda.clavePublica();
+        if (!boveda.tieneFirma()) {
+            boveda.crearFirma();
+        }
+        claveFirma = boveda.clavePublicaFirma();
+        miId = Almacen.idDeClave(clavePublica);
+        almacen.cargar();
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
         if (esperandoDesbloqueo) return;
+        if (enBienvenida) {
+            // Sin claves todavía no hay nada que proteger: la portada no pide desbloqueo.
+            desbloqueado = true;
+            render();
+            return;
+        }
         if (desbloqueado && System.currentTimeMillis() - ultimaSalida < GRACIA_BLOQUEO_MS) {
             procesarPendiente();
             return;
@@ -178,6 +197,10 @@ public class MainActivity extends Activity {
     private void render() {
         if (errorInicio != null) {
             mostrarError();
+            return;
+        }
+        if (enBienvenida) {
+            mostrar(clavePublica == null ? pantallaBienvenida() : pantallaClaveLista(), false);
             return;
         }
         if (pantallaSecundaria != null) pantallaSecundaria.run();
@@ -265,6 +288,206 @@ public class MainActivity extends Activity {
         item.setOnClickListener(v -> mostrarPestana(p));
         Ui.clicable(item);
         return item;
+    }
+
+    // ------------------------------------------------------------------ primer arranque
+
+    /** Portada: foto de fondo, qué es x39 y el botón que crea la clave. */
+    private View pantallaBienvenida() {
+        FrameLayout marco = new FrameLayout(this);
+        marco.setBackgroundColor(Ui.FONDO);
+        int foto = getResources().getIdentifier("portada_sevilla", "drawable", getPackageName());
+        if (foto != 0) {
+            ImageView fondo = new ImageView(this);
+            fondo.setImageResource(foto);
+            fondo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            fondo.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            marco.addView(fondo, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+        // Velo: deja ver la foto arriba y oscurece abajo para que el texto se lea.
+        android.graphics.drawable.GradientDrawable velo = new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{foto != 0 ? 0x33000000 : 0xFF2A0B0A, 0xB30D0D0D, 0xF20D0D0D, 0xFF0D0D0D});
+        View capa = new View(this);
+        capa.setBackground(velo);
+        marco.addView(capa, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout col = Ui.columna(this);
+        col.setGravity(Gravity.BOTTOM);
+        col.setPadding(Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 20));
+
+        LinearLayout marca = Ui.fila(this);
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.drawable.ic_launcher_frente);
+        marca.addView(logo, new LinearLayout.LayoutParams(Ui.dp(this, 64), Ui.dp(this, 64)));
+        marca.addView(Ui.texto(this, "x39", 40, Ui.TEXTO, true));
+        col.addView(marca);
+        TextView lema = Ui.texto(this, "Mensajería poscuántica. Tu clave, solo en tu móvil.", 17, Ui.TEXTO_2, false);
+        lema.setPadding(Ui.dp(this, 4), Ui.dp(this, 2), 0, Ui.dp(this, 14));
+        col.addView(lema);
+
+        col.addView(puntoBienvenida(Icono.Tipo.CANDADO, "Cifrado y firmado", "ML-KEM-1024 y ML-DSA-87, estándares poscuánticos del NIST."));
+        col.addView(puntoBienvenida(Icono.Tipo.LLAVE, "Sin cuenta", "Ni correo ni teléfono. La clave se crea y se queda en este móvil."));
+        col.addView(puntoBienvenida(Icono.Tipo.ESCUDO_OK, "Nada sale de la app", "Sin internet, sin capturas de pantalla y sin reenviar mensajes."));
+
+        if (!movilConBloqueo()) {
+            LinearLayout av = Ui.columna(this);
+            av.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
+            android.graphics.drawable.GradientDrawable borde = new android.graphics.drawable.GradientDrawable();
+            borde.setColor(0x26E53935);
+            borde.setCornerRadius(Ui.dp(this, 14));
+            borde.setStroke(Ui.dp(this, 1), 0x73E53935);
+            av.setBackground(borde);
+            LinearLayout avTit = Ui.fila(this);
+            avTit.addView(Ui.icono(this, Icono.Tipo.AVISO, Ui.ROJO, 18));
+            TextView avT = Ui.texto(this, "Tu móvil no tiene bloqueo de pantalla", 14, Ui.TEXTO, true);
+            avT.setPadding(Ui.dp(this, 10), 0, 0, 0);
+            avTit.addView(avT, Ui.peso(1));
+            av.addView(avTit);
+            TextView avD = Ui.texto(this, "Sin él, cualquiera que coja el móvil entra en x39. Actívalo antes de crear tu clave.", 13, Ui.TEXTO_2, false);
+            avD.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 8));
+            av.addView(avD);
+            TextView ajustes = Ui.texto(this, "Activar bloqueo de pantalla", 14, Ui.ROJO, true);
+            ajustes.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 2));
+            ajustes.setOnClickListener(v -> abrirAjustesSeguridad());
+            Ui.clicable(ajustes);
+            av.addView(ajustes);
+            col.addView(av, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 4));
+        }
+
+        TextView crear = Ui.boton(this, "Crear mi clave", true, v -> crearIdentidad());
+        col.addView(crear, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 16, 0, 10));
+        TextView pie = Ui.texto(this, "Versión de prueba · protocolo pendiente de auditoría externa", 12, Ui.TENUE, false);
+        pie.setGravity(Gravity.CENTER);
+        col.addView(pie, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        ScrollView sv = new ScrollView(this);
+        sv.setFillViewport(true);
+        sv.addView(col, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        marco.addView(sv, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        return marco;
+    }
+
+    private View puntoBienvenida(Icono.Tipo tipo, String titulo, String texto) {
+        LinearLayout f = Ui.fila(this);
+        f.setGravity(Gravity.TOP);
+        f.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
+        FrameLayout caja = new FrameLayout(this);
+        caja.setBackground(Ui.redondeado(this, 0x40E53935, 12));
+        caja.addView(Ui.icono(this, tipo, Ui.ROJO, 20), new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
+        f.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
+        LinearLayout t = Ui.columna(this);
+        t.setPadding(Ui.dp(this, 14), 0, 0, 0);
+        t.addView(Ui.texto(this, titulo, 15, Ui.TEXTO, true));
+        t.addView(Ui.texto(this, texto, 13, Ui.TEXTO_2, false));
+        f.addView(t, Ui.peso(1));
+        return f;
+    }
+
+    private View pantallaCreando() {
+        LinearLayout col = Ui.columna(this);
+        col.setGravity(Gravity.CENTER);
+        col.setPadding(Ui.dp(this, 32), 0, Ui.dp(this, 32), 0);
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.drawable.ic_launcher_frente);
+        col.addView(logo, new LinearLayout.LayoutParams(Ui.dp(this, 96), Ui.dp(this, 96)));
+        ProgressBar pb = new ProgressBar(this);
+        pb.setIndeterminate(true);
+        pb.setIndeterminateTintList(ColorStateList.valueOf(Ui.ROJO));
+        col.addView(pb, Ui.margen(this, Ui.dp(this, 40), Ui.dp(this, 40), 0, 16, 0, 16));
+        TextView t = Ui.texto(this, "Creando tus claves…", 20, Ui.TEXTO, true);
+        t.setGravity(Gravity.CENTER);
+        col.addView(t);
+        TextView d = Ui.texto(this, "ML-KEM-1024 para cifrar · ML-DSA-87 para firmar", 13, Ui.SUAVE, false);
+        d.setGravity(Gravity.CENTER);
+        d.setPadding(0, Ui.dp(this, 6), 0, 0);
+        col.addView(d);
+        return col;
+    }
+
+    /** Tras crear la clave: la huella explicada y el botón para entrar. */
+    private View pantallaClaveLista() {
+        LinearLayout raizCol = Ui.columna(this);
+        ScrollView sv = new ScrollView(this);
+        LinearLayout col = Ui.columna(this);
+        col.setPadding(Ui.dp(this, 24), Ui.dp(this, 40), Ui.dp(this, 24), Ui.dp(this, 16));
+        FrameLayout caja = new FrameLayout(this);
+        caja.setBackground(Ui.redondeado(this, Ui.ROJO_SUAVE, 18));
+        caja.addView(Ui.icono(this, Icono.Tipo.ESCUDO_OK, Ui.ROJO, 30), new FrameLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30), Gravity.CENTER));
+        col.addView(caja, new LinearLayout.LayoutParams(Ui.dp(this, 60), Ui.dp(this, 60)));
+        TextView t = Ui.texto(this, "Tu clave está lista", 26, Ui.TEXTO, true);
+        t.setPadding(0, Ui.dp(this, 18), 0, Ui.dp(this, 8));
+        col.addView(t);
+        col.addView(Ui.texto(this, "Esta es tu huella de seguridad. Cuando añadas a alguien, comparad estos 60 dígitos en persona: si coinciden, nadie se ha puesto en medio.", 15, Ui.TEXTO_2, false));
+        LinearLayout marcoHuella = Ui.columna(this);
+        marcoHuella.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        marcoHuella.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 18));
+        marcoHuella.addView(Ui.huella(this, miHuella(), 18));
+        col.addView(marcoHuella, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 20, 0, 14));
+        col.addView(Ui.texto(this, "Puedes volver a verla en Contactos › Mi clave.", 13, Ui.SUAVE, false));
+        if (!movilConBloqueo()) {
+            TextView b = Ui.texto(this, "⚠ Recuerda activar el bloqueo de pantalla del móvil.", 13, Ui.ROJO, false);
+            b.setPadding(0, Ui.dp(this, 10), 0, 0);
+            col.addView(b);
+        }
+        sv.addView(col);
+        raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        TextView entrar = Ui.boton(this, "Entrar", true, v -> {
+            enBienvenida = false;
+            mostrarPestana(Pestana.CHATS);
+            procesarPendiente();
+        });
+        raizCol.addView(entrar, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 24, 8, 24, 20));
+        return raizCol;
+    }
+
+    /** Genera ML-KEM-1024 y ML-DSA-87 fuera del hilo de la interfaz. */
+    private void crearIdentidad() {
+        mostrar(pantallaCreando(), false);
+        new Thread(() -> {
+            long inicio = System.currentTimeMillis();
+            String error = null;
+            try {
+                boveda.crearClaves();
+                if (!boveda.tieneFirma()) boveda.crearFirma();
+            } catch (Exception e) {
+                error = Ui.mensaje(e);
+            }
+            long resto = CREACION_MIN_MS - (System.currentTimeMillis() - inicio);
+            if (resto > 0) {
+                try { Thread.sleep(resto); } catch (InterruptedException ignorado) { Thread.currentThread().interrupt(); }
+            }
+            final String fallo = error;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (fallo != null) {
+                    mostrar(pantallaBienvenida(), false);
+                    aviso("No se pudo crear la clave: " + fallo);
+                    return;
+                }
+                try {
+                    cargarIdentidad();
+                } catch (Exception e) {
+                    errorInicio = Ui.mensaje(e);
+                    render();
+                    return;
+                }
+                mostrar(pantallaClaveLista(), false);
+            });
+        }, "x39-claves").start();
+    }
+
+    private boolean movilConBloqueo() {
+        KeyguardManager km = getSystemService(KeyguardManager.class);
+        return km != null && km.isDeviceSecure();
+    }
+
+    private void abrirAjustesSeguridad() {
+        try {
+            startActivity(new Intent(Settings.ACTION_SECURITY_SETTINGS));
+        } catch (android.content.ActivityNotFoundException e) {
+            startActivity(new Intent(Settings.ACTION_SETTINGS));
+        }
     }
 
     // ------------------------------------------------------------------ pantallas
@@ -879,7 +1102,7 @@ public class MainActivity extends Activity {
     }
 
     private void procesarPendiente() {
-        if (pendienteCompartido == null || errorInicio != null) return;
+        if (pendienteCompartido == null || errorInicio != null || enBienvenida) return;
         String t = pendienteCompartido;
         pendienteCompartido = null;
         procesarTexto(t);
