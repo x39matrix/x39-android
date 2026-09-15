@@ -4,7 +4,7 @@
 # - La clave pública se copia a android/app/src/main/assets/autoridad.pk y viaja dentro de la app.
 # Uso:
 #   bash scripts/invitaciones.sh crear
-#   bash scripts/invitaciones.sh emitir 2026-12-31 "María" "López García" "Concejala de Cultura"
+#   bash scripts/invitaciones.sh emitir 2026-12-31 "María" "López García" "Concejala de Cultura" "Los Remedios"
 #   bash scripts/invitaciones.sh verificar 'X39INV1:...'
 set -euo pipefail
 source "$HOME/.cargo/env"
@@ -23,10 +23,12 @@ case "${1:-}" in
   emitir)
     # Nombre, apellidos y cargo van juntos en la invitación como «Nombre Apellidos · Cargo»: la app
     # enseña el nombre en grande y el cargo debajo, y así aparece en la agenda de todos.
-    [ $# -eq 5 ] || { echo "uso: $0 emitir AAAA-MM-DD 'Nombre' 'Apellidos' 'Cargo'"; exit 2; }
+    # El área decide su sala en Chats (una por área; «Alcaldía» entra en todas).
+    [ $# -eq 6 ] || { echo "uso: $0 emitir AAAA-MM-DD 'Nombre' 'Apellidos' 'Cargo' 'Área'"; exit 2; }
     [ -f "$SEMILLA" ] || { echo "no existe $SEMILLA: primero '$0 crear'"; exit 1; }
-    case "$3$4$5" in *"·"*|*"|"*) echo "el nombre, los apellidos y el cargo no pueden llevar «·» ni «|»"; exit 2;; esac
-    cargo run -q --example invitacion -- emitir "$SEMILLA" "$2" "$3 $4 · $5"
+    case "$3$4$5$6" in *"·"*|*"|"*) echo "nombre, apellidos, cargo y área no pueden llevar «·» ni «|»"; exit 2;; esac
+    [ -n "$6" ] || { echo "el área no puede estar vacía (o «Alcaldía» para entrar en todas las salas)"; exit 2; }
+    cargo run -q --example invitacion -- emitir "$SEMILLA" "$2" "$3 $4 · $5 · $6"
     ;;
   verificar)
     [ $# -eq 2 ] || { echo "uso: $0 verificar 'X39INV1:...'"; exit 2; }
@@ -34,7 +36,7 @@ case "${1:-}" in
     cargo run -q --example invitacion -- verificar "$PK_APP" "$(date +%F)" "$2"
     ;;
   *)
-    echo "uso: $0 crear | emitir AAAA-MM-DD 'Nombre' 'Apellidos' 'Cargo' | verificar 'X39INV1:...'"
+    echo "uso: $0 crear | emitir AAAA-MM-DD 'Nombre' 'Apellidos' 'Cargo' 'Área' | verificar 'X39INV1:...'"
     exit 2
     ;;
 esac

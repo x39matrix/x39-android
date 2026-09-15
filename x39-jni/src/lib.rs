@@ -11,6 +11,7 @@ use x39_core::directorio;
 use x39_core::firma::{self, DSA_PK_LEN, DSA_SEED_LEN};
 use x39_core::invitacion;
 use x39_core::ots::Prueba;
+use x39_core::sala;
 use x39_core::{CID_LEN, PK_LEN, SK_LEN, TtlPolicy, share};
 use zeroize::Zeroizing;
 
@@ -566,6 +567,137 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_directoryEntryRead<'c>(
                 salida.push_str(&acr);
             }
             Ok(env.new_string(salida)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+// ---- Salas por departamento (x39-core/src/sala.rs)
+
+fn clave_sala_from(env: &jni::Env, array: &JByteArray) -> Res<Zeroizing<[u8; sala::CLAVE_LEN]>> {
+    let raw = Zeroizing::new(env.convert_byte_array(array)?);
+    if raw.len() != sala::CLAVE_LEN {
+        return Err(PuenteError::Datos("clave de sala con longitud incorrecta"));
+    }
+    let mut k = Zeroizing::new([0u8; sala::CLAVE_LEN]);
+    k.copy_from_slice(&raw);
+    Ok(k)
+}
+
+fn epoca_from(value: jint) -> Res<u32> {
+    u32::try_from(value).map_err(|_| PuenteError::Datos("época negativa"))
+}
+
+/// Clave nueva de sala (32 bytes). El llamante la guarda cifrada.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_roomNewKey<'c>(mut unowned: EnvUnowned<'c>, _class: JClass<'c>) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let k = Zeroizing::new(sala::nueva_clave()?);
+            Ok(env.byte_array_from_slice(&*k)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Cifra un mensaje para la sala. Devuelve «X39SALA1:…».
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_roomEncrypt<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    key: JByteArray<'c>,
+    room: JString<'c>,
+    epoch: jint,
+    plaintext: JByteArray<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let k = clave_sala_from(env, &key)?;
+            let texto = Zeroizing::new(env.convert_byte_array(&plaintext)?);
+            let m = sala::cifrar(&k, &room.to_string(), epoca_from(epoch)?, &texto)?;
+            Ok(env.new_string(m)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_roomDecrypt<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    key: JByteArray<'c>,
+    room: JString<'c>,
+    epoch: jint,
+    message: JString<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let k = clave_sala_from(env, &key)?;
+            let texto = Zeroizing::new(sala::descifrar(&k, &room.to_string(), epoca_from(epoch)?, &message.to_string())?);
+            Ok(env.byte_array_from_slice(&texto)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Firma una publicación en la sala (mensaje, sobre o alta). Devuelve «X39FIRMA1:…».
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_roomSign<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    seed: JByteArray<'c>,
+    room: JString<'c>,
+    epoch: jint,
+    action: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let seed = seed_from(env, &seed)?;
+            let f = sala::firmar(&seed, &room.to_string(), epoca_from(epoch)?, &action.to_string())?;
+            Ok(env.new_string(f)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// 1 si la firma de la publicación es de esa clave; si no, lanza.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_roomVerify<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    signing_public_key: JByteArray<'c>,
+    room: JString<'c>,
+    epoch: jint,
+    action: JString<'c>,
+    signature: JString<'c>,
+) -> jint {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = signing_public_key_from(env, &signing_public_key)?;
+            sala::verificar(&pk, &room.to_string(), epoca_from(epoch)?, &action.to_string(), &signature.to_string())?;
+            Ok(1)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Eslabón de la cadena (hex) a partir del anterior (hex o vacío para el primero).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_roomChainLink<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    previous_hex: JString<'c>,
+    room: JString<'c>,
+    seq: jlong,
+    sender: JString<'c>,
+    message: JString<'c>,
+    signature: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let prev = previous_hex.to_string();
+            let anterior = if prev.is_empty() {
+                [0u8; 32]
+            } else {
+                sala::de_hex(&prev).ok_or(PuenteError::Datos("eslabón anterior mal formado"))?
+            };
+            let seq = seconds(seq, "seq negativo")?;
+            let h = sala::eslabon(&anterior, &room.to_string(), seq, &sender.to_string(), &message.to_string(), &signature.to_string());
+            Ok(env.new_string(sala::hex(&h))?)
         })
         .resolve::<ThrowRuntimeExAndDefault>()
 }

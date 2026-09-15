@@ -15,7 +15,8 @@ use crate::share;
 
 pub const PREFIX_INV: &str = "X39INV1:";
 pub const INV_CTX: &[u8] = b"x39-invitacion-v1";
-pub const MAX_NOMBRE: usize = 80;
+/// «Nombre Apellidos · Cargo · Área» cabe de sobra.
+pub const MAX_NOMBRE: usize = 120;
 const CARGA_PREFIJO: &str = "X39-INV-v1|";
 
 #[derive(Debug, Clone, PartialEq, Eq)]

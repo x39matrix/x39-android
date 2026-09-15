@@ -68,7 +68,15 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.11.0";
+    private static final String VERSION = "0.12.0";
+    /** Salas a las que me añadieron a mano (JSON de ids), según /sala/mias. */
+    private static final String PREF_SALAS_EXTRA = "salas_extra";
+    /** Un sobre (clave de sala) se puede abrir aunque lleve años publicado: quien entra tarde lee lo anterior. */
+    private static final long TTL_SOBRE_SEGUNDOS = 10L * 365 * 24 * 3600;
+    private static final long INTERVALO_MIAS_MS = 60_000;
+    /** Sobres que se entregan como mucho en cada pasada (cada uno son ~3 kB y una firma). */
+    private static final int SOBRES_POR_PASADA = 6;
+    private static final int LOTE_SALA = 30;
     /** Marca de tiempo del buzón hasta la que ya se leyó la agenda. */
     private static final String PREF_AGENDA_DESDE = "agenda_desde";
     /** Entre dos consultas de la agenda con la app delante. */
@@ -124,12 +132,18 @@ public class MainActivity extends Activity {
     private long ultimoIntentoAgenda;
     private boolean sincronizandoAgenda;
     private String estadoAgenda = "Todavía no consultada.";
+    /** Salas por departamento (dentro de Chats). */
+    private String salaAbierta;
+    private boolean sincronizandoSalas;
+    private long ultimoIntentoMias;
+    private String estadoSalas = "Todavía no consultadas.";
     private final Runnable sondeo = new Runnable() {
         @Override
         public void run() {
             if (!sondeando) return;
             if (!directorioPublicado && System.currentTimeMillis() - ultimoIntentoDirectorio > REINTENTO_DIRECTORIO_MS) publicarEnDirectorio();
             if (System.currentTimeMillis() - ultimoIntentoAgenda > INTERVALO_AGENDA_MS) sincronizarAgenda();
+            sincronizarSalas();
             sincronizarBuzon();
             // Con una conversación o Chats delante se pregunta más a menudo; el resto del tiempo, menos.
             boolean atento = pantallaSecundaria != null || pestana == Pestana.CHATS;
@@ -336,6 +350,7 @@ public class MainActivity extends Activity {
         if (clavePublica == null) p = Pestana.PLENOS;
         pestana = p;
         pantallaSecundaria = null;
+        salaAbierta = null;
         View v;
         switch (p) {
             case CHATS: v = pantallaChats(); break;
@@ -997,6 +1012,641 @@ public class MainActivity extends Activity {
         }, "x39-agenda").start();
     }
 
+    // ------------------------------------------------------------------ salas por departamento
+
+    /** «Los Remedios» → «los-remedios»: el id de la sala de un área. */
+    static String slug(String texto) {
+        String n = java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
+        n = n.replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
+        if (n.length() > 48) n = n.substring(0, 48).replaceAll("-+$", "");
+        return n;
+    }
+
+    private String miArea() {
+        return Almacen.campo(prefs().getString(PREF_INV_NOMBRE, null), 2);
+    }
+
+    private String miCargo() {
+        return Almacen.campo(prefs().getString(PREF_INV_NOMBRE, null), 1);
+    }
+
+    /** El alcalde (área «Alcaldía» o cargo «Alcalde/Alcaldesa…») entra en todas las salas. */
+    private static boolean esAlcaldia(String area, String cargo) {
+        if (area != null && slug(area).equals("alcaldia")) return true;
+        if (cargo != null) {
+            String c = slug(cargo);
+            return c.startsWith("alcalde") || c.startsWith("alcaldesa");
+        }
+        return false;
+    }
+
+    private boolean soyAlcalde() {
+        return miAcreditacion() != null && esAlcaldia(miArea(), miCargo());
+    }
+
+    private String miDireccion() {
+        return Buzon.direccion(clavePublica);
+    }
+
+    private List<String> salasExtra() {
+        List<String> l = new ArrayList<>();
+        try {
+            org.json.JSONArray a = new org.json.JSONArray(prefs().getString(PREF_SALAS_EXTRA, "[]"));
+            for (int i = 0; i < a.length(); i++) l.add(a.optString(i));
+        } catch (Exception ignorada) {
+            // Sin salas extra.
+        }
+        return l;
+    }
+
+    /** Mis salas (id → nombre): General, la de mi área (todas si soy el alcalde) y las que me añadieron a mano. */
+    private java.util.LinkedHashMap<String, String> misSalas() {
+        java.util.LinkedHashMap<String, String> m = new java.util.LinkedHashMap<>();
+        if (miAcreditacion() == null || claveFirma == null) return m;
+        m.put("general", "General");
+        boolean alcalde = soyAlcalde();
+        String area = miArea();
+        if (area != null && !alcalde) m.put(slug(area), area);
+        if (alcalde) {
+            java.util.TreeMap<String, String> areas = new java.util.TreeMap<>();
+            for (Almacen.Contacto c : almacen.contactos) {
+                String a = c.acreditadoArea();
+                if (a != null && !esAlcaldia(a, c.acreditadoCargo())) areas.put(slug(a), a);
+            }
+            for (java.util.Map.Entry<String, String> e : areas.entrySet()) m.putIfAbsent(e.getKey(), e.getValue());
+        }
+        for (String id : salasExtra()) {
+            if (!id.isEmpty()) m.putIfAbsent(id, nombreDeSala(id));
+        }
+        return m;
+    }
+
+    private String nombreDeSala(String id) {
+        if ("general".equals(id)) return "General";
+        Almacen.Sala s = almacen.sala(id);
+        if (s != null && s.nombre != null && !s.nombre.isEmpty()) return s.nombre;
+        for (Almacen.Contacto c : almacen.contactos) {
+            String a = c.acreditadoArea();
+            if (a != null && slug(a).equals(id)) return a;
+        }
+        String area = miArea();
+        if (area != null && slug(area).equals(id)) return area;
+        String bonito = id.replace('-', ' ');
+        return Character.toUpperCase(bonito.charAt(0)) + bonito.substring(1);
+    }
+
+    /** ¿Está el contacto en la sala? Por su área, por ser el alcalde, o porque un miembro le añadió. */
+    private boolean esMiembro(Almacen.Contacto c, String salaId) {
+        if (c.acreditadoNombre == null || c.claveFirma == null) return false;
+        if ("general".equals(salaId)) return true;
+        if (esAlcaldia(c.acreditadoArea(), c.acreditadoCargo())) return true;
+        String a = c.acreditadoArea();
+        if (a != null && slug(a).equals(salaId)) return true;
+        Almacen.Sala s = almacen.sala(salaId);
+        return s != null && s.miembrosExtra.contains(Buzon.direccion(c.clave));
+    }
+
+    private List<Almacen.Contacto> miembrosDe(String salaId) {
+        List<Almacen.Contacto> l = new ArrayList<>();
+        for (Almacen.Contacto c : almacen.contactos) {
+            if (esMiembro(c, salaId)) l.add(c);
+        }
+        java.util.Collections.sort(l, (a, b) -> a.nombre.compareToIgnoreCase(b.nombre));
+        return l;
+    }
+
+    private java.util.Map<String, Almacen.Contacto> contactosPorDireccion() {
+        java.util.Map<String, Almacen.Contacto> m = new java.util.HashMap<>();
+        for (Almacen.Contacto c : almacen.contactos) m.put(Buzon.direccion(c.clave), c);
+        return m;
+    }
+
+    /** Estado de una sala tomado en el hilo de pantalla para trabajar con él en segundo plano. */
+    private static final class FotoSala {
+        final String id;
+        final int epoca;
+        final byte[] clave;
+        final long ultimoSeq;
+        final String ultimoHash;
+        final List<Almacen.Contacto> miembros;
+
+        FotoSala(Almacen.Sala s, List<Almacen.Contacto> miembros) {
+            id = s.id;
+            epoca = s.epoca;
+            clave = s.clave;
+            ultimoSeq = s.ultimoSeq;
+            ultimoHash = s.ultimoHash;
+            this.miembros = miembros;
+        }
+    }
+
+    /**
+     * Sincroniza mis salas con el canister: consigue la clave (o la crea si nadie lo ha hecho), se la entrega
+     * a los miembros que aún no la tienen, y lee los mensajes nuevos comprobando firma y cadena.
+     */
+    private void sincronizarSalas() {
+        if (clavePublica == null || sincronizandoSalas || !buzon.activo() || miAcreditacion() == null) return;
+        java.util.LinkedHashMap<String, String> mias = misSalas();
+        if (mias.isEmpty()) return;
+        sincronizandoSalas = true;
+        final String miDir = miDireccion();
+        final boolean pedirMias = System.currentTimeMillis() - ultimoIntentoMias > INTERVALO_MIAS_MS;
+        if (pedirMias) ultimoIntentoMias = System.currentTimeMillis();
+        final List<FotoSala> fotos = new ArrayList<>();
+        for (java.util.Map.Entry<String, String> e : mias.entrySet()) {
+            Almacen.Sala s = almacen.salaOCrear(e.getKey(), e.getValue());
+            fotos.add(new FotoSala(s, miembrosDe(s.id)));
+        }
+        final java.util.Map<String, Almacen.Contacto> porDir = contactosPorDireccion();
+        new Thread(() -> {
+            String fallo = null;
+            if (pedirMias) {
+                try {
+                    final List<String> extra = buzon.salaMias(miDir);
+                    runOnUiThread(() -> prefs().edit().putString(PREF_SALAS_EXTRA, new org.json.JSONArray(extra).toString()).apply());
+                } catch (Exception e) {
+                    fallo = Ui.mensaje(e);
+                }
+            }
+            for (FotoSala f : fotos) {
+                try {
+                    sincronizarSala(f, miDir, porDir);
+                } catch (Exception e) {
+                    fallo = Ui.mensaje(e);
+                }
+            }
+            final String f = fallo;
+            runOnUiThread(() -> {
+                sincronizandoSalas = false;
+                estadoSalas = f == null ? "Salas al día a las " + Ui.hora(System.currentTimeMillis()) : "Salas: " + f;
+            });
+        }, "x39-salas").start();
+    }
+
+    /** Trabajo de una sala en segundo plano; los cambios se aplican al final en el hilo de pantalla. */
+    private void sincronizarSala(FotoSala foto, String miDir, java.util.Map<String, Almacen.Contacto> porDir) throws Exception {
+        final String id = foto.id;
+        JSONObject estado = buzon.salaEstado(id);
+        int epocaSala = estado.isNull("epoca") ? -1 : estado.optInt("epoca", -1);
+        byte[] clave = foto.clave;
+        int epoca = foto.epoca;
+        boolean claveNueva = false;
+        if (epocaSala < 0) {
+            // Nadie ha creado la clave: la creo y me la entrego. Si alguien se adelanta, el canister dice 409.
+            byte[] k = X39Core.roomNewKey();
+            try {
+                entregarClave(id, 0, k, miDir, clavePublica, miDir);
+                clave = k;
+                epoca = 0;
+                epocaSala = 0;
+                claveNueva = true;
+            } catch (Buzon.OtraEpoca e) {
+                estado = buzon.salaEstado(id);
+                epocaSala = estado.isNull("epoca") ? -1 : estado.optInt("epoca", -1);
+            }
+        }
+        if (epocaSala >= 0 && (epoca != epocaSala || clave == null)) {
+            org.json.JSONArray sobres = buzon.salaSobres(id, miDir);
+            for (int i = 0; i < sobres.length(); i++) {
+                JSONObject sobre = sobres.optJSONObject(i);
+                if (sobre == null || sobre.optInt("epoca", -1) != epocaSala) continue;
+                try {
+                    clave = abrirSobre(id, epocaSala, sobre, miDir, porDir);
+                    epoca = epocaSala;
+                    claveNueva = true;
+                    break;
+                } catch (Exception ignorada) {
+                    // Sobre que no verifica o no es para esta clave: se prueba el siguiente.
+                }
+            }
+        }
+        if (clave != null && epoca == epocaSala) {
+            java.util.Set<String> conSobre = new java.util.HashSet<>();
+            org.json.JSONArray cs = estado.optJSONArray("con_sobre");
+            for (int i = 0; cs != null && i < cs.length(); i++) conSobre.add(cs.optString(i));
+            int entregados = 0;
+            for (Almacen.Contacto c : foto.miembros) {
+                if (entregados >= SOBRES_POR_PASADA) break;
+                String d = Buzon.direccion(c.clave);
+                if (conSobre.contains(d)) continue;
+                try {
+                    entregarClave(id, epoca, clave, d, c.clave, miDir);
+                    entregados++;
+                } catch (Exception ignorada) {
+                    // Se reintenta en la siguiente pasada.
+                }
+            }
+        }
+        final List<String> extra = new ArrayList<>();
+        org.json.JSONArray ms = estado.optJSONArray("miembros");
+        for (int i = 0; ms != null && i < ms.length(); i++) {
+            JSONObject m = ms.optJSONObject(i);
+            if (m != null) extra.add(m.optString("direccion"));
+        }
+
+        final List<Almacen.MensajeSala> nuevos = new ArrayList<>();
+        long seq = foto.ultimoSeq;
+        String hash = foto.ultimoHash;
+        while (true) {
+            org.json.JSONArray lote = buzon.salaMensajes(id, seq).optJSONArray("mensajes");
+            if (lote == null || lote.length() == 0) break;
+            for (int i = 0; i < lote.length(); i++) {
+                JSONObject m = lote.optJSONObject(i);
+                if (m == null) continue;
+                long mseq = m.optLong("seq");
+                String de = m.optString("de");
+                String msg = m.optString("msg");
+                String firma = m.optString("firma");
+                int mepoca = m.optInt("epoca", 0);
+                String hashSrv = m.optString("hash");
+                long ts = m.optLong("ts") / 1_000_000L;
+                boolean cadenaOk = X39Core.roomChainLink(hash, id, mseq, de, msg, firma).equals(hashSrv);
+                boolean propio = de.equals(miDir);
+                String autor;
+                byte[] pk;
+                if (propio) {
+                    autor = "Tú";
+                    pk = claveFirma;
+                } else {
+                    Almacen.Contacto c = porDir.get(de);
+                    autor = c == null ? "Desconocido" : c.nombre;
+                    pk = c == null ? null : c.claveFirma;
+                }
+                boolean firmaOk = false;
+                if (pk != null) {
+                    try {
+                        X39Core.roomVerify(pk, id, mepoca, msg, firma);
+                        firmaOk = true;
+                    } catch (RuntimeException ignorada) {
+                        // Firma que no es del autor declarado: se muestra con aviso.
+                    }
+                }
+                String texto;
+                if (clave != null && mepoca == epoca) {
+                    try {
+                        texto = new String(X39Core.roomDecrypt(clave, id, mepoca, msg), java.nio.charset.StandardCharsets.UTF_8);
+                    } catch (RuntimeException e) {
+                        texto = "(no se pudo descifrar este mensaje)";
+                    }
+                } else {
+                    texto = "(mensaje de la época " + mepoca + " de la sala: sin su clave)";
+                }
+                nuevos.add(new Almacen.MensajeSala(mseq, de, autor, texto, ts, propio, firmaOk, cadenaOk));
+                seq = mseq;
+                hash = hashSrv;
+            }
+            if (lote.length() < LOTE_SALA) break;
+        }
+
+        final byte[] claveFinal = clave;
+        final int epocaFinal = epoca;
+        final boolean guardarClave = claveNueva;
+        final long seqFinal = seq;
+        final String hashFinal = hash;
+        runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            Almacen.Sala s = almacen.sala(id);
+            if (s == null) return;
+            boolean cambio = guardarClave || !nuevos.isEmpty() || !s.miembrosExtra.equals(extra);
+            if (guardarClave) {
+                s.clave = claveFinal;
+                s.epoca = epocaFinal;
+            }
+            s.miembrosExtra.clear();
+            s.miembrosExtra.addAll(extra);
+            s.mensajes.addAll(nuevos);
+            s.ultimoSeq = seqFinal;
+            s.ultimoHash = hashFinal;
+            if (cambio) {
+                try {
+                    almacen.guardar();
+                } catch (Exception e) {
+                    estadoSalas = "No se pudo guardar la sala: " + Ui.mensaje(e);
+                }
+            }
+            if (!nuevos.isEmpty() || guardarClave) {
+                if (id.equals(salaAbierta) && pantallaSecundaria != null) pantallaSecundaria.run();
+                else if (pantallaSecundaria == null && pestana == Pestana.CHATS) mostrarPestana(Pestana.CHATS);
+            }
+        });
+    }
+
+    /** Mete la clave de la sala en una cápsula firmada para `paraDir` y la publica en el canister. */
+    private void entregarClave(String id, int epoca, byte[] clave, String paraDir, byte[] paraKem, String miDir) throws Exception {
+        byte[] carga = null;
+        byte[] semilla = null;
+        try {
+            carga = new JSONObject().put("sala", id).put("epoca", epoca)
+                    .put("clave", android.util.Base64.encodeToString(clave, android.util.Base64.NO_WRAP))
+                    .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            semilla = boveda.semillaFirma();
+            String sobre = X39Core.sealSigned(paraKem, semilla, carga, System.currentTimeMillis() / 1000L);
+            String firma = X39Core.roomSign(semilla, id, epoca, X39Core.roomActionEnvelope(paraDir, sobre));
+            buzon.salaSobre(id, epoca, paraDir, miDir, sobre, firma);
+        } finally {
+            if (carga != null) Arrays.fill(carga, (byte) 0);
+            if (semilla != null) Arrays.fill(semilla, (byte) 0);
+        }
+    }
+
+    /** Abre un sobre dirigido a mí: firma de quien lo entrega (un miembro) y clave de la sala dentro. */
+    private byte[] abrirSobre(String id, int epoca, JSONObject sobre, String miDir, java.util.Map<String, Almacen.Contacto> porDir) throws Exception {
+        String de = sobre.optString("de");
+        byte[] pk;
+        if (de.equals(miDir)) {
+            pk = claveFirma;
+        } else {
+            Almacen.Contacto c = porDir.get(de);
+            if (c == null || c.claveFirma == null || !esMiembroSeguro(c, id)) throw new IllegalStateException("sobre de alguien que no es miembro");
+            pk = c.claveFirma;
+        }
+        byte[] sk = null;
+        byte[] salida = null;
+        byte[] carga = null;
+        try {
+            sk = boveda.claveSecreta();
+            salida = X39Core.open(sk, sobre.optString("sobre"), System.currentTimeMillis() / 1000L, TTL_SOBRE_SEGUNDOS);
+            byte[] cuerpo = Arrays.copyOfRange(salida, X39Core.CID_LEN, salida.length);
+            carga = X39Core.verifySigned(pk, clavePublica, cuerpo);
+            Arrays.fill(cuerpo, (byte) 0);
+            JSONObject j = new JSONObject(new String(carga, java.nio.charset.StandardCharsets.UTF_8));
+            if (!id.equals(j.optString("sala")) || j.optInt("epoca", -1) != epoca) throw new IllegalStateException("sobre de otra sala o época");
+            byte[] clave = android.util.Base64.decode(j.optString("clave"), android.util.Base64.NO_WRAP);
+            if (clave.length != X39Core.ROOM_KEY_LEN) throw new IllegalStateException("clave de sala con longitud incorrecta");
+            return clave;
+        } finally {
+            if (sk != null) Arrays.fill(sk, (byte) 0);
+            if (salida != null) Arrays.fill(salida, (byte) 0);
+            if (carga != null) Arrays.fill(carga, (byte) 0);
+        }
+    }
+
+    /** Versión de esMiembro para hilos de fondo (no toca el almacén de salas). */
+    private boolean esMiembroSeguro(Almacen.Contacto c, String salaId) {
+        if (c.acreditadoNombre == null) return false;
+        if ("general".equals(salaId) || esAlcaldia(c.acreditadoArea(), c.acreditadoCargo())) return true;
+        String a = c.acreditadoArea();
+        return a != null && slug(a).equals(salaId) || salasExtraContiene(salaId, Buzon.direccion(c.clave));
+    }
+
+    private boolean salasExtraContiene(String salaId, String dir) {
+        Almacen.Sala s = almacen.sala(salaId);
+        return s != null && s.miembrosExtra.contains(dir);
+    }
+
+    private void abrirSala(String id) {
+        salaAbierta = id;
+        abrirSecundaria(() -> {
+            Almacen.Sala s = almacen.sala(id);
+            if (s == null) s = almacen.salaOCrear(id, nombreDeSala(id));
+            mostrar(pantallaSala(s), false);
+        });
+        sincronizarSalas();
+    }
+
+    private View filaSala(String id, String nombre) {
+        Almacen.Sala s = almacen.sala(id);
+        LinearLayout f = Ui.fila(this);
+        f.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
+        f.setMinimumHeight(Ui.dp(this, 72));
+        f.addView(Ui.avatar(this, nombre, 48));
+        LinearLayout textos = Ui.columna(this);
+        textos.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 8), 0);
+        textos.addView(Ui.texto(this, nombre, 16, Ui.TEXTO, true));
+        int miembros = miembrosDe(id).size() + 1;
+        String vista;
+        if (s == null || s.mensajes.isEmpty()) {
+            vista = miembros + (miembros == 1 ? " miembro" : " miembros") + " · sin mensajes todavía";
+        } else {
+            Almacen.MensajeSala m = s.mensajes.get(s.mensajes.size() - 1);
+            vista = (m.propio ? "Tú" : Almacen.campo(m.autor, 0)) + ": " + m.texto;
+        }
+        TextView prev = Ui.texto(this, vista, 14, Ui.TEXTO_2, false);
+        prev.setSingleLine(true);
+        prev.setEllipsize(TextUtils.TruncateAt.END);
+        textos.addView(prev);
+        f.addView(textos, Ui.peso(1));
+        if (s != null && !s.mensajes.isEmpty()) f.addView(Ui.texto(this, Ui.hora(s.ultimaActividad()), 12, Ui.TENUE, false));
+        f.setOnClickListener(v -> abrirSala(id));
+        Ui.clicable(f);
+        return f;
+    }
+
+    private View pantallaSala(Almacen.Sala s) {
+        LinearLayout col = Ui.columna(this);
+        LinearLayout cab = Ui.fila(this);
+        cab.setPadding(Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4), Ui.dp(this, 8));
+        cab.addView(Ui.botonIcono(this, Icono.Tipo.ATRAS, Ui.TEXTO, "Volver", v -> mostrarPestana(Pestana.CHATS)));
+        cab.addView(Ui.avatar(this, s.nombre, 40));
+        LinearLayout textos = Ui.columna(this);
+        textos.setPadding(Ui.dp(this, 10), 0, 0, 0);
+        textos.addView(Ui.texto(this, "Sala · " + s.nombre, 16, Ui.TEXTO, true));
+        int miembros = miembrosDe(s.id).size() + 1;
+        String sub = miembros + " miembros · nada se borra · " + (s.conClave() ? "toca para ver quién está" : "esperando la clave de la sala…");
+        textos.addView(Ui.texto(this, sub, 12, s.conClave() ? Ui.SUAVE : Ui.AVISO, false));
+        textos.setOnClickListener(v -> verMiembros(s));
+        Ui.clicable(textos);
+        cab.addView(textos, Ui.peso(1));
+        cab.addView(Ui.botonIcono(this, Icono.Tipo.MAS, Ui.TEXTO, "Añadir a alguien a la sala", v -> anadirMiembro(s)));
+        col.addView(cab);
+        col.addView(Ui.separador(this));
+
+        ScrollView sv = new ScrollView(this);
+        LinearLayout hilo = Ui.columna(this);
+        hilo.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
+        TextView aviso = Ui.texto(this, "Solo los miembros tienen la clave de esta sala. Cada mensaje va firmado por su autor y encadenado al anterior: "
+                + "no se puede borrar ni cambiar sin que se note. El historial completo queda en el canister del Ayuntamiento.", 12, Ui.SUAVE, false);
+        aviso.setGravity(Gravity.CENTER);
+        aviso.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 8));
+        aviso.setBackground(Ui.redondeado(this, Ui.SUPERFICIE, 14));
+        hilo.addView(aviso, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 0, 0, 10));
+        int anchoMax = (int) (getResources().getDisplayMetrics().widthPixels * 0.8f);
+        for (Almacen.MensajeSala m : s.mensajes) hilo.addView(burbujaSala(m, anchoMax));
+        sv.addView(hilo);
+        col.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        sv.post(() -> sv.fullScroll(View.FOCUS_DOWN));
+
+        LinearLayout compositor = Ui.fila(this);
+        compositor.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 12));
+        EditText et = Ui.campo(this, "Mensaje para la sala " + s.nombre, 1, true);
+        et.setMaxLines(5);
+        compositor.addView(et, Ui.peso(1));
+        FrameLayout enviar = new FrameLayout(this);
+        android.graphics.drawable.GradientDrawable circulo = new android.graphics.drawable.GradientDrawable();
+        circulo.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        circulo.setColor(Ui.BLANCO);
+        enviar.setBackground(circulo);
+        ImageView flecha = new ImageView(this);
+        flecha.setImageDrawable(new Icono(Icono.Tipo.ENVIAR, Ui.FONDO));
+        enviar.addView(flecha, new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.CENTER));
+        enviar.setContentDescription("Enviar a la sala");
+        enviar.setOnClickListener(v -> enviarSala(s, et));
+        Ui.clicable(enviar);
+        compositor.addView(enviar, Ui.margen(this, Ui.dp(this, 48), Ui.dp(this, 48), 8, 0, 0, 0));
+        col.addView(compositor);
+        return col;
+    }
+
+    private View burbujaSala(Almacen.MensajeSala m, int anchoMax) {
+        LinearLayout b = Ui.columna(this);
+        b.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 8));
+        android.graphics.drawable.GradientDrawable fondo = new android.graphics.drawable.GradientDrawable();
+        fondo.setColor(m.propio ? Ui.BURBUJA_SALIENTE : Ui.BURBUJA_ENTRANTE);
+        float r = Ui.dp(this, 18), p = Ui.dp(this, 6);
+        fondo.setCornerRadii(m.propio ? new float[]{r, r, r, r, p, p, r, r} : new float[]{r, r, r, r, r, r, p, p});
+        b.setBackground(fondo);
+        if (!m.propio) {
+            TextView a = Ui.texto(this, m.autor, 12, Ui.TEXTO_2, true);
+            a.setPadding(0, 0, 0, Ui.dp(this, 2));
+            b.addView(a);
+        }
+        TextView t = Ui.texto(this, m.texto, 15, Ui.TEXTO, false);
+        t.setMaxWidth(anchoMax - Ui.dp(this, 28));
+        t.setTextIsSelectable(false);
+        t.setLongClickable(false);
+        b.addView(t);
+        String pie = Ui.hora(m.ts) + (m.firmaOk ? " · firma verificada" : " · ⚠ firma sin comprobar") + (m.cadenaOk ? "" : " · ⚠ cadena rota");
+        TextView h = Ui.texto(this, pie, 11, m.propio ? 0xA6FFFFFF : 0xFF7A7A80, false);
+        h.setGravity(Gravity.END);
+        b.addView(h, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.gravity = m.propio ? Gravity.END : Gravity.START;
+        lp.setMargins(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
+        b.setLayoutParams(lp);
+        return b;
+    }
+
+    private void enviarSala(Almacen.Sala s, EditText et) {
+        final String texto = et.getText().toString().trim();
+        if (texto.isEmpty()) return;
+        if (!s.conClave()) {
+            aviso("La sala todavía no tiene clave. Espera unos segundos a que se sincronice.");
+            return;
+        }
+        final String miDir = miDireccion();
+        final String msg;
+        final String firma;
+        byte[] semilla = null;
+        try {
+            msg = X39Core.roomEncrypt(s.clave, s.id, s.epoca, texto.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            semilla = boveda.semillaFirma();
+            firma = X39Core.roomSign(semilla, s.id, s.epoca, msg);
+        } catch (Exception e) {
+            aviso(Ui.mensaje(e));
+            return;
+        } finally {
+            if (semilla != null) Arrays.fill(semilla, (byte) 0);
+        }
+        et.setText("");
+        final String id = s.id;
+        final int epoca = s.epoca;
+        new Thread(() -> {
+            String fallo = null;
+            try {
+                buzon.salaMensaje(id, epoca, miDir, msg, firma);
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            }
+            final String f = fallo;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (f == null) {
+                    sincronizarSalas();
+                } else {
+                    aviso("No se pudo enviar a la sala: " + f + "\n\nTu mensaje era:\n" + texto);
+                }
+            });
+        }, "x39-sala-enviar").start();
+    }
+
+    private void verMiembros(Almacen.Sala s) {
+        List<Almacen.Contacto> ms = miembrosDe(s.id);
+        StringBuilder sb = new StringBuilder();
+        String yo = prefs().getString(PREF_INV_NOMBRE, null);
+        sb.append("• ").append(Almacen.campo(yo, 0)).append(" (tú)");
+        if (Almacen.campo(yo, 1) != null) sb.append(" · ").append(Almacen.campo(yo, 1));
+        for (Almacen.Contacto c : ms) {
+            sb.append("\n• ").append(c.nombre);
+            if (c.acreditadoCargo() != null) sb.append(" · ").append(c.acreditadoCargo());
+            if (c.acreditadoArea() != null && !"general".equals(s.id) && !slug(c.acreditadoArea()).equals(s.id)) sb.append(" (invitado desde ").append(c.acreditadoArea()).append(")");
+        }
+        String quien = "general".equals(s.id) ? "Todo el personal acreditado del Ayuntamiento." : "El personal acreditado del área, el alcalde y quien haya sido invitado por un miembro.";
+        new AlertDialog.Builder(this)
+                .setTitle("Sala " + s.nombre + " · " + (ms.size() + 1) + " miembros")
+                .setMessage(quien + "\n\n" + sb)
+                .setPositiveButton("Entendido", null)
+                .show();
+    }
+
+    private void anadirMiembro(Almacen.Sala s) {
+        if ("general".equals(s.id)) {
+            aviso("En General está ya todo el personal acreditado.");
+            return;
+        }
+        final List<Almacen.Contacto> candidatos = new ArrayList<>();
+        for (Almacen.Contacto c : almacen.contactos) {
+            if (c.acreditadoNombre != null && c.claveFirma != null && !esMiembro(c, s.id)) candidatos.add(c);
+        }
+        if (candidatos.isEmpty()) {
+            aviso("Todo el personal acreditado de la agenda está ya en esta sala.");
+            return;
+        }
+        java.util.Collections.sort(candidatos, (a, b) -> a.nombre.compareToIgnoreCase(b.nombre));
+        String[] nombres = new String[candidatos.size()];
+        for (int i = 0; i < nombres.length; i++) {
+            Almacen.Contacto c = candidatos.get(i);
+            nombres[i] = c.nombre + (c.acreditadoCargo() != null ? " · " + c.acreditadoCargo() : "") + (c.acreditadoArea() != null ? " · " + c.acreditadoArea() : "");
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Añadir a la sala " + s.nombre)
+                .setItems(nombres, (d, i) -> invitarASala(s, candidatos.get(i)))
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void invitarASala(Almacen.Sala s, Almacen.Contacto c) {
+        final String id = s.id;
+        final String dir = Buzon.direccion(c.clave);
+        final String miDir = miDireccion();
+        final String firma;
+        byte[] semilla = null;
+        try {
+            semilla = boveda.semillaFirma();
+            firma = X39Core.roomSign(semilla, id, 0, X39Core.roomActionMember(dir));
+        } catch (Exception e) {
+            aviso(Ui.mensaje(e));
+            return;
+        } finally {
+            if (semilla != null) Arrays.fill(semilla, (byte) 0);
+        }
+        new Thread(() -> {
+            String fallo = null;
+            try {
+                buzon.salaMiembro(id, dir, miDir, firma);
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            }
+            final String f = fallo;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (f != null) {
+                    aviso("No se pudo añadir: " + f);
+                    return;
+                }
+                Almacen.Sala sala = almacen.sala(id);
+                if (sala != null && !sala.miembrosExtra.contains(dir)) sala.miembrosExtra.add(dir);
+                try {
+                    almacen.guardar();
+                } catch (Exception ignorada) {
+                    // Se vuelve a leer del canister en la siguiente pasada.
+                }
+                Toast.makeText(this, c.nombre + " ya está en la sala; recibirá la clave enseguida", Toast.LENGTH_LONG).show();
+                if (pantallaSecundaria != null) pantallaSecundaria.run();
+                sincronizarSalas();
+            });
+        }, "x39-sala-miembro").start();
+    }
+
     private static boolean esIdDeContacto(String s) {
         if (s.length() != 16) return false;
         for (int i = 0; i < s.length(); i++) {
@@ -1253,15 +1903,26 @@ public class MainActivity extends Activity {
 
         col.addView(franjaProteccion(), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 16, 0, 16, 0));
 
+        ScrollView sv = new ScrollView(this);
+        LinearLayout lista = Ui.columna(this);
+        lista.setPadding(0, 0, 0, Ui.dp(this, 96));
+
+        // Salas por departamento: General y la del área (todas para el alcalde), más las invitadas.
+        java.util.LinkedHashMap<String, String> salas = misSalas();
+        if (!salas.isEmpty()) {
+            LinearLayout titS = Ui.fila(this);
+            titS.setPadding(Ui.dp(this, 20), Ui.dp(this, 22), Ui.dp(this, 20), Ui.dp(this, 6));
+            titS.addView(Ui.texto(this, "Salas", 17, Ui.TEXTO, true), Ui.peso(1));
+            titS.addView(Ui.texto(this, estadoSalas, 12, Ui.SUAVE, false));
+            lista.addView(titS);
+            for (java.util.Map.Entry<String, String> e : salas.entrySet()) lista.addView(filaSala(e.getKey(), e.getValue()));
+        }
+
         LinearLayout tit = Ui.fila(this);
         tit.setPadding(Ui.dp(this, 20), Ui.dp(this, 22), Ui.dp(this, 20), Ui.dp(this, 6));
         tit.addView(Ui.texto(this, "Conversaciones", 17, Ui.TEXTO, true), Ui.peso(1));
         tit.addView(Ui.texto(this, almacen.contactos.size() + (almacen.contactos.size() == 1 ? " contacto" : " contactos"), 12, Ui.SUAVE, false));
-        col.addView(tit);
-
-        ScrollView sv = new ScrollView(this);
-        LinearLayout lista = Ui.columna(this);
-        lista.setPadding(0, 0, 0, Ui.dp(this, 96));
+        lista.addView(tit);
         // Chats: solo con quien hay conversación. La agenda completa está en Contactos.
         List<Almacen.Contacto> cs = new ArrayList<>();
         for (Almacen.Contacto c : almacen.ordenados()) {

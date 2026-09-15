@@ -165,6 +165,70 @@ final class Buzon {
         return a;
     }
 
+    // ---- Salas por departamento (canister /sala/*)
+
+    JSONObject salaEstado(String sala) throws IOException {
+        return pedir("GET", url() + "/sala/estado?sala=" + sala, null);
+    }
+
+    /** Sobres (clave de la sala) dirigidos a `para`: [{epoca, de, sobre, firma, ts}]. */
+    JSONArray salaSobres(String sala, String para) throws IOException {
+        JSONArray a = pedir("GET", url() + "/sala/sobres?sala=" + sala + "&para=" + para, null).optJSONArray("sobres");
+        return a == null ? new JSONArray() : a;
+    }
+
+    /** {mensajes:[{seq,de,epoca,msg,firma,ts,hash}], ultimo, epoca}. */
+    JSONObject salaMensajes(String sala, long desde) throws IOException {
+        return pedir("GET", url() + "/sala/mensajes?sala=" + sala + "&desde=" + desde, null);
+    }
+
+    /** Salas a las que añadieron a mano a `para`. */
+    List<String> salaMias(String para) throws IOException {
+        JSONArray a = pedir("GET", url() + "/sala/mias?para=" + para, null).optJSONArray("salas");
+        List<String> l = new ArrayList<>();
+        for (int i = 0; a != null && i < a.length(); i++) l.add(a.optString(i));
+        return l;
+    }
+
+    /** Entrega la clave de la sala a `para`. La época 0 la crea el primero; 409 si la sala va por otra época. */
+    void salaSobre(String sala, int epoca, String para, String de, String sobre, String firma) throws IOException {
+        JSONObject c = new JSONObject();
+        try {
+            c.put("sala", sala).put("epoca", epoca).put("para", para).put("de", de).put("sobre", sobre).put("firma", firma);
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        pedir("POST", url() + "/sala/sobre", c.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Publica un mensaje cifrado y firmado. Devuelve {seq, hash}. */
+    JSONObject salaMensaje(String sala, int epoca, String de, String msg, String firma) throws IOException {
+        JSONObject c = new JSONObject();
+        try {
+            c.put("sala", sala).put("epoca", epoca).put("de", de).put("msg", msg).put("firma", firma);
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        return pedir("POST", url() + "/sala/mensaje", c.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    void salaMiembro(String sala, String direccion, String de, String firma) throws IOException {
+        JSONObject c = new JSONObject();
+        try {
+            c.put("sala", sala).put("direccion", direccion).put("de", de).put("firma", firma);
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        pedir("POST", url() + "/sala/miembro", c.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** El canister rechazó la publicación porque la sala va por otra época (o aún no tiene clave). */
+    static final class OtraEpoca extends IOException {
+        OtraEpoca(String detalle) {
+            super(detalle);
+        }
+    }
+
     private static String entradaDe(JSONObject r) throws IOException {
         String e = r.optString("entrada", "");
         if (e.isEmpty()) throw new IOException("el directorio no devolvió ninguna entrada");
@@ -227,6 +291,7 @@ final class Buzon {
                 throw new IOException("respuesta del buzón no válida (HTTP " + codigo + ")");
             }
             if (codigo == 404 && "no esta en el directorio".equals(r.optString("error"))) throw new NoEstaEnDirectorio();
+            if (codigo == 409) throw new OtraEpoca(r.optString("error", "otra época"));
             if (codigo != 200) throw new IOException("buzón: " + r.optString("error", "HTTP " + codigo));
             return r;
         } finally {

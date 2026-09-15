@@ -14,6 +14,7 @@ pub mod directorio;
 pub mod firma;
 pub mod invitacion;
 pub mod ots;
+pub mod sala;
 pub mod share;
 
 use aes_gcm::Aes256Gcm;

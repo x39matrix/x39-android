@@ -94,6 +94,37 @@ final class X39Core {
      */
     static native String directoryEntryRead(String text, String expectedCode);
 
+    // ---- Salas por departamento (x39-core/src/sala.rs; canister /sala/*)
+
+    static final int ROOM_KEY_LEN = 32;
+
+    /** Clave nueva de sala (32 bytes). Se guarda cifrada en el almacén. */
+    static native byte[] roomNewKey();
+
+    /** Cifra un mensaje para la sala en esa época. Devuelve «X39SALA1:…». */
+    static native String roomEncrypt(byte[] key, String room, int epoch, byte[] plaintext);
+
+    static native byte[] roomDecrypt(byte[] key, String room, int epoch, String message);
+
+    /** Firma una publicación (el texto X39SALA1 del mensaje, o la acción de sobre/miembro). Devuelve «X39FIRMA1:…». */
+    static native String roomSign(byte[] seed, String room, int epoch, String action);
+
+    /** 1 si la firma es de esa clave; si no, lanza. */
+    static native int roomVerify(byte[] signingPublicKey, String room, int epoch, String action, String signature);
+
+    /** Eslabón (hex) de la cadena de la sala; previousHex vacío para el primer mensaje. */
+    static native String roomChainLink(String previousHex, String room, long seq, String sender, String message, String signature);
+
+    /** Acción firmada al entregar la clave de la sala a `para`: igual que sala::accion_sobre. */
+    static String roomActionEnvelope(String para, String sobre) {
+        return "sobre:" + para + ":" + sobre;
+    }
+
+    /** Acción firmada al añadir a alguien: igual que sala::accion_miembro. */
+    static String roomActionMember(String direccion) {
+        return "miembro:" + direccion;
+    }
+
     /** clave_pública(1568) || clave_secreta(3168). */
     static native byte[] generateKeypair();
 
