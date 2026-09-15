@@ -29,6 +29,13 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    sourceSets {
+        main {
+            // Piezas comunes con Evidencia: puente al motor Rust, bóveda Keystore, iconos y paleta.
+            java.srcDirs += ['../comun/java']
+        }
+    }
+
     // Sin el bloque de metadatos de dependencias firmado por Google (requisito F-Droid).
     dependenciesInfo {
         includeInApk false

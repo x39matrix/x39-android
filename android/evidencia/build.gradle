@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+// X-39 Evidencia: fotos con huella, firma ML-DSA-87 y ancla OpenTimestamps.
+// App distinta de la mensajería: su manifiesto sí pide internet (solo huellas de 32 bytes) y cámara.
+android {
+    namespace 'org.x39matrix.evidencia'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'org.x39matrix.evidencia'
+        minSdk 28
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            // Piezas comunes con la mensajería: puente al motor Rust, bóveda Keystore, iconos y paleta.
+            java.srcDirs += ['../comun/java']
+            // Mismo motor Rust (libx39jni.so) que compila scripts/build_apk.sh.
+            jniLibs.srcDirs = ['../app/src/main/jniLibs']
+        }
+    }
+
+    dependenciesInfo {
+        includeInApk false
+        includeInBundle false
+    }
+}
+
+// Google 0: sin dependencias. Solo Android framework + libx39jni.so (Rust).
+dependencies {
+}

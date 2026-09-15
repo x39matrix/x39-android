@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- x39 · Evidencia: grafito; el rojo es solo la marca (candado y «x39»). Regla del proyecto: NINGÚN verde. -->
+<resources>
+    <color name="ev_fondo">#1B1B1D</color>
+    <color name="ev_superficie">#2B2B2F</color>
+    <color name="ev_acento">#F2F2F2</color>
+    <color name="ev_seleccion">#4A4A52</color>
+    <color name="ev_texto">#F2F2F2</color>
+    <color name="ev_texto_suave">#9A9AA1</color>
+
+    <style name="Tema.Evidencia" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/ev_fondo</item>
+        <item name="android:colorPrimaryDark">@color/ev_fondo</item>
+        <item name="android:colorAccent">@color/ev_acento</item>
+        <item name="android:colorControlActivated">@color/ev_acento</item>
+        <item name="android:windowBackground">@color/ev_fondo</item>
+        <item name="android:statusBarColor">@color/ev_fondo</item>
+        <item name="android:navigationBarColor">@color/ev_fondo</item>
+        <item name="android:textColorPrimary">@color/ev_texto</item>
+        <item name="android:textColorSecondary">@color/ev_texto_suave</item>
+        <item name="android:textColorHighlight">@color/ev_seleccion</item>
+        <item name="android:colorControlNormal">@color/ev_texto_suave</item>
+        <item name="android:alertDialogTheme">@style/Tema.Evidencia.Dialogo</item>
+    </style>
+
+    <style name="Tema.Evidencia.Dialogo" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/ev_acento</item>
+        <item name="android:colorBackground">@color/ev_superficie</item>
+        <item name="android:textColorPrimary">@color/ev_texto</item>
+        <item name="android:textColorSecondary">@color/ev_texto_suave</item>
+    </style>
+</resources>

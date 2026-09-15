@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Capa monocroma (iconos temáticos de Android 13+): la misma silueta del candado. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M43,50V42a11,11 0,0 1,22 0v8"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M39,49h30a5,5 0,0 1,5 5v20a5,5 0,0 1,-5 5h-30a5,5 0,0 1,-5 -5v-20a5,5 0,0 1,5 -5zM54,58.5a4,4 0,0 0,-2.2 7.35V71h4.4v-5.15A4,4 0,0 0,54 58.5z"
+        android:fillType="evenOdd"
+        android:fillColor="#FFFFFFFF" />
+</vector>

@@ -42,6 +42,26 @@ final class X39Core {
     /** Devuelve la carga si la firma es del remitente y va dirigida a mí; si no, lanza. */
     static native byte[] verifySigned(byte[] senderSigningKey, byte[] myPublicKey, byte[] body);
 
+    // ---- Evidencia: firma de mensajes y OpenTimestamps
+
+    /** Firma ML-DSA-87 estándar (contexto vacío) con la semilla de 32 bytes. Devuelve 4627 bytes. */
+    static native byte[] signMessage(byte[] seed, byte[] message);
+
+    /** 1 si la firma es válida; si no, lanza. */
+    static native int verifyMessage(byte[] signingPublicKey, byte[] message, byte[] signature);
+
+    /** Compromiso que se envía a los calendarios: sha256(huella(32) || nonce(16)). */
+    static native byte[] otsCommitment(byte[] digest, byte[] nonce);
+
+    /** Incorpora la respuesta de un calendario; con ots == null empieza la prueba. Devuelve el .ots completo. */
+    static native byte[] otsIncorporate(byte[] ots, byte[] digest, byte[] nonce, byte[] commitment, byte[] response);
+
+    /** Pendientes, una línea por calendario: "uri mensaje_hex". */
+    static native String otsPending(byte[] ots);
+
+    /** Bloques de Bitcoin que atestiguan la prueba, separados por comas. */
+    static native String otsBlocks(byte[] ots);
+
     /** clave_pública(1568) || clave_secreta(3168). */
     static native byte[] generateKeypair();
 

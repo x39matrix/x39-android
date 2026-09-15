@@ -8,6 +8,7 @@ use jni::errors::ThrowRuntimeExAndDefault;
 use jni::objects::{JByteArray, JClass, JString};
 use jni::sys::{jint, jlong};
 use x39_core::firma::{self, DSA_PK_LEN, DSA_SEED_LEN};
+use x39_core::ots::Prueba;
 use x39_core::{CID_LEN, PK_LEN, SK_LEN, TtlPolicy, share};
 use zeroize::Zeroizing;
 
@@ -321,6 +322,123 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_verifySigned<'c>(
             let body = Zeroizing::new(env.convert_byte_array(&body)?);
             let payload = firma::verify_from(&sender, &mine, &body)?;
             Ok(env.byte_array_from_slice(payload)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+fn fijo<const N: usize>(env: &jni::Env, array: &JByteArray, que: &'static str) -> Res<[u8; N]> {
+    env.convert_byte_array(array)?.try_into().map_err(|_| PuenteError::Datos(que))
+}
+
+/// Firma ML-DSA-87 estándar (contexto vacío) de `message` con la semilla. Devuelve 4627 bytes.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_signMessage<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    seed: JByteArray<'c>,
+    message: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let seed = seed_from(env, &seed)?;
+            let msg = env.convert_byte_array(&message)?;
+            Ok(env.byte_array_from_slice(&firma::sign(&seed, &msg, b"")?)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Devuelve 1 si la firma ML-DSA-87 (contexto vacío) es válida; si no, lanza.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_verifyMessage<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    signing_public_key: JByteArray<'c>,
+    message: JByteArray<'c>,
+    signature: JByteArray<'c>,
+) -> jint {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = signing_public_key_from(env, &signing_public_key)?;
+            let msg = env.convert_byte_array(&message)?;
+            let sig = env.convert_byte_array(&signature)?;
+            if firma::verify(&pk, &msg, b"", &sig) { Ok(1) } else { Err(PuenteError::X39(x39_core::Error::Firma)) }
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Compromiso OpenTimestamps que se envía a los calendarios: sha256(huella || nonce).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_otsCommitment<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    digest: JByteArray<'c>,
+    nonce: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let (_, compromiso) = Prueba::nueva(fijo(env, &digest, "huella de 32 bytes")?, fijo(env, &nonce, "nonce de 16 bytes")?)?;
+            Ok(env.byte_array_from_slice(&compromiso)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Incorpora una respuesta de calendario. Con `ots` nulo empieza la prueba desde huella y nonce.
+/// Devuelve el `.ots` completo actualizado.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_otsIncorporate<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    ots: JByteArray<'c>,
+    digest: JByteArray<'c>,
+    nonce: JByteArray<'c>,
+    commitment: JByteArray<'c>,
+    response: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let mut prueba = if ots.is_null() {
+                Prueba::nueva(fijo(env, &digest, "huella de 32 bytes")?, fijo(env, &nonce, "nonce de 16 bytes")?)?.0
+            } else {
+                Prueba::leer(&env.convert_byte_array(&ots)?)?
+            };
+            prueba.incorporar(&env.convert_byte_array(&commitment)?, &env.convert_byte_array(&response)?)?;
+            Ok(env.byte_array_from_slice(&prueba.serializar()?)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Calendarios pendientes, una línea por cada uno: "uri mensaje_hex".
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_otsPending<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    ots: JByteArray<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let prueba = Prueba::leer(&env.convert_byte_array(&ots)?)?;
+            let lineas: Vec<String> = prueba
+                .pendientes()
+                .into_iter()
+                .map(|(uri, msg)| format!("{uri} {}", msg.iter().map(|b| format!("{b:02x}")).collect::<String>()))
+                .collect();
+            Ok(env.new_string(lineas.join("\n"))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Alturas de bloque de Bitcoin que atestiguan la prueba, separadas por comas (vacío si ninguna).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_otsBlocks<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    ots: JByteArray<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let prueba = Prueba::leer(&env.convert_byte_array(&ots)?)?;
+            let bloques: Vec<String> = prueba.bloques_bitcoin().iter().map(u64::to_string).collect();
+            Ok(env.new_string(bloques.join(","))?)
         })
         .resolve::<ThrowRuntimeExAndDefault>()
 }

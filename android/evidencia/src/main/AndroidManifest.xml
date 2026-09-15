@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  x39 · Evidencia. Tres permisos y ninguno más (prueba de aceptación 7):
+  - INTERNET: solo para enviar huellas SHA-256 (32 bytes) a los calendarios de OpenTimestamps y recoger pruebas.
+    Nunca fotos. Cada petición queda en el registro de red de la pantalla Seguridad.
+  - ACCESS_NETWORK_STATE: saber si hay red antes de intentar anclar.
+  - CAMERA: la cámara propia de la app. Las fotos no pasan por la galería.
+  Sin copias de seguridad en la nube.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature android:name="android.hardware.camera.any" android:required="true" />
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:label="x39"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Tema.Evidencia">
+
+        <!-- Las clases viven en el paquete org.x39.bolsillo para reutilizar el puente al motor y la paleta. -->
+        <activity
+            android:name="org.x39.bolsillo.EvidenciaActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Cola de anclaje: JobScheduler del sistema, sin AndroidX. -->
+        <service
+            android:name="org.x39.bolsillo.ColaAnclaje"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Comparte el recibo (.json + .ots) con la hoja de compartir. Nunca la foto. -->
+        <provider
+            android:name="org.x39.bolsillo.ProveedorRecibos"
+            android:authorities="${applicationId}.recibos"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+    </application>
+</manifest>

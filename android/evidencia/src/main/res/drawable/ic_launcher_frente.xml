@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Candado rojo: la marca de x39. Dentro de la zona segura de 66 dp del icono adaptativo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- arco -->
+    <path
+        android:pathData="M43,50V42a11,11 0,0 1,22 0v8"
+        android:strokeColor="#FFE53935"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <!-- cuerpo -->
+    <path
+        android:pathData="M39,49h30a5,5 0,0 1,5 5v20a5,5 0,0 1,-5 5h-30a5,5 0,0 1,-5 -5v-20a5,5 0,0 1,5 -5z"
+        android:fillColor="#FFE53935" />
+    <!-- bocallave -->
+    <path
+        android:pathData="M54,58.5a4,4 0,0 1,2.2 7.35V71h-4.4v-5.15A4,4 0,0 1,54 58.5z"
+        android:fillColor="#FF1B1B1D" />
+</vector>

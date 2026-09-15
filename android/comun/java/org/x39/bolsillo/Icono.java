@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 
 /** Iconos de trazo dibujados sobre una rejilla de 24 unidades, coherentes con el diseño. */
 final class Icono extends Drawable {
-    enum Tipo { INICIO, CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
+    enum Tipo { INICIO, CAMARA, AJUSTES, CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
 
     private final Tipo tipo;
     private final Paint pincel = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -33,6 +33,17 @@ final class Icono extends Drawable {
         c.scale(b.width() / 24f, b.height() / 24f);
         Path p = new Path();
         switch (tipo) {
+            case CAMARA:
+                p.addRoundRect(new RectF(3, 7, 21, 20), 3, 3, Path.Direction.CW);
+                p.moveTo(8.5f, 7); p.lineTo(10, 4.5f); p.lineTo(14, 4.5f); p.lineTo(15.5f, 7);
+                p.addCircle(12, 13.5f, 3.6f, Path.Direction.CW);
+                break;
+            case AJUSTES:
+                p.moveTo(4, 7); p.lineTo(20, 7); p.moveTo(4, 12); p.lineTo(20, 12); p.moveTo(4, 17); p.lineTo(20, 17);
+                p.addCircle(9, 7, 2.2f, Path.Direction.CW);
+                p.addCircle(15, 12, 2.2f, Path.Direction.CW);
+                p.addCircle(8, 17, 2.2f, Path.Direction.CW);
+                break;
             case INICIO:
                 p.moveTo(3.5f, 11); p.lineTo(12, 4); p.lineTo(20.5f, 11);
                 p.addRoundRect(new RectF(6, 10, 18, 20.5f), 2, 2, Path.Direction.CW);
