@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
     private static final int REQ_DESBLOQUEO = 39;
     private static final int REQ_COMPROBAR = 40;
     private static final long GRACIA_BLOQUEO_MS = 60_000;
-    private static final String VERSION = "0.9.1";
+    private static final String VERSION = "0.9.2";
     /** Tiempo mínimo de la pantalla «Creando tus claves» para que no parpadee. */
     private static final long CREACION_MIN_MS = 900;
     private static final String PREFS = "x39";
@@ -661,6 +661,7 @@ public class MainActivity extends Activity {
 
     private void volverDeInvitacion() {
         pantallaSecundaria = null;
+        invitacionInicial = null;
         if (enBienvenida) mostrar(pantallaBienvenida(), false);
         else mostrarPestana(Pestana.PLENOS);
     }
@@ -679,10 +680,8 @@ public class MainActivity extends Activity {
         col.addView(d);
 
         EditText campo = Ui.campo(this, "X39INV1:…", 5, true);
-        if (invitacionInicial != null) {
-            campo.setText(invitacionInicial);
-            invitacionInicial = null;
-        }
+        // Se conserva mientras la pantalla siga abierta (se vuelve a pintar al traer la app al frente).
+        if (invitacionInicial != null) campo.setText(invitacionInicial);
         col.addView(campo, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView pegar = Ui.boton(this, "Pegar del portapapeles", false, v -> {
@@ -747,6 +746,7 @@ public class MainActivity extends Activity {
                         prefs().edit().putString(PREF_INV_NOMBRE, nombre).putString(PREF_INV_CADUCA, caduca).putString(PREF_INV_TEXTO, invitacion).apply();
                         crearAcreditacion();
                         pantallaSecundaria = null;
+                        invitacionInicial = null;
                         mostrarPestana(Pestana.CONTACTOS);
                     })
                     .show();
@@ -761,6 +761,7 @@ public class MainActivity extends Activity {
                 .setPositiveButton("Crear mi clave", (dlg, w) -> {
                     prefs().edit().putString(PREF_INV_NOMBRE, nombre).putString(PREF_INV_CADUCA, caduca).putString(PREF_INV_TEXTO, invitacion).apply();
                     pantallaSecundaria = null;
+                    invitacionInicial = null;
                     crearIdentidad();
                 })
                 .show();
