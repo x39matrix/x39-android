@@ -23,6 +23,8 @@ android {
             def almacen = System.getenv('X39_KEYSTORE')
             if (almacen) {
                 storeFile file(almacen)
+                // keytool de JDK 17 crea PKCS12 aunque el fichero se llame .jks.
+                storeType 'pkcs12'
                 storePassword System.getenv('X39_STORE_PASS')
                 keyAlias System.getenv('X39_KEY_ALIAS') ?: 'x39'
                 keyPassword System.getenv('X39_KEY_PASS') ?: System.getenv('X39_STORE_PASS')

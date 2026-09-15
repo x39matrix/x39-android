@@ -19,9 +19,20 @@ SALIDA="pruebas_ots/apks/x39-$VERSION-release.apk"
 [ ! -e "$SALIDA" ] || { echo "ya existe $SALIDA; muévelo antes de volver a compilar"; exit 1; }
 echo "Versión $VERSION · almacén $ALMACEN · alias $ALIAS"
 
-read -r -s -p "Contraseña del almacén (no se muestra): " PASS; echo
-[ -n "$PASS" ] || { echo "contraseña vacía"; exit 1; }
+# Se comprueba la contraseña con keytool ANTES de compilar: un error de tecleo se ve al momento.
+KEYTOOL="$JAVA_HOME/bin/keytool"
 trap 'unset PASS' EXIT
+for intento in 1 2 3; do
+  read -r -s -p "Contraseña del almacén (no se muestra): " PASS; echo
+  if [ -n "$PASS" ] && X39_STORE_PASS="$PASS" "$KEYTOOL" -list -keystore "$ALMACEN" -alias "$ALIAS" \
+       -storepass:env X39_STORE_PASS >/dev/null 2>&1; then
+    echo "✓ la contraseña abre el almacén"
+    break
+  fi
+  PASS=""
+  echo "✗ la contraseña no abre $ALMACEN (intento $intento de 3)"
+  [ "$intento" -lt 3 ] || exit 1
+done
 
 echo "### 1. Motor Rust (arm64 + x86_64)"
 ( cd x39-jni && cargo ndk -t arm64-v8a -t x86_64 --platform 28 -o ../android/app/src/main/jniLibs build --release 2>&1 \
