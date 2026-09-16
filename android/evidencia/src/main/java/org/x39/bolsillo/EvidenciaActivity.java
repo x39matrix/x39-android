@@ -113,6 +113,7 @@ public class EvidenciaActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+        limpiarCompartidos();
         if (camara == null) render();
     }
 
@@ -1115,7 +1116,13 @@ public class EvidenciaActivity extends Activity {
         datos.addView(pildora(f), lpp);
         dato(datos, "Huella SHA-256", f.sha256, true);
         dato(datos, "Hora del dispositivo al sellar (declarada, no verificable)", f.capturada, false);
-        dato(datos, "Firmada con la clave", agrupar(f.firmante), true);
+        String bytesClave;
+        try {
+            bytesClave = f.firmante.equals(evidencias.huellaClave()) ? " · clave pública " + miles(evidencias.clavePublica().length) + " bytes" : "";
+        } catch (Exception e) {
+            bytesClave = "";
+        }
+        dato(datos, "Firmada con la clave" + bytesClave, agrupar(f.firmante), true);
         int bytesFirma = Base64.decode(f.firma, Base64.NO_WRAP).length;
         dato(datos, "Firma", "ML-DSA-87 · " + miles(bytesFirma) + " bytes", false);
         String sujeto = f.esFoto() ? "Esta foto" : f.esVideo() ? "Este vídeo" : f.esAudio() ? "Este audio" : "Este archivo";
@@ -1244,19 +1251,18 @@ public class EvidenciaActivity extends Activity {
         startActivity(Intent.createChooser(i, titulo));
     }
 
+    /**
+     * Exportar = la hoja de compartir de Android con el archivo descifrado servido por el proveedor de la app
+     * (lectura temporal), igual que el recibo: el periodista elige el destino (Signal, correo, USB…). La app
+     * nunca escribe en DCIM, Pictures ni Movies, ni toca el MediaStore.
+     */
     private void confirmarExportar(Evidencias.Ficha f) {
-        String lo = f.esFoto() ? "La foto" : "El archivo";
+        String lo = f.esFoto() ? "La foto" : f.esVideo() ? "El vídeo" : f.esAudio() ? "El audio" : "El archivo";
         new AlertDialog.Builder(this)
-                .setTitle(f.esFoto() ? "Exportar la foto" : "Exportar el archivo")
-                .setMessage(lo + " saldrá del almacén cifrado de la app y quedará como un archivo normal donde elijas. Quien tenga ese archivo podrá abrirlo. El recibo sigue valiendo: la huella del archivo exportado es la misma.")
+                .setTitle(f.esFoto() ? "Exportar la foto" : f.esVideo() ? "Exportar el vídeo" : f.esAudio() ? "Exportar el audio" : "Exportar el archivo")
+                .setMessage(lo + " se descifra y se entrega a la app que elijas. Fuera de la bóveda, este archivo puede sincronizarse con la nube de tu móvil. El recibo sigue valiendo: la huella es la misma.")
                 .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Exportar", (d, w) -> {
-                    exportandoId = f.id;
-                    String titulo = f.esFoto() ? "x39-" + f.id + ".jpg" : (f.nombre.isEmpty() ? "x39-" + f.id : f.nombre);
-                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                            .setType(f.mime).putExtra(Intent.EXTRA_TITLE, titulo);
-                    startActivityForResult(i, REQ_EXPORTAR);
-                })
+                .setPositiveButton("Elegir destino", (d, w) -> exportar(f))
                 .show();
     }
 
@@ -1266,30 +1272,63 @@ public class EvidenciaActivity extends Activity {
         if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
         if (requestCode == REQ_ARCHIVO) {
             sellarArchivo(data.getData());
-        } else if (requestCode == REQ_EXPORTAR && exportandoId != null) {
-            exportar(exportandoId, data.getData());
-            exportandoId = null;
         }
     }
 
-    private void exportar(String id, Uri destino) {
+    /** Nombre de fichero seguro para el proveedor (solo letras, dígitos, punto, guion). */
+    private static String nombreExportado(Evidencias.Ficha f) {
+        String base = f.esFoto() ? "x39-" + f.id + ".jpg" : (f.nombre.isEmpty() ? "x39-" + f.id : f.nombre);
+        String limpio = base.replaceAll("[^A-Za-z0-9._-]", "-");
+        if (limpio.length() > 80) limpio = limpio.substring(limpio.length() - 80);
+        return limpio;
+    }
+
+    private void exportar(Evidencias.Ficha f) {
+        final String nombre = nombreExportado(f);
+        final File destino = new File(ProveedorRecibos.carpeta(this), nombre);
+        TextView estado = Ui.texto(this, "Descifrando…", 14, Ui.TEXTO, false);
+        estado.setPadding(dp(24), dp(20), dp(24), dp(8));
+        AlertDialog espera = new AlertDialog.Builder(this).setTitle(nombre).setView(estado).setCancelable(false).show();
         new Thread(() -> {
             String fallo = null;
-            try {
-                Evidencias.Ficha f = evidencias.porId(id);
-                if (f == null) throw new IllegalStateException("la evidencia ya no existe");
-                try (OutputStream out = getContentResolver().openOutputStream(destino)) {
-                    if (out == null) throw new IllegalStateException("el sistema no dio el destino");
-                    evidencias.descifrarA(f, out);
-                }
+            try (OutputStream out = new java.io.FileOutputStream(destino)) {
+                evidencias.descifrarA(f, out);
             } catch (GeneralSecurityException e) {
-                fallo = "lo guardado ha cambiado o está dañado; la copia exportada quedó incompleta";
+                fallo = "lo guardado ha cambiado o está dañado; no se exporta";
             } catch (Exception e) {
                 fallo = Ui.mensaje(e);
             }
             final String error = fallo;
-            runOnUiThread(() -> Toast.makeText(this, error == null ? "Exportado" : "No se pudo exportar: " + error, Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                espera.dismiss();
+                if (error != null) {
+                    //noinspection ResultOfMethodCallIgnored
+                    destino.delete();
+                    aviso("No se pudo exportar: " + error);
+                    return;
+                }
+                Uri uri = ProveedorRecibos.uri(this, nombre);
+                Intent i = new Intent(Intent.ACTION_SEND).setType(f.mime).putExtra(Intent.EXTRA_STREAM, uri);
+                i.setClipData(ClipData.newRawUri(null, uri));
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(Intent.createChooser(i, "Exportar " + nombre));
+            });
         }, "x39-exportar").start();
+    }
+
+    /** Copias descifradas que quedaron en cache/compartir tras exportar: se borran pasados 15 minutos. */
+    private void limpiarCompartidos() {
+        File[] fs = ProveedorRecibos.carpeta(this).listFiles();
+        if (fs == null) return;
+        long limite = System.currentTimeMillis() - 15 * 60_000L;
+        for (File x : fs) {
+            String n = x.getName();
+            if (!n.endsWith(".json") && !n.endsWith(".ots") && !n.endsWith(".txt") && x.lastModified() < limite) {
+                //noinspection ResultOfMethodCallIgnored
+                x.delete();
+            }
+        }
     }
 
     private void confirmarBorrar(Evidencias.Ficha f) {

@@ -13,8 +13,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 /**
- * Sirve, en solo lectura, los ficheros que el usuario decide compartir (recibo .json, prueba .ots, clave pública).
- * Solo desde la carpeta cache/compartir de la app; nunca el almacén de fotos. Sin AndroidX.
+ * Sirve, en solo lectura, los ficheros que el usuario decide compartir (recibo .json, prueba .ots, clave pública
+ * y, desde 0.2.1, la copia descifrada de una evidencia al pulsar «Exportar»). Solo desde la carpeta
+ * cache/compartir de la app; nunca el almacén cifrado directamente, nunca DCIM ni la galería. Sin AndroidX.
  */
 public class ProveedorRecibos extends ContentProvider {
 
@@ -56,9 +57,15 @@ public class ProveedorRecibos extends ContentProvider {
 
     @Override
     public String getType(Uri uri) {
-        String n = uri.getLastPathSegment() == null ? "" : uri.getLastPathSegment();
+        String n = (uri.getLastPathSegment() == null ? "" : uri.getLastPathSegment()).toLowerCase(java.util.Locale.ROOT);
         if (n.endsWith(".json")) return "application/json";
         if (n.endsWith(".txt")) return "text/plain";
+        // Archivos exportados a mano (0.2.1): el tipo real, para que la app de destino los abra bien.
+        if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
+        if (n.endsWith(".png")) return "image/png";
+        if (n.endsWith(".mp4")) return "video/mp4";
+        if (n.endsWith(".m4a")) return "audio/mp4";
+        if (n.endsWith(".pdf")) return "application/pdf";
         return "application/octet-stream";
     }
 
