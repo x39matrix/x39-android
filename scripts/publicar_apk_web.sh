@@ -28,7 +28,7 @@ fi
 cp "$APK" "$D/x39.apk"
 echo "$SHA  x39.apk" > "$D/x39.apk.sha256"
 cat > "$D/x39.apk.certificado.txt" <<EOF
-x39 · versión $VER · paquete $PKG
+x39 · versión $VER · $(date +%d/%m/%Y) · paquete $PKG
 Firmado por: $DN
 SHA-256 del certificado de firma: $CERT
 SHA-256 del APK: $SHA
