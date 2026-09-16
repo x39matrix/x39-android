@@ -1,0 +1,113 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Length 5512 >>
+stream
+BT /F2 15 Tf 50.0 775.9 Td (Acta de pruebas de aceptación · x39 Evidencia 0.1.1) Tj ET
+BT /F1 9.5 Tf 50.0 753.9 Td (Fecha: 16 de septiembre de 2026, 12:10–12:45 \(hora de Sevilla\). Objeto: la APK firmada publicada en) Tj ET
+BT /F1 9.5 Tf 50.0 741.4 Td (https://x39matrix.org/app/x39.apk. Dispositivo: Redmi Note 15 5G \(Android 16, HyperOS\), número de serie) Tj ET
+BT /F1 9.5 Tf 50.0 728.9 Td (adb c64c43b9. Método: la persona que hace las pruebas pulsa en el móvil; el estado del sistema \(modo) Tj ET
+BT /F1 9.5 Tf 50.0 716.4 Td (avión, procesos, JobScheduler, MediaStore, pantallas\) se lee y se fuerza por adb desde el PC. Todo lo) Tj ET
+BT /F1 9.5 Tf 50.0 703.9 Td (que se afirma aquí sale de esas lecturas, copiadas abajo.) Tj ET
+BT /F2 11.5 Tf 50.0 684.4 Td (Objeto probado) Tj ET
+BT /F3 8.5 Tf 50.0 668.4 Td (Fichero: x39.apk · 2.299.697 bytes · SHA-256) Tj ET
+BT /F3 8.5 Tf 50.0 656.9 Td (6d873c5703c6973bf9203696099e503ca8383ac5866af44074c75fb3aaaac0f3) Tj ET
+BT /F3 8.5 Tf 50.0 642.4 Td (Firma: CN=x39, O=x39matrix, C=ES · certificado SHA-256) Tj ET
+BT /F3 8.5 Tf 50.0 630.9 Td (72f0745f993605b1b3cd30966162b6d98d84fcacbd23e2e07e24c3d15f7d8935) Tj ET
+BT /F3 8.5 Tf 50.0 616.4 Td (Paquete org.x39matrix.evidencia · versionCode 2 · versionName 0.1.1 · no depurable · instalada) Tj ET
+BT /F3 8.5 Tf 50.0 604.9 Td (por adb desde la copia descargada de la web) Tj ET
+BT /F2 11.5 Tf 50.0 586.4 Td (Resultados) Tj ET
+BT /F2 10 Tf 50.0 570.4 Td (1. Modo avión — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 556.4 Td (Con airplane_mode_on=1 \(activado por adb\) se sellaron 5 evidencias entre las 12:18 y las 12:23 \(3 fotos) Tj ET
+BT /F1 9.5 Tf 50.0 543.9 Td (de la app, 1 imagen y 1 captura elegidas como archivo\). Ficha: «Firmada · en espera de ancla», «En) Tj ET
+BT /F1 9.5 Tf 50.0 531.4 Td (espera de red para enviar la huella \(32 bytes\) a los calendarios».) Tj ET
+BT /F2 10 Tf 50.0 515.9 Td (2. Galería vacía — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 501.9 Td (MediaStore imágenes: 1.732 antes y 1.732 después \(última IMG-20260916-WA0001.jpeg\); vídeos: 161 antes y) Tj ET
+BT /F1 9.5 Tf 50.0 489.4 Td (después. Las 3 fotos hechas con la app no aparecen en la galería.) Tj ET
+BT /F2 10 Tf 50.0 473.9 Td (3. Registro de red — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 459.9 Td (Pantalla Seguridad › Registro de red, leída por adb a las 12:33: solo) Tj ET
+BT /F1 9.5 Tf 50.0 447.4 Td (alice.btc.calendar.opentimestamps.org, bob.btc.calendar.opentimestamps.org,) Tj ET
+BT /F1 9.5 Tf 50.0 434.9 Td (finney.calendar.eternitywall.com y btc.calendar.catallaxy.com; método GET, ?0 B ?42 B, código 404) Tj ET
+BT /F1 9.5 Tf 50.0 422.4 Td (\(calendario sin confirmación en Bitcoin todavía\). Ningún otro dominio.) Tj ET
+BT /F2 10 Tf 50.0 406.9 Td (4. Tamaños medidos por la app — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 392.9 Td (Seguridad: «Clave pública ML-DSA-87: 2.592 bytes \(medido ahora\)». Ficha de la evidencia 0467ebee…:) Tj ET
+BT /F1 9.5 Tf 50.0 380.4 Td («Firma · ML-DSA-87 · 4.627 bytes».) Tj ET
+BT /F2 10 Tf 50.0 364.9 Td (5. Foto alterada detectada — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 350.9 Td (Captura Screenshot_2026-09-15-19-41-33-041_com.anthropic.claude.jpg sellada en la app con huella) Tj ET
+BT /F1 9.5 Tf 50.0 338.4 Td (d8befd2141b9…; SHA-256 del fichero original en el PC:) Tj ET
+BT /F1 9.5 Tf 50.0 325.9 Td (d8befd2141b9b2779c2bc4610bcb353251b79dce1a0f472d5b43dea9325bfad4 \(coincide\). Copia con un bit cambiado:) Tj ET
+BT /F1 9.5 Tf 50.0 313.4 Td (4fb5e64a4fce1a06c58a3284962715c99815f87ad2a7e75da4403c672d24ae1c \(no coincide\). Límite: la comprobación) Tj ET
+BT /F1 9.5 Tf 50.0 300.9 Td (se hizo por huella; la app no exporta la foto original por diseño.) Tj ET
+BT /F2 10 Tf 50.0 285.4 Td (6. La cola sobrevive a matar la app — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 271.4 Td (JobScheduler: JOB #u0a403/3901 org.x39matrix.evidencia/ColaAnclaje, persistido \(.schedulePersisted\).) Tj ET
+BT /F1 9.5 Tf 50.0 258.9 Td (Tras enviar la app al fondo y «am kill» \(pidof vacío\), el job seguía registrado. Al quitar el modo) Tj ET
+BT /F1 9.5 Tf 50.0 246.4 Td (avión: START -1m13s, «app called jobFinished» -1m08s, sin abrir la app. Las 5 evidencias pasaron a) Tj ET
+BT /F1 9.5 Tf 50.0 233.9 Td («Enviada a los calendarios».) Tj ET
+BT /F2 10 Tf 50.0 218.4 Td (7. Ahorro de batería de MIUI — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 204.4 Td (Ahorro activado a mano \(POWER_SAVE_MODE_OPEN=1; adb no puede activarlo\). Foto sellada a las 12:29 en) Tj ET
+BT /F1 9.5 Tf 50.0 191.9 Td (modo avión, proceso matado, red devuelta: START a los ~6 s de volver la red, «app called jobFinished»,) Tj ET
+BT /F1 9.5 Tf 50.0 179.4 Td (dos pasadas; la foto pasó a «Enviada a los calendarios».) Tj ET
+BT /F2 10 Tf 50.0 163.9 Td (8. Permisos exactos — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 149.9 Td (aapt2 dump permissions sobre x39.apk: INTERNET, ACCESS_NETWORK_STATE, CAMERA y ninguno más; la pantalla) Tj ET
+BT /F1 9.5 Tf 50.0 137.4 Td (Seguridad de la app lista los mismos tres leídos del paquete instalado.) Tj ET
+BT /F2 11.5 Tf 50.0 117.9 Td (Observaciones) Tj ET
+BT /F1 9.5 Tf 50.0 101.9 Td (Ninguna prueba falló. Los recibos .ots de las evidencias tienen atestaciones pendientes de los cuatro) Tj ET
+BT /F1 9.5 Tf 50.0 89.4 Td (calendarios; la confirmación en Bitcoin llega en horas y se comprueba con «ots verify». En Xiaomi, adb) Tj ET
+BT /F1 9.5 Tf 50.0 76.9 Td (no puede pulsar ni desplazar la pantalla \(INJECT_EVENTS\) ni cambiar ajustes seguros; esas acciones las) Tj ET
+BT /F1 9.5 Tf 50.0 64.4 Td (hizo la persona en el móvil y se leyeron con uiautomator.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 595.28 841.89] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 1136 >>
+stream
+BT /F2 11.5 Tf 50.0 777.9 Td (Lecturas de adb \(extracto literal\)) Tj ET
+BT /F3 8.5 Tf 50.0 761.9 Td (airplane=1  · imagenes en galeria: 1732 · videos en galeria: 161) Tj ET
+BT /F3 8.5 Tf 50.0 747.4 Td (JOB #u0a403/3901: ac91826 org.x39matrix.evidencia/org.x39.bolsillo.ColaAnclaje · pid tras kill:) Tj ET
+BT /F3 8.5 Tf 50.0 735.9 Td ('') Tj ET
+BT /F3 8.5 Tf 50.0 721.4 Td (-1m13s927ms START: #u0a403/3901 … ColaAnclaje · -1m08s406ms STOP: … app called jobFinished) Tj ET
+BT /F3 8.5 Tf 50.0 706.9 Td (16/09 12:33:28  GET alice.btc.calendar.opentimestamps.org  ?0 B ?42 B  404) Tj ET
+BT /F3 8.5 Tf 50.0 692.4 Td (Seguridad: Clave pública ML-DSA-87: 2.592 bytes \(medido ahora\) · Ficha: Firma ML-DSA-87 · 4.627) Tj ET
+BT /F3 8.5 Tf 50.0 680.9 Td (bytes) Tj ET
+BT /F2 11.5 Tf 50.0 662.4 Td (Firma de esta acta) Tj ET
+BT /F1 9.5 Tf 50.0 646.4 Td (Este PDF se sella con OpenTimestamps \(fichero .ots junto a él\) y su SHA-256 queda en el repositorio) Tj ET
+BT /F1 9.5 Tf 50.0 633.9 Td (x39_mensajeria \(pruebas_ots/actas\). Quien quiera comprobarlo: sha256sum del PDF y «ots verify) Tj ET
+BT /F1 9.5 Tf 50.0 621.4 Td (acta.pdf.ots».) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 595.28 841.89] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+9 0 obj
+<< /Type /Catalog /Pages 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000303 00000 n 
+0000005867 00000 n 
+0000006019 00000 n 
+0000007207 00000 n 
+0000007359 00000 n 
+0000007422 00000 n 
+trailer
+<< /Size 10 /Root 9 0 R >>
+startxref
+7471
+%%EOF
