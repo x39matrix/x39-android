@@ -512,14 +512,19 @@ final class Evidencias {
         new File(dir, f.id + ".ots").delete();
     }
 
-    /** Recibo exportable, con los campos de la sección 4. Ni el contenido, ni su nombre, ni su ruta. */
-    static JSONObject recibo(Ficha f) throws JSONException {
+    /**
+     * Recibo exportable, con los campos de la sección 4. Ni el contenido, ni su nombre, ni su ruta.
+     * Desde 0.2 lleva también la clave pública (`signer_pk`, 2.592 bytes en base64): con el recibo solo,
+     * cualquiera comprueba que SHA-256(signer_pk) == signer_fp y que la firma verifica, sin pedir la clave aparte.
+     */
+    static JSONObject recibo(Ficha f, byte[] clavePublicaFirma) throws JSONException {
         return new JSONObject()
                 .put("v", 1)
                 .put("id", f.id)
                 .put("sha256", f.sha256)
                 .put("captured_at_local", f.capturada)
                 .put("signer_fp", f.firmante)
+                .put("signer_pk", clavePublicaFirma == null ? JSONObject.NULL : Base64.encodeToString(clavePublicaFirma, Base64.NO_WRAP))
                 .put("sig_alg", "ML-DSA-87")
                 .put("sig", f.firma)
                 .put("ots", f.id + ".ots")

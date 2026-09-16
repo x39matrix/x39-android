@@ -1077,7 +1077,9 @@ public class EvidenciaActivity extends Activity {
             File dir = ProveedorRecibos.carpeta(this);
             ArrayList<Uri> uris = new ArrayList<>();
             String json = f.id + ".json";
-            Evidencias.escribirAtomico(new File(dir, json), Evidencias.recibo(f).toString(2).getBytes(StandardCharsets.UTF_8));
+            // La clave pública que firmó va dentro del recibo (signer_pk): el recibo se verifica por sí solo.
+            byte[] clavePk = f.firmante.equals(evidencias.huellaClave()) ? evidencias.clavePublica() : null;
+            Evidencias.escribirAtomico(new File(dir, json), Evidencias.recibo(f, clavePk).toString(2).getBytes(StandardCharsets.UTF_8));
             uris.add(ProveedorRecibos.uri(this, json));
             byte[] ots = evidencias.ots(f);
             if (ots != null) {
