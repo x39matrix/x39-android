@@ -95,7 +95,8 @@ final class RedX39 {
         } else {
             con = (HttpsURLConnection) u.openConnection();
         }
-        final String destino = tor ? Orbot.PROXY_HOST + ":" + Orbot.PROXY_PUERTO + " (Tor) ⇒ " + u.getHost() : u.getHost();
+        // En el registro de Seguridad cada línea por Tor lo dice: «calendario vía 127.0.0.1:8118».
+        final String destino = tor ? u.getHost() + " vía " + Orbot.PROXY_HOST + ":" + Orbot.PROXY_PUERTO : u.getHost();
         int enviados = 0;
         int recibidos = 0;
         int codigo = -1;
