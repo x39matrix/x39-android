@@ -1494,6 +1494,17 @@ public class EvidenciaActivity extends Activity {
         }
     }
 
+    /** Lleva a Signal para hablar: si está instalado lo abre; si no, a su web de instalación.
+     *  X-39 no habla por Signal ni toca su cifrado: solo lanza el intent, igual que con Orbot. */
+    private void abrirSignal() {
+        Intent i = getPackageManager().getLaunchIntentForPackage("org.thoughtcrime.securesms");
+        if (i != null) {
+            startActivity(i);
+        } else {
+            abrirWeb("https://signal.org/install");
+        }
+    }
+
     /** Copias descifradas que quedaron en cache/compartir tras exportar: se borran pasados 15 minutos. */
     private void limpiarCompartidos() {
         File[] fs = ProveedorRecibos.carpeta(this).listFiles();
@@ -1610,6 +1621,13 @@ public class EvidenciaActivity extends Activity {
                 refrescarTor();
             }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
         }
+
+        // Para hablar: Signal. X-39 no reinventa la mensajería; solo te lleva a la herramienta buena.
+        LinearLayout hablar = tarjeta(col, "Para hablar: Signal");
+        hablar.addView(Ui.texto(this, "X-39 demuestra que un archivo existía; no sirve para hablar. Para llamadas, vídeo y conversaciones sensibles, usa Signal, auditado y de código abierto. Este botón te lleva a él.", 13, Ui.TEXTO_2, false));
+        boolean signalInstalado = getPackageManager().getLaunchIntentForPackage("org.thoughtcrime.securesms") != null;
+        hablar.addView(Ui.boton(this, signalInstalado ? "Abrir Signal" : "Instalar Signal", false, v -> abrirSignal()),
+                Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
 
         LinearLayout clave = tarjeta(col, "Tu identidad");
         try {

@@ -21,6 +21,8 @@
     <!-- Solo para saber si Orbot está instalado (anclaje por Tor opcional, 0.3). No es un permiso. -->
     <queries>
         <package android:name="org.torproject.android" />
+        <!-- Solo para saber si Signal está instalado y poder abrirlo (botón «Signal»). No es un permiso. -->
+        <package android:name="org.thoughtcrime.securesms" />
     </queries>
 
     <application
