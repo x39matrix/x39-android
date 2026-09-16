@@ -53,6 +53,8 @@ final class Evidencias {
     static final String ARCHIVO = "archivo";
     /** Vídeo grabado con la cámara de la app (0.2). */
     static final String VIDEO = "video";
+    /** Audio grabado con el micrófono desde la app (0.2.1). */
+    static final String AUDIO = "audio";
     static final int PK_ESPERADA = 2592;
     static final int FIRMA_ESPERADA = 4627;
     private static final DateTimeFormatter HORA_LOCAL = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
@@ -113,6 +115,10 @@ final class Evidencias {
 
         boolean esVideo() {
             return VIDEO.equals(tipo) || mime.startsWith("video/");
+        }
+
+        boolean esAudio() {
+            return AUDIO.equals(tipo) || mime.startsWith("audio/");
         }
 
         String canonica() {

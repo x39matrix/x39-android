@@ -60,13 +60,19 @@ import java.util.Locale;
  * Textos según la sección 9 de la especificación: nada de «auténtica», «sin rastro» ni «subir».
  */
 public class EvidenciaActivity extends Activity {
-    static final String VERSION = "0.2.0";
+    static final String VERSION = "0.2.1";
     private static final int REQ_CAMARA = 1;
     private static final int REQ_EXPORTAR = 2;
     private static final int REQ_ARCHIVO = 3;
     private static final int REQ_MICROFONO = 4;
+    private static final int REQ_MICROFONO_AUDIO = 5;
     /** Un vídeo de evidencia como máximo dura esto; a 8 Mbit/s son unos 600 MB. */
     private static final long MAX_VIDEO_MS = 10 * 60_000L;
+    /** Una grabación de audio como máximo: a 128 kbit/s son unos 55 MB. */
+    private static final long MAX_AUDIO_MS = 60 * 60_000L;
+    private android.media.MediaRecorder grabadoraAudio;
+    private File audioTmp;
+    private long inicioAudio;
     /** Ya se pidió el micrófono una vez y se negó: se graba sin sonido en vez de insistir. */
     private boolean microfonoNegado;
     /** Hasta este tamaño una imagen se descifra en memoria para verla; por encima se muestra un icono. */
@@ -211,6 +217,7 @@ public class EvidenciaActivity extends Activity {
         barra.setPadding(dp(6), 0, dp(6), 0);
         barra.addView(itemNavegacion(Icono.Tipo.ACTAS, "Evidencias", pestana == Pestana.EVIDENCIAS && secundaria == null, () -> mostrarPestana(Pestana.EVIDENCIAS)), Ui.peso(1));
         barra.addView(itemNavegacion(Icono.Tipo.CAMARA, "Hacer una foto", false, this::abrirCamara), Ui.peso(1));
+        barra.addView(itemNavegacion(Icono.Tipo.AUDIO, "Grabar audio", false, this::abrirGrabadora), Ui.peso(1));
         barra.addView(itemNavegacion(Icono.Tipo.ARCHIVO, "Elegir un archivo", false, this::elegirArchivo), Ui.peso(1));
         barra.addView(itemNavegacion(Icono.Tipo.ESCUDO, "Seguridad", pestana == Pestana.SEGURIDAD && secundaria == null, () -> mostrarPestana(Pestana.SEGURIDAD)), Ui.peso(1));
         barra.addView(itemNavegacion(Icono.Tipo.AJUSTES, "Ajustes", pestana == Pestana.AJUSTES && secundaria == null, () -> mostrarPestana(Pestana.AJUSTES)), Ui.peso(1));
@@ -772,7 +779,8 @@ public class EvidenciaActivity extends Activity {
             @Override
             public void video(File archivo, long duracionMs) {
                 reloj.removeCallbacks(tic);
-                procesarVideo(archivo, duracionMs);
+                cerrarCamara();
+                procesarGrabacion(archivo, duracionMs, Evidencias.VIDEO, "video", "mp4", "video/mp4", "Vídeo");
             }
 
             @Override
@@ -796,21 +804,144 @@ public class EvidenciaActivity extends Activity {
         camara.abrir();
     }
 
-    /** Sella el MP4 temporal como evidencia (huella, cifrado por trozos, firma) y lo borra. */
-    private void procesarVideo(File archivo, long duracionMs) {
-        cerrarCamara();
+    // ------------------------------------------------------------------ audio
+
+    /** Grabadora de audio: micrófono → AAC en un archivo temporal privado que se sella y se borra, como el vídeo. */
+    private void abrirGrabadora() {
+        if (!evidencias.tieneIdentidad()) {
+            render();
+            return;
+        }
+        secundaria = null;
+        LinearLayout raizCol = Ui.columna(this);
+        raizCol.addView(barraSuperior("Audio", () -> {
+            descartarAudio();
+            mostrarPestana(Pestana.EVIDENCIAS);
+        }, 0));
+        LinearLayout col = Ui.columna(this);
+        col.setGravity(Gravity.CENTER_HORIZONTAL);
+        col.setPadding(dp(24), dp(40), dp(24), dp(24));
+        col.addView(aro(Icono.Tipo.AUDIO), new LinearLayout.LayoutParams(dp(84), dp(84)));
+        TextView ayuda = Ui.texto(this, "Se guarda cifrado y se firma al parar. El micrófono se pide al pulsar «Grabar».", 14, Ui.TEXTO_2, false);
+        ayuda.setGravity(Gravity.CENTER);
+        ayuda.setPadding(0, dp(18), 0, dp(24));
+        col.addView(ayuda);
+        TextView cronometro = Ui.mono(this, "00:00", 40, Ui.TEXTO);
+        cronometro.setGravity(Gravity.CENTER);
+        col.addView(cronometro);
+        TextView boton = Ui.boton(this, "Grabar", true, null);
+        final android.os.Handler reloj = new android.os.Handler(android.os.Looper.getMainLooper());
+        final Runnable tic = new Runnable() {
+            @Override
+            public void run() {
+                if (grabadoraAudio == null) return;
+                long ms = System.currentTimeMillis() - inicioAudio;
+                cronometro.setText(String.format(ES, "%02d:%02d", ms / 60_000, (ms / 1000) % 60));
+                if (ms >= MAX_AUDIO_MS) {
+                    pararAudio(reloj, this);
+                    return;
+                }
+                reloj.postDelayed(this, 500);
+            }
+        };
+        boton.setOnClickListener(v -> {
+            if (grabadoraAudio != null) {
+                boton.setEnabled(false);
+                pararAudio(reloj, tic);
+                return;
+            }
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MICROFONO_AUDIO);
+                return;
+            }
+            try {
+                @SuppressWarnings("deprecation")
+                android.media.MediaRecorder r = new android.media.MediaRecorder();
+                r.setAudioSource(android.media.MediaRecorder.AudioSource.MIC);
+                r.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4);
+                audioTmp = new File(getCacheDir(), "a-" + System.currentTimeMillis() + ".m4a");
+                r.setOutputFile(audioTmp.getAbsolutePath());
+                r.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC);
+                r.setAudioEncodingBitRate(128_000);
+                r.setAudioSamplingRate(44_100);
+                r.prepare();
+                r.start();
+                grabadoraAudio = r;
+                inicioAudio = System.currentTimeMillis();
+                boton.setText("Parar");
+                ayuda.setText("Grabando · se cifra y se firma al parar");
+                reloj.post(tic);
+            } catch (Exception e) {
+                descartarAudio();
+                aviso("No se pudo grabar: " + Ui.mensaje(e));
+            }
+        });
+        col.addView(boton, Ui.margen(this, dp(180), dp(56), 0, 28, 0, 0));
+        raizCol.addView(col, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        mostrar(raizCol, false);
+    }
+
+    private void pararAudio(android.os.Handler reloj, Runnable tic) {
+        reloj.removeCallbacks(tic);
+        android.media.MediaRecorder r = grabadoraAudio;
+        File f = audioTmp;
+        grabadoraAudio = null;
+        audioTmp = null;
+        if (r == null) return;
+        long duracion = System.currentTimeMillis() - inicioAudio;
+        boolean valido;
+        try {
+            r.stop();
+            valido = true;
+        } catch (RuntimeException e) {
+            valido = false;
+        }
+        r.release();
+        if (!valido || f == null) {
+            if (f != null) {
+                //noinspection ResultOfMethodCallIgnored
+                f.delete();
+            }
+            aviso("La grabación es demasiado corta.");
+            abrirGrabadora();
+            return;
+        }
+        procesarGrabacion(f, duracion, Evidencias.AUDIO, "audio", "m4a", "audio/mp4", "Audio");
+    }
+
+    /** Al salir de la pantalla de audio grabando: nada se guarda sin sellar. */
+    private void descartarAudio() {
+        android.media.MediaRecorder r = grabadoraAudio;
+        grabadoraAudio = null;
+        if (r != null) {
+            try {
+                r.stop();
+            } catch (RuntimeException ignorado) {
+                // Grabación interrumpida.
+            }
+            r.release();
+        }
+        if (audioTmp != null) {
+            //noinspection ResultOfMethodCallIgnored
+            audioTmp.delete();
+            audioTmp = null;
+        }
+    }
+
+    /** Sella una grabación temporal (vídeo o audio) como evidencia (huella, cifrado por trozos, firma) y la borra. */
+    private void procesarGrabacion(File archivo, long duracionMs, String tipo, String prefijo, String extension, String mime, String titulo) {
         final long total = archivo.length();
-        final String nombre = "video-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", ES).format(new java.util.Date()) + ".mp4";
+        final String nombre = prefijo + "-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", ES).format(new java.util.Date()) + "." + extension;
         TextView estado = Ui.texto(this, "Calculando la huella y cifrando…", 14, Ui.TEXTO, false);
         estado.setPadding(dp(24), dp(20), dp(24), dp(8));
-        AlertDialog espera = new AlertDialog.Builder(this).setTitle("Vídeo · " + duracion(duracionMs)).setView(estado).setCancelable(false).show();
+        AlertDialog espera = new AlertDialog.Builder(this).setTitle(titulo + " · " + duracion(duracionMs)).setView(estado).setCancelable(false).show();
         final long inicio = System.currentTimeMillis();
         new Thread(() -> {
             Evidencias.Sellado sellado = null;
             String fallo = null;
             long[] ultimoAviso = {0};
             try (InputStream in = new java.io.FileInputStream(archivo)) {
-                sellado = evidencias.sellar(in, Evidencias.VIDEO, nombre, "video/mp4", hechos -> {
+                sellado = evidencias.sellar(in, tipo, nombre, mime, hechos -> {
                     long ahora = System.currentTimeMillis();
                     if (ahora - ultimoAviso[0] < 250) return;
                     ultimoAviso[0] = ahora;
@@ -832,15 +963,15 @@ public class EvidenciaActivity extends Activity {
                 espera.dismiss();
                 mostrarPestana(Pestana.EVIDENCIAS);
                 if (error != null) {
-                    aviso("No se pudo guardar el vídeo: " + error);
+                    aviso("No se pudo guardar: " + error);
                 } else if (resultado.yaExistia) {
-                    aviso("Este vídeo ya estaba sellado.");
+                    aviso("Esta grabación ya estaba sellada.");
                 } else {
-                    Toast.makeText(this, "Vídeo guardado y firmado en " + duracion(ms), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, titulo + " guardado y firmado en " + duracion(ms), Toast.LENGTH_SHORT).show();
                     ColaAnclaje.programar(this);
                 }
             });
-        }, "x39-video").start();
+        }, "x39-grabacion").start();
     }
 
     private void cerrarCamara() {
@@ -878,6 +1009,14 @@ public class EvidenciaActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_MICROFONO_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Ya puedes grabar: pulsa «Grabar»", Toast.LENGTH_SHORT).show();
+            } else {
+                aviso("Sin permiso de micrófono no se puede grabar audio. Puedes darlo en los ajustes de Android.");
+            }
+            return;
+        }
         if (requestCode == REQ_MICROFONO) {
             // La cámara sigue abierta; el usuario vuelve a pulsar «Vídeo». Sin micrófono se graba sin sonido.
             if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
@@ -963,7 +1102,7 @@ public class EvidenciaActivity extends Activity {
             arch.addView(aro(iconoDe(f)), new LinearLayout.LayoutParams(dp(64), dp(64)));
             LinearLayout tx = Ui.columna(this);
             tx.setPadding(dp(14), 0, 0, 0);
-            tx.addView(Ui.texto(this, f.nombre.isEmpty() ? (f.esVideo() ? "Vídeo" : "Archivo") : f.nombre, 16, Ui.TEXTO, true));
+            tx.addView(Ui.texto(this, f.nombre.isEmpty() ? (f.esVideo() ? "Vídeo" : f.esAudio() ? "Audio" : "Archivo") : f.nombre, 16, Ui.TEXTO, true));
             tx.addView(Ui.texto(this, f.mime + " · " + tamano(f), 13, Ui.SUAVE, false));
             arch.addView(tx, Ui.peso(1));
             col.addView(arch, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, f.esImagen() && f.bytes <= MAX_VISTA ? 12 : 0, 0, 0));
@@ -979,7 +1118,7 @@ public class EvidenciaActivity extends Activity {
         dato(datos, "Firmada con la clave", agrupar(f.firmante), true);
         int bytesFirma = Base64.decode(f.firma, Base64.NO_WRAP).length;
         dato(datos, "Firma", "ML-DSA-87 · " + miles(bytesFirma) + " bytes", false);
-        String sujeto = f.esFoto() ? "Esta foto" : f.esVideo() ? "Este vídeo" : "Este archivo";
+        String sujeto = f.esFoto() ? "Esta foto" : f.esVideo() ? "Este vídeo" : f.esAudio() ? "Este audio" : "Este archivo";
         String ancla;
         switch (f.otsEstado) {
             case "bitcoin":
@@ -1190,7 +1329,7 @@ public class EvidenciaActivity extends Activity {
             permisos.addView(Ui.texto(this, "No se pudieron leer: " + Ui.mensaje(e), 13, Ui.AVISO, false));
         }
         TextView internet = Ui.texto(this, "Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas. Nunca fotos, vídeos ni archivos. "
-                + "Micrófono: solo mientras grabas un vídeo; si lo niegas, el vídeo se graba sin sonido.", 13, Ui.TEXTO_2, false);
+                + "Micrófono: solo mientras grabas un vídeo o un audio; si lo niegas, el vídeo se graba sin sonido y el audio no se puede grabar.", 13, Ui.TEXTO_2, false);
         internet.setPadding(0, dp(8), 0, 0);
         permisos.addView(internet);
 

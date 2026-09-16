@@ -5,7 +5,8 @@
     Nunca fotos ni vídeos. Cada petición queda en el registro de red de la pantalla Seguridad.
   - ACCESS_NETWORK_STATE: saber si hay red antes de intentar anclar.
   - CAMERA: la cámara propia de la app. Las fotos y los vídeos no pasan por la galería.
-  - RECORD_AUDIO (desde 0.2): el sonido del vídeo, solo mientras se graba; si se niega, el vídeo va sin sonido.
+  - RECORD_AUDIO (desde 0.2): el sonido del vídeo y las grabaciones de audio, solo mientras se graba; se pide al
+    pulsar «Vídeo» o «Grabar», nunca al abrir la app; si se niega, el vídeo va sin sonido y el audio no se graba.
   Sin copias de seguridad en la nube.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
