@@ -57,8 +57,8 @@ if echo "$BADGING" | grep -q 'application-debuggable'; then echo "✗ el APK es 
 if echo "$BADGING" | grep -q "name='org.x39matrix.evidencia' "; then echo "✓ paquete org.x39matrix.evidencia"; else echo "✗ paquete inesperado"; fallo=1; fi
 PERMISOS=$("$BT/aapt2" dump permissions "$APK" | grep -oP "uses-permission: name='\K[^']+" | sort | tr '\n' ' ')
 echo "permisos: $PERMISOS"
-[ "$PERMISOS" = "android.permission.ACCESS_NETWORK_STATE android.permission.CAMERA android.permission.INTERNET " ] \
-  && echo "✓ permisos exactos" || { echo "✗ permisos distintos de los tres esperados"; fallo=1; }
+[ "$PERMISOS" = "android.permission.ACCESS_NETWORK_STATE android.permission.CAMERA android.permission.INTERNET android.permission.RECORD_AUDIO " ] \
+  && echo "✓ permisos exactos (INTERNET, ACCESS_NETWORK_STATE, CAMERA, RECORD_AUDIO)" || { echo "✗ permisos distintos de los cuatro esperados"; fallo=1; }
 if unzip -l "$APK" | grep -qiE 'google|firebase|gms'; then echo "✗ contiene ficheros de Google"; fallo=1; else echo "✓ sin Google"; fi
 [ "$fallo" -eq 0 ] || { echo "NO publicar este APK."; exit 1; }
 

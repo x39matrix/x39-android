@@ -18,7 +18,7 @@ sha256sum "$APK"
 
 echo "### 3. Comprobaciones"
 AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
-echo "--- permisos declarados (deben ser exactamente INTERNET, ACCESS_NETWORK_STATE y CAMERA):"
+echo "--- permisos declarados (deben ser exactamente INTERNET, ACCESS_NETWORK_STATE, CAMERA y RECORD_AUDIO):"
 "$AAPT2" dump permissions "$APK"
 "$AAPT2" dump badging "$APK" | grep -E "^package:|application-label:" || true
 python3 - "$APK" <<'PY'

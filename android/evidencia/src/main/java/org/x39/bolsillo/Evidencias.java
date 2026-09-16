@@ -51,6 +51,8 @@ final class Evidencias {
     static final String PREFIJO_CANONICO = "X39-EVIDENCIA-v1|";
     static final String FOTO = "foto";
     static final String ARCHIVO = "archivo";
+    /** Vídeo grabado con la cámara de la app (0.2). */
+    static final String VIDEO = "video";
     static final int PK_ESPERADA = 2592;
     static final int FIRMA_ESPERADA = 4627;
     private static final DateTimeFormatter HORA_LOCAL = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
@@ -107,6 +109,10 @@ final class Evidencias {
 
         boolean esImagen() {
             return esFoto() || mime.startsWith("image/");
+        }
+
+        boolean esVideo() {
+            return VIDEO.equals(tipo) || mime.startsWith("video/");
         }
 
         String canonica() {

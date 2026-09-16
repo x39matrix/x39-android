@@ -60,10 +60,15 @@ import java.util.Locale;
  * Textos según la sección 9 de la especificación: nada de «auténtica», «sin rastro» ni «subir».
  */
 public class EvidenciaActivity extends Activity {
-    static final String VERSION = "0.1.1";
+    static final String VERSION = "0.2.0";
     private static final int REQ_CAMARA = 1;
     private static final int REQ_EXPORTAR = 2;
     private static final int REQ_ARCHIVO = 3;
+    private static final int REQ_MICROFONO = 4;
+    /** Un vídeo de evidencia como máximo dura esto; a 8 Mbit/s son unos 600 MB. */
+    private static final long MAX_VIDEO_MS = 10 * 60_000L;
+    /** Ya se pidió el micrófono una vez y se negó: se graba sin sonido en vez de insistir. */
+    private boolean microfonoNegado;
     /** Hasta este tamaño una imagen se descifra en memoria para verla; por encima se muestra un icono. */
     private static final long MAX_VISTA = 25L << 20;
     private static final Locale ES = new Locale("es", "ES");
@@ -682,6 +687,13 @@ public class EvidenciaActivity extends Activity {
         TextView ayuda = Ui.texto(this, "Se guarda cifrada y se firma al instante", 13, Ui.TEXTO_2, false);
         ayuda.setPadding(0, 0, 0, dp(14));
         abajo.addView(ayuda);
+        TextView cronometro = Ui.mono(this, "", 22, Ui.BLANCO);
+        cronometro.setPadding(0, 0, 0, dp(10));
+        cronometro.setVisibility(View.GONE);
+        abajo.addView(cronometro);
+        LinearLayout mandos = Ui.fila(this);
+        mandos.setGravity(Gravity.CENTER_VERTICAL);
+        TextView botonVideo = Ui.boton(this, "Vídeo", false, null);
         FrameLayout disparador = new FrameLayout(this);
         GradientDrawable anillo = new GradientDrawable();
         anillo.setShape(GradientDrawable.OVAL);
@@ -696,12 +708,47 @@ public class EvidenciaActivity extends Activity {
         disparador.addView(centro, new FrameLayout.LayoutParams(dp(60), dp(60), Gravity.CENTER));
         disparador.setContentDescription("Hacer la foto");
         disparador.setOnClickListener(v -> {
-            if (camara == null) return;
+            if (camara == null || camara.grabando()) return;
             v.setEnabled(false);
             v.setAlpha(0.5f);
             camara.disparar();
         });
-        abajo.addView(disparador, new LinearLayout.LayoutParams(dp(78), dp(78)));
+        // Vídeo: el mismo botón empieza y para. El cronómetro corre mientras graba y corta a los 10 minutos.
+        final android.os.Handler reloj = new android.os.Handler(android.os.Looper.getMainLooper());
+        final Runnable tic = new Runnable() {
+            @Override
+            public void run() {
+                if (camara == null || !camara.grabando()) return;
+                long ms = camara.duracionGrabacionMs();
+                cronometro.setText(String.format(ES, "%02d:%02d", ms / 60_000, (ms / 1000) % 60));
+                if (ms >= MAX_VIDEO_MS) {
+                    camara.parar();
+                    return;
+                }
+                reloj.postDelayed(this, 500);
+            }
+        };
+        botonVideo.setOnClickListener(v -> {
+            if (camara == null) return;
+            if (camara.grabando()) {
+                botonVideo.setEnabled(false);
+                camara.parar();
+                return;
+            }
+            boolean mic = checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+            if (!mic && !microfonoNegado) {
+                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MICROFONO);
+                return;
+            }
+            File tmp = new File(getCacheDir(), "v-" + System.currentTimeMillis() + ".mp4");
+            botonVideo.setEnabled(false);
+            camara.grabar(tmp, mic);
+        });
+        mandos.addView(botonVideo, new LinearLayout.LayoutParams(dp(110), dp(50)));
+        mandos.addView(disparador, Ui.margen(this, dp(78), dp(78), 24, 0, 0, 0));
+        View relleno = new View(this);
+        mandos.addView(relleno, new LinearLayout.LayoutParams(dp(110), 1));
+        abajo.addView(mandos);
         marco.addView(abajo, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
 
         mostrar(marco, false);
@@ -712,13 +759,88 @@ public class EvidenciaActivity extends Activity {
             }
 
             @Override
+            public void grabando() {
+                botonVideo.setEnabled(true);
+                botonVideo.setText("Parar");
+                disparador.setVisibility(View.INVISIBLE);
+                ayuda.setText("Grabando · se cifra y se firma al parar");
+                cronometro.setText("00:00");
+                cronometro.setVisibility(View.VISIBLE);
+                reloj.post(tic);
+            }
+
+            @Override
+            public void video(File archivo, long duracionMs) {
+                reloj.removeCallbacks(tic);
+                procesarVideo(archivo, duracionMs);
+            }
+
+            @Override
             public void error(String motivo) {
-                cerrarCamara();
-                mostrarPestana(Pestana.EVIDENCIAS);
-                aviso("No se pudo usar la cámara: " + motivo);
+                reloj.removeCallbacks(tic);
+                if (camara != null && !motivo.startsWith("la grabación es demasiado corta")) {
+                    cerrarCamara();
+                    mostrarPestana(Pestana.EVIDENCIAS);
+                    aviso("No se pudo usar la cámara: " + motivo);
+                    return;
+                }
+                // Grabación demasiado corta: la cámara sigue abierta en modo foto.
+                botonVideo.setEnabled(true);
+                botonVideo.setText("Vídeo");
+                disparador.setVisibility(View.VISIBLE);
+                cronometro.setVisibility(View.GONE);
+                ayuda.setText("Se guarda cifrada y se firma al instante");
+                Toast.makeText(EvidenciaActivity.this, "Vídeo demasiado corto: mantén la grabación al menos un segundo", Toast.LENGTH_SHORT).show();
             }
         });
         camara.abrir();
+    }
+
+    /** Sella el MP4 temporal como evidencia (huella, cifrado por trozos, firma) y lo borra. */
+    private void procesarVideo(File archivo, long duracionMs) {
+        cerrarCamara();
+        final long total = archivo.length();
+        final String nombre = "video-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", ES).format(new java.util.Date()) + ".mp4";
+        TextView estado = Ui.texto(this, "Calculando la huella y cifrando…", 14, Ui.TEXTO, false);
+        estado.setPadding(dp(24), dp(20), dp(24), dp(8));
+        AlertDialog espera = new AlertDialog.Builder(this).setTitle("Vídeo · " + duracion(duracionMs)).setView(estado).setCancelable(false).show();
+        final long inicio = System.currentTimeMillis();
+        new Thread(() -> {
+            Evidencias.Sellado sellado = null;
+            String fallo = null;
+            long[] ultimoAviso = {0};
+            try (InputStream in = new java.io.FileInputStream(archivo)) {
+                sellado = evidencias.sellar(in, Evidencias.VIDEO, nombre, "video/mp4", hechos -> {
+                    long ahora = System.currentTimeMillis();
+                    if (ahora - ultimoAviso[0] < 250) return;
+                    ultimoAviso[0] = ahora;
+                    String t = Formatter.formatShortFileSize(this, hechos) + (total > 0 ? " de " + Formatter.formatShortFileSize(this, total) : "");
+                    runOnUiThread(() -> estado.setText("Calculando la huella y cifrando…\n" + t));
+                });
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            } finally {
+                // El MP4 en claro solo existe hasta aquí: la copia cifrada es la evidencia.
+                //noinspection ResultOfMethodCallIgnored
+                archivo.delete();
+            }
+            final Evidencias.Sellado resultado = sellado;
+            final String error = fallo;
+            final long ms = System.currentTimeMillis() - inicio;
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                espera.dismiss();
+                mostrarPestana(Pestana.EVIDENCIAS);
+                if (error != null) {
+                    aviso("No se pudo guardar el vídeo: " + error);
+                } else if (resultado.yaExistia) {
+                    aviso("Este vídeo ya estaba sellado.");
+                } else {
+                    Toast.makeText(this, "Vídeo guardado y firmado en " + duracion(ms), Toast.LENGTH_SHORT).show();
+                    ColaAnclaje.programar(this);
+                }
+            });
+        }, "x39-video").start();
     }
 
     private void cerrarCamara() {
@@ -756,11 +878,19 @@ public class EvidenciaActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_MICROFONO) {
+            // La cámara sigue abierta; el usuario vuelve a pulsar «Vídeo». Sin micrófono se graba sin sonido.
+            if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                microfonoNegado = true;
+                Toast.makeText(this, "Sin micrófono: el vídeo se grabará sin sonido", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
         if (requestCode != REQ_CAMARA) return;
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             abrirCamara();
         } else {
-            aviso("Sin permiso de cámara no se pueden hacer fotos. Puedes darlo en los ajustes de Android. Los archivos se pueden sellar igual.");
+            aviso("Sin permiso de cámara no se pueden hacer fotos ni vídeos. Puedes darlo en los ajustes de Android. Los archivos se pueden sellar igual.");
         }
     }
 
@@ -833,7 +963,7 @@ public class EvidenciaActivity extends Activity {
             arch.addView(aro(iconoDe(f)), new LinearLayout.LayoutParams(dp(64), dp(64)));
             LinearLayout tx = Ui.columna(this);
             tx.setPadding(dp(14), 0, 0, 0);
-            tx.addView(Ui.texto(this, f.nombre.isEmpty() ? "Archivo" : f.nombre, 16, Ui.TEXTO, true));
+            tx.addView(Ui.texto(this, f.nombre.isEmpty() ? (f.esVideo() ? "Vídeo" : "Archivo") : f.nombre, 16, Ui.TEXTO, true));
             tx.addView(Ui.texto(this, f.mime + " · " + tamano(f), 13, Ui.SUAVE, false));
             arch.addView(tx, Ui.peso(1));
             col.addView(arch, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, f.esImagen() && f.bytes <= MAX_VISTA ? 12 : 0, 0, 0));
@@ -849,7 +979,7 @@ public class EvidenciaActivity extends Activity {
         dato(datos, "Firmada con la clave", agrupar(f.firmante), true);
         int bytesFirma = Base64.decode(f.firma, Base64.NO_WRAP).length;
         dato(datos, "Firma", "ML-DSA-87 · " + miles(bytesFirma) + " bytes", false);
-        String sujeto = f.esFoto() ? "Esta foto" : "Este archivo";
+        String sujeto = f.esFoto() ? "Esta foto" : f.esVideo() ? "Este vídeo" : "Este archivo";
         String ancla;
         switch (f.otsEstado) {
             case "bitcoin":
@@ -1057,7 +1187,8 @@ public class EvidenciaActivity extends Activity {
         } catch (Exception e) {
             permisos.addView(Ui.texto(this, "No se pudieron leer: " + Ui.mensaje(e), 13, Ui.AVISO, false));
         }
-        TextView internet = Ui.texto(this, "Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas. Nunca fotos ni archivos.", 13, Ui.TEXTO_2, false);
+        TextView internet = Ui.texto(this, "Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas. Nunca fotos, vídeos ni archivos. "
+                + "Micrófono: solo mientras grabas un vídeo; si lo niegas, el vídeo se graba sin sonido.", 13, Ui.TEXTO_2, false);
         internet.setPadding(0, dp(8), 0, 0);
         permisos.addView(internet);
 
