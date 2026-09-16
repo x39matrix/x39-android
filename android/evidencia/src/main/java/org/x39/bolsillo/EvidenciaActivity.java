@@ -1591,9 +1591,9 @@ public class EvidenciaActivity extends Activity {
             long hace = Orbot.ultimoEstadoHace(this);
             // Un aviso de Orbot de hace más de 10 minutos ya no dice nada: «no conocido» no significa Tor caído,
             // significa que la app no tiene noticias recientes (ábrelo y avisará). El anclaje no depende de este texto.
-            String estado = (hace < 0 || hace > 10 * 60_000L) ? "no conocido (abre Orbot para que avise)"
+            String estadoOrbot = (hace < 0 || hace > 10 * 60_000L) ? "no conocido (abre Orbot para que avise)"
                     : "ON".equals(e) ? "conectado" : "STARTING".equals(e) ? "arrancando" : "OFF".equals(e) ? "apagado" : "no conocido (abre Orbot para que avise)";
-            estadoTor = "Orbot instalado · estado " + estado + " · proxy 127.0.0.1:8118 " + (torListo ? "listo" : "no disponible");
+            estadoTor = "Orbot instalado · estado " + estadoOrbot + " · proxy 127.0.0.1:8118 " + (torListo ? "listo" : "no disponible");
         }
         TextView et = Ui.texto(this, estadoTor, 13, Ui.SUAVE, false);
         et.setPadding(0, dp(8), 0, 0);
