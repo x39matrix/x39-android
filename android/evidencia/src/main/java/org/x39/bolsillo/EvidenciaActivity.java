@@ -588,7 +588,8 @@ public class EvidenciaActivity extends Activity {
                 color = Ui.TEXTO;
                 break;
             default:
-                texto = esperandoTor() ? "○  Firmada · en espera de Tor" : "○  Firmada · en espera de ancla";
+                // El texto sigue al interruptor: con «Anclar solo por Tor» encendido la huella espera a Tor, apagado espera red.
+                texto = Orbot.soloTor(this) ? "○  Firmada · en espera de Tor" : "○  Firmada · en espera de red";
                 fondo = Ui.CAJA;
                 color = Ui.TEXTO_2;
                 break;
@@ -1289,7 +1290,7 @@ public class EvidenciaActivity extends Activity {
                 ancla = "La huella está en los calendarios de OpenTimestamps. Bitcoin la confirma en una o dos horas.";
                 break;
             default:
-                ancla = esperandoTor()
+                ancla = Orbot.soloTor(this)
                         ? "En espera de Tor (Orbot) para enviar la huella (32 bytes) a los calendarios. Sin Orbot activo no sale nada."
                         : "En espera de red para enviar la huella (32 bytes) a los calendarios.";
                 break;
@@ -1587,8 +1588,12 @@ public class EvidenciaActivity extends Activity {
             estadoTor = "Orbot no está instalado.";
         } else {
             String e = Orbot.ultimoEstado(this);
-            estadoTor = "Orbot instalado · estado " + ("ON".equals(e) ? "conectado" : "STARTING".equals(e) ? "arrancando" : "OFF".equals(e) ? "apagado" : "sin noticias")
-                    + " · proxy 127.0.0.1:8118 " + (torListo ? "listo" : "no disponible");
+            long hace = Orbot.ultimoEstadoHace(this);
+            // Un aviso de Orbot de hace más de 10 minutos ya no dice nada: «no conocido» no significa Tor caído,
+            // significa que la app no tiene noticias recientes (ábrelo y avisará). El anclaje no depende de este texto.
+            String estado = (hace < 0 || hace > 10 * 60_000L) ? "no conocido (abre Orbot para que avise)"
+                    : "ON".equals(e) ? "conectado" : "STARTING".equals(e) ? "arrancando" : "OFF".equals(e) ? "apagado" : "no conocido (abre Orbot para que avise)";
+            estadoTor = "Orbot instalado · estado " + estado + " · proxy 127.0.0.1:8118 " + (torListo ? "listo" : "no disponible");
         }
         TextView et = Ui.texto(this, estadoTor, 13, Ui.SUAVE, false);
         et.setPadding(0, dp(8), 0, 0);
