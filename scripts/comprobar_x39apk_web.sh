@@ -2,7 +2,11 @@
 # Comprueba en vivo el APK publicado en x39matrix.org/app/x39.apk: cabeceras, huella, ficheros al lado y firma.
 # Uso: bash scripts/comprobar_x39apk_web.sh [huella_esperada] [certificado_esperado]
 set -uo pipefail
-ESPERADA="${1:-6d873c5703c6973bf9203696099e503ca8383ac5866af44074c75fb3aaaac0f3}"
+# Sin argumento, la huella esperada es la de la última release firmada en pruebas_ots/apks (x39-<ver>-release.apk.sha256).
+ULTIMA=$(ls -t "$HOME"/x39_mensajeria/pruebas_ots/apks/x39-*-release.apk.sha256 2>/dev/null | head -1)
+ESPERADA="${1:-$(cut -d' ' -f1 "$ULTIMA" 2>/dev/null)}"
+[ -n "$ESPERADA" ] || { echo "no hay huella esperada: pásala como argumento"; exit 2; }
+echo "huella esperada: $ESPERADA (${ULTIMA##*/})"
 CERT="${2:-72f0745f993605b1b3cd30966162b6d98d84fcacbd23e2e07e24c3d15f7d8935}"
 BASE="https://x39matrix.org"
 D="$HOME/x39_mensajeria/pruebas_ots/web_x39apk"
