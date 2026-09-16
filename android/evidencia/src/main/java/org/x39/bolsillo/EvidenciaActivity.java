@@ -60,7 +60,7 @@ import java.util.Locale;
  * Textos según la sección 9 de la especificación: nada de «auténtica», «sin rastro» ni «subir».
  */
 public class EvidenciaActivity extends Activity {
-    static final String VERSION = "0.2.1";
+    static final String VERSION = "0.3.0";
     private static final int REQ_CAMARA = 1;
     private static final int REQ_EXPORTAR = 2;
     private static final int REQ_ARCHIVO = 3;
@@ -114,12 +114,52 @@ public class EvidenciaActivity extends Activity {
     protected void onStart() {
         super.onStart();
         limpiarCompartidos();
+        if (receptorOrbot == null) {
+            receptorOrbot = Orbot.receptor(this::refrescarTor);
+            Orbot.registrar(this, receptorOrbot);
+        }
+        refrescarTor();
         if (camara == null) render();
+    }
+
+    // ------------------------------------------------------------------ Tor (Orbot)
+
+    private android.content.BroadcastReceiver receptorOrbot;
+    /** Último resultado de Orbot.listo(), medido en segundo plano (abre un socket; no se hace en pantalla). */
+    private boolean torListo;
+
+    private boolean esperandoTor() {
+        return Orbot.soloTor(this) && !torListo;
+    }
+
+    /** Vuelve a medir si Orbot está listo y repinta si cambió. */
+    private void refrescarTor() {
+        if (!Orbot.soloTor(this)) {
+            torListo = false;
+            return;
+        }
+        new Thread(() -> {
+            boolean listo = Orbot.listo(this);
+            runOnUiThread(() -> {
+                if (isDestroyed() || listo == torListo) return;
+                torListo = listo;
+                if (camara == null && grabadoraAudio == null) render();
+                if (listo) ColaAnclaje.programar(this);
+            });
+        }, "x39-tor").start();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        if (receptorOrbot != null) {
+            try {
+                unregisterReceiver(receptorOrbot);
+            } catch (IllegalArgumentException ignorado) {
+                // Ya quitado.
+            }
+            receptorOrbot = null;
+        }
         if (camara != null) {
             cerrarCamara();
             render();
@@ -548,7 +588,7 @@ public class EvidenciaActivity extends Activity {
                 color = Ui.TEXTO;
                 break;
             default:
-                texto = "○  Firmada · en espera de ancla";
+                texto = esperandoTor() ? "○  Firmada · en espera de Tor" : "○  Firmada · en espera de ancla";
                 fondo = Ui.CAJA;
                 color = Ui.TEXTO_2;
                 break;
@@ -1249,7 +1289,9 @@ public class EvidenciaActivity extends Activity {
                 ancla = "La huella está en los calendarios de OpenTimestamps. Bitcoin la confirma en una o dos horas.";
                 break;
             default:
-                ancla = "En espera de red para enviar la huella (32 bytes) a los calendarios.";
+                ancla = esperandoTor()
+                        ? "En espera de Tor (Orbot) para enviar la huella (32 bytes) a los calendarios. Sin Orbot activo no sale nada."
+                        : "En espera de red para enviar la huella (32 bytes) a los calendarios.";
                 break;
         }
         dato(datos, "Ancla en Bitcoin", ancla, false);
@@ -1431,6 +1473,26 @@ public class EvidenciaActivity extends Activity {
         }, "x39-exportar").start();
     }
 
+    private void avisoOrbotNoInstalado() {
+        new AlertDialog.Builder(this)
+                .setTitle("Orbot no está instalado")
+                .setMessage("Para anclar por Tor hace falta Orbot (Guardian Project). Instálalo desde F-Droid o desde la web de Guardian Project. "
+                        + "Mientras tanto, con el interruptor encendido, las huellas esperan y no salen por la red directa.")
+                .setNegativeButton("Ahora no", null)
+                .setNeutralButton("Guardian Project", (d, w) -> abrirWeb(Orbot.GUARDIAN))
+                .setPositiveButton("F-Droid", (d, w) -> abrirWeb(Orbot.F_DROID))
+                .show();
+    }
+
+    /** Abre una web en el navegador del sistema (la app no la descarga: solo lanza el intent). */
+    private void abrirWeb(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (android.content.ActivityNotFoundException e) {
+            aviso("No hay navegador. La dirección es " + url);
+        }
+    }
+
     /** Copias descifradas que quedaron en cache/compartir tras exportar: se borran pasados 15 minutos. */
     private void limpiarCompartidos() {
         File[] fs = ProveedorRecibos.carpeta(this).listFiles();
@@ -1481,7 +1543,7 @@ public class EvidenciaActivity extends Activity {
         } catch (Exception e) {
             permisos.addView(Ui.texto(this, "No se pudieron leer: " + Ui.mensaje(e), 13, Ui.AVISO, false));
         }
-        TextView internet = Ui.texto(this, "Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas. Nunca fotos, vídeos ni archivos. "
+        TextView internet = Ui.texto(this, "Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas (directo o, si lo activas, solo por Tor). Nunca fotos, vídeos ni archivos. "
                 + "Micrófono: solo mientras grabas un vídeo o un audio; si lo niegas, el vídeo se graba sin sonido y el audio no se puede grabar.", 13, Ui.TEXTO_2, false);
         internet.setPadding(0, dp(8), 0, 0);
         permisos.addView(internet);
@@ -1494,6 +1556,55 @@ public class EvidenciaActivity extends Activity {
         filaEstado(estado, "Ubicación en las fotos", "No", true);
         boolean aislado = ColaAnclaje.aislado(this);
         filaEstado(estado, "Modo aislado", aislado ? "Activo: nada sale del móvil" : "Apagado", true);
+
+        // Tor opcional (0.3): las huellas salen solo por el proxy HTTP de Orbot; sin Orbot, esperan.
+        LinearLayout tor = tarjeta(col, "Anclar solo por Tor");
+        LinearLayout filaTor = Ui.fila(this);
+        filaTor.setPadding(0, dp(4), 0, dp(6));
+        filaTor.addView(Ui.texto(this, "Anclar solo por Tor", 15, Ui.TEXTO, true), Ui.peso(1));
+        Switch swTor = new Switch(this);
+        swTor.setChecked(Orbot.soloTor(this));
+        swTor.setContentDescription("Anclar solo por Tor");
+        swTor.setOnCheckedChangeListener((b, activo) -> {
+            ColaAnclaje.prefs(this).edit().putBoolean(Orbot.PREF_SOLO_TOR, activo).apply();
+            if (activo) {
+                if (!Orbot.instalado(this)) {
+                    avisoOrbotNoInstalado();
+                } else {
+                    Orbot.pedirArranque(this);
+                }
+            }
+            refrescarTor();
+            ColaAnclaje.programar(this);
+            mostrarPestana(Pestana.SEGURIDAD);
+        });
+        filaTor.addView(swTor);
+        tor.addView(filaTor);
+        tor.addView(Ui.texto(this, "Las huellas salen solo a través de Tor (Orbot). Oculta tu dirección IP a los calendarios. "
+                + "Tu operadora puede ver que usas Tor; en algunos países eso llama la atención. Si Orbot no está activo, las huellas esperan.", 13, Ui.TEXTO_2, false));
+        String estadoTor;
+        if (!Orbot.instalado(this)) {
+            estadoTor = "Orbot no está instalado.";
+        } else {
+            String e = Orbot.ultimoEstado(this);
+            estadoTor = "Orbot instalado · estado " + ("ON".equals(e) ? "conectado" : "STARTING".equals(e) ? "arrancando" : "OFF".equals(e) ? "apagado" : "sin noticias")
+                    + " · proxy 127.0.0.1:8118 " + (torListo ? "listo" : "no disponible");
+        }
+        TextView et = Ui.texto(this, estadoTor, 13, Ui.SUAVE, false);
+        et.setPadding(0, dp(8), 0, 0);
+        tor.addView(et);
+        if (!Orbot.instalado(this)) {
+            tor.addView(Ui.boton(this, "Instalar Orbot desde F-Droid", false, v -> abrirWeb(Orbot.F_DROID)),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
+            tor.addView(Ui.boton(this, "O desde Guardian Project", false, v -> abrirWeb(Orbot.GUARDIAN)),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 8, 0, 0));
+        } else if (Orbot.soloTor(this) && !torListo) {
+            tor.addView(Ui.boton(this, "Pedir a Orbot que arranque", false, v -> {
+                Orbot.pedirArranque(this);
+                Toast.makeText(this, "Pedido a Orbot; abre Orbot si no conecta solo", Toast.LENGTH_SHORT).show();
+                refrescarTor();
+            }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
+        }
 
         LinearLayout clave = tarjeta(col, "Tu identidad");
         try {

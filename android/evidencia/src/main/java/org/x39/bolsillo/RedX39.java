@@ -84,14 +84,26 @@ final class RedX39 {
     private static Respuesta pedir(Context c, String metodo, String url, byte[] cuerpo) throws IOException {
         if (!permitido(url)) throw new IOException("destino no permitido: " + url);
         URL u = new URL(url);
-        HttpsURLConnection con = (HttpsURLConnection) u.openConnection();
+        // «Anclar solo por Tor»: TODO sale por el proxy HTTP de Orbot (CONNECT: el nombre del calendario viaja
+        // dentro del túnel, el móvil no lo resuelve). Si el proxy no está, se falla: nunca red directa.
+        final boolean tor = Orbot.soloTor(c);
+        HttpsURLConnection con;
+        if (tor) {
+            if (!Orbot.proxyAbierto()) throw new IOException("Orbot no está activo: la huella espera");
+            con = (HttpsURLConnection) u.openConnection(new java.net.Proxy(java.net.Proxy.Type.HTTP,
+                    new java.net.InetSocketAddress(Orbot.PROXY_HOST, Orbot.PROXY_PUERTO)));
+        } else {
+            con = (HttpsURLConnection) u.openConnection();
+        }
+        final String destino = tor ? Orbot.PROXY_HOST + ":" + Orbot.PROXY_PUERTO + " (Tor) ⇒ " + u.getHost() : u.getHost();
         int enviados = 0;
         int recibidos = 0;
         int codigo = -1;
         try {
             con.setInstanceFollowRedirects(false);
-            con.setConnectTimeout(20_000);
-            con.setReadTimeout(20_000);
+            // Por Tor los calendarios tardan más: 60 s antes de dar la petición por perdida.
+            con.setConnectTimeout(tor ? 60_000 : 20_000);
+            con.setReadTimeout(tor ? 60_000 : 20_000);
             con.setUseCaches(false);
             con.setRequestMethod(metodo);
             con.setRequestProperty("Accept", "application/vnd.opentimestamps.v1");
@@ -123,7 +135,7 @@ final class RedX39 {
             return new Respuesta(codigo, datos);
         } finally {
             con.disconnect();
-            registrar(c, u.getHost(), metodo, enviados, recibidos, codigo);
+            registrar(c, destino, metodo, enviados, recibidos, codigo);
         }
     }
 

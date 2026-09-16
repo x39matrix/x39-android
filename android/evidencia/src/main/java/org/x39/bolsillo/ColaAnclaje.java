@@ -16,6 +16,7 @@ import java.util.List;
  * pending  → envía el compromiso (32 bytes) a los calendarios; con 2 o más respuestas guarda el .ots.
  * calendar → pide a cada calendario la actualización; cuando aparece un bloque de Bitcoin, la ficha queda anclada.
  * El estado vive en la ficha, no en memoria: si la app muere a mitad, se retoma.
+ * Con «Anclar solo por Tor» (0.3): cada envío pasa por el proxy de Orbot; si Orbot no está, la cola espera.
  */
 public class ColaAnclaje extends JobService {
     static final String PREFS = "evidencia";
@@ -60,6 +61,12 @@ public class ColaAnclaje extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         if (aislado(this)) return false;
+        if (Orbot.soloTor(this) && !Orbot.listo(this)) {
+            // Regla sin excepciones: sin Orbot activo, la cola espera. Se le pide que arranque y se reintenta.
+            Orbot.pedirArranque(this);
+            jobFinished(params, params.getJobId() == JOB_AHORA);
+            return true;
+        }
         new Thread(() -> {
             boolean reintentar = false;
             try {
@@ -84,6 +91,8 @@ public class ColaAnclaje extends JobService {
         boolean faltanEnvios = false;
         for (Evidencias.Ficha f : ev.todas()) {
             if (aislado(c)) return false;
+            // Orbot se cerró a mitad de la tanda: lo que queda espera; nada sale por la red directa.
+            if (Orbot.soloTor(c) && !Orbot.listo(c)) return true;
             if ("pending".equals(f.otsEstado)) {
                 if (!enviar(c, ev, f)) faltanEnvios = true;
             } else if ("calendar".equals(f.otsEstado)) {

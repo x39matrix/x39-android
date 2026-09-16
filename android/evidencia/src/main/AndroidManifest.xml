@@ -18,6 +18,11 @@
 
     <uses-feature android:name="android.hardware.camera.any" android:required="true" />
 
+    <!-- Solo para saber si Orbot está instalado (anclaje por Tor opcional, 0.3). No es un permiso. -->
+    <queries>
+        <package android:name="org.torproject.android" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"
