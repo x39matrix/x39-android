@@ -124,6 +124,11 @@ public class EvidenciaActivity extends Activity {
             cerrarCamara();
             render();
         }
+        // Grabando audio y la app se va al fondo (llamada, bloqueo): el tramo en curso se sella, no se pierde.
+        if (grabadoraAudio != null) {
+            descartarAudio();
+            render();
+        }
     }
 
     @Override
@@ -807,7 +812,20 @@ public class EvidenciaActivity extends Activity {
 
     // ------------------------------------------------------------------ audio
 
-    /** Grabadora de audio: micrófono → AAC en un archivo temporal privado que se sella y se borra, como el vídeo. */
+    /** Cada tramo de audio se cierra y se sella por su cuenta: lo grabado hasta el minuto 40 existe aunque el 41 no llegue. */
+    private static final long TRAMO_AUDIO_MS = 5 * 60_000L;
+    /** Espacio mínimo antes de empezar a grabar (una hora a 64 kbit/s son ~29 MB; se pide margen). */
+    private static final long ESPACIO_MIN_AUDIO = 100L << 20;
+    private long inicioTramo;
+    private int numTramo;
+    private String sesionAudio;
+    private android.media.AudioFocusRequest focoAudio;
+
+    /**
+     * Grabadora de audio: micrófono → AAC (64 kbit/s) en tramos de 5 minutos; cada tramo se cifra, se firma y
+     * se ancla al cerrarse. Una llamada entrante (pérdida del foco de audio) o salir de la pantalla cierran y
+     * sellan el tramo en curso: nada grabado se pierde.
+     */
     private void abrirGrabadora() {
         if (!evidencias.tieneIdentidad()) {
             render();
@@ -815,32 +833,52 @@ public class EvidenciaActivity extends Activity {
         }
         secundaria = null;
         LinearLayout raizCol = Ui.columna(this);
+        final android.os.Handler reloj = new android.os.Handler(android.os.Looper.getMainLooper());
+        final Runnable[] ticRef = new Runnable[1];
         raizCol.addView(barraSuperior("Audio", () -> {
-            descartarAudio();
-            mostrarPestana(Pestana.EVIDENCIAS);
+            if (grabadoraAudio != null) pararAudio(reloj, ticRef[0]);
+            else mostrarPestana(Pestana.EVIDENCIAS);
         }, 0));
         LinearLayout col = Ui.columna(this);
         col.setGravity(Gravity.CENTER_HORIZONTAL);
         col.setPadding(dp(24), dp(40), dp(24), dp(24));
         col.addView(aro(Icono.Tipo.AUDIO), new LinearLayout.LayoutParams(dp(84), dp(84)));
-        TextView ayuda = Ui.texto(this, "Se guarda cifrado y se firma al parar. El micrófono se pide al pulsar «Grabar».", 14, Ui.TEXTO_2, false);
+        TextView ayuda = Ui.texto(this, "Se graba en tramos de 5 minutos; cada tramo se cifra, se firma y se ancla al cerrarse. El micrófono se pide al pulsar «Grabar».", 14, Ui.TEXTO_2, false);
         ayuda.setGravity(Gravity.CENTER);
         ayuda.setPadding(0, dp(18), 0, dp(24));
         col.addView(ayuda);
         TextView cronometro = Ui.mono(this, "00:00", 40, Ui.TEXTO);
         cronometro.setGravity(Gravity.CENTER);
         col.addView(cronometro);
+        TextView tramoTxt = Ui.texto(this, "", 13, Ui.SUAVE, false);
+        tramoTxt.setGravity(Gravity.CENTER);
+        col.addView(tramoTxt);
         TextView boton = Ui.boton(this, "Grabar", true, null);
-        final android.os.Handler reloj = new android.os.Handler(android.os.Looper.getMainLooper());
-        final Runnable tic = new Runnable() {
+        ticRef[0] = new Runnable() {
             @Override
             public void run() {
                 if (grabadoraAudio == null) return;
-                long ms = System.currentTimeMillis() - inicioAudio;
+                long ahora = System.currentTimeMillis();
+                long ms = ahora - inicioAudio;
                 cronometro.setText(String.format(ES, "%02d:%02d", ms / 60_000, (ms / 1000) % 60));
+                tramoTxt.setText("Tramo " + numTramo + " · " + (numTramo - 1) + (numTramo == 2 ? " sellado" : " sellados"));
                 if (ms >= MAX_AUDIO_MS) {
                     pararAudio(reloj, this);
                     return;
+                }
+                if (ahora - inicioTramo >= TRAMO_AUDIO_MS) {
+                    // Cierra el tramo (se sella en segundo plano) y abre el siguiente sin parar la escucha más de un instante.
+                    File cerrado = cerrarTramo();
+                    if (cerrado != null) sellarTramo(cerrado, numTramo, ahora - inicioTramo);
+                    try {
+                        iniciarTramo();
+                    } catch (Exception e) {
+                        grabadoraAudio = null;
+                        soltarFoco();
+                        aviso("La grabación se cortó al abrir el tramo siguiente: " + Ui.mensaje(e) + ". Lo anterior está sellado.");
+                        abrirGrabadora();
+                        return;
+                    }
                 }
                 reloj.postDelayed(this, 500);
             }
@@ -848,32 +886,30 @@ public class EvidenciaActivity extends Activity {
         boton.setOnClickListener(v -> {
             if (grabadoraAudio != null) {
                 boton.setEnabled(false);
-                pararAudio(reloj, tic);
+                pararAudio(reloj, ticRef[0]);
                 return;
             }
             if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MICROFONO_AUDIO);
                 return;
             }
+            long libre = evidencias.espacioLibre();
+            if (libre < ESPACIO_MIN_AUDIO) {
+                aviso("Quedan " + Formatter.formatShortFileSize(this, libre) + " libres. Hacen falta al menos 100 MB para grabar con margen.");
+                return;
+            }
             try {
-                @SuppressWarnings("deprecation")
-                android.media.MediaRecorder r = new android.media.MediaRecorder();
-                r.setAudioSource(android.media.MediaRecorder.AudioSource.MIC);
-                r.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4);
-                audioTmp = new File(getCacheDir(), "a-" + System.currentTimeMillis() + ".m4a");
-                r.setOutputFile(audioTmp.getAbsolutePath());
-                r.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC);
-                r.setAudioEncodingBitRate(128_000);
-                r.setAudioSamplingRate(44_100);
-                r.prepare();
-                r.start();
-                grabadoraAudio = r;
+                pedirFoco(reloj, ticRef[0]);
+                sesionAudio = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", ES).format(new java.util.Date());
+                numTramo = 0;
                 inicioAudio = System.currentTimeMillis();
+                iniciarTramo();
                 boton.setText("Parar");
-                ayuda.setText("Grabando · se cifra y se firma al parar");
-                reloj.post(tic);
+                ayuda.setText("Grabando · cada 5 minutos se sella un tramo · al parar se sella el último");
+                reloj.post(ticRef[0]);
             } catch (Exception e) {
-                descartarAudio();
+                grabadoraAudio = null;
+                soltarFoco();
                 aviso("No se pudo grabar: " + Ui.mensaje(e));
             }
         });
@@ -882,14 +918,30 @@ public class EvidenciaActivity extends Activity {
         mostrar(raizCol, false);
     }
 
-    private void pararAudio(android.os.Handler reloj, Runnable tic) {
-        reloj.removeCallbacks(tic);
+    private void iniciarTramo() throws Exception {
+        @SuppressWarnings("deprecation")
+        android.media.MediaRecorder r = new android.media.MediaRecorder();
+        r.setAudioSource(android.media.MediaRecorder.AudioSource.MIC);
+        r.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4);
+        numTramo++;
+        audioTmp = new File(getCacheDir(), "a-" + sesionAudio + "-t" + numTramo + ".m4a");
+        r.setOutputFile(audioTmp.getAbsolutePath());
+        r.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC);
+        r.setAudioEncodingBitRate(64_000);
+        r.setAudioSamplingRate(44_100);
+        r.prepare();
+        r.start();
+        grabadoraAudio = r;
+        inicioTramo = System.currentTimeMillis();
+    }
+
+    /** Para y libera la grabadora del tramo en curso. Devuelve el archivo si tiene contenido válido. */
+    private File cerrarTramo() {
         android.media.MediaRecorder r = grabadoraAudio;
         File f = audioTmp;
         grabadoraAudio = null;
         audioTmp = null;
-        if (r == null) return;
-        long duracion = System.currentTimeMillis() - inicioAudio;
+        if (r == null) return null;
         boolean valido;
         try {
             r.stop();
@@ -898,41 +950,103 @@ public class EvidenciaActivity extends Activity {
             valido = false;
         }
         r.release();
-        if (!valido || f == null) {
-            if (f != null) {
+        if (!valido && f != null) {
+            //noinspection ResultOfMethodCallIgnored
+            f.delete();
+            return null;
+        }
+        return f;
+    }
+
+    private String nombreTramo(int tramo, String extension) {
+        return "audio-" + sesionAudio + "-t" + String.format(ES, "%02d", tramo) + "." + extension;
+    }
+
+    /** Sella un tramo intermedio sin diálogo (la grabación sigue). */
+    private void sellarTramo(File f, int tramo, long duracionMs) {
+        final String nombre = nombreTramo(tramo, "m4a");
+        new Thread(() -> {
+            String fallo = null;
+            try (InputStream in = new java.io.FileInputStream(f)) {
+                evidencias.sellar(in, Evidencias.AUDIO, nombre, "audio/mp4", null);
+            } catch (Exception e) {
+                fallo = Ui.mensaje(e);
+            } finally {
                 //noinspection ResultOfMethodCallIgnored
                 f.delete();
             }
-            aviso("La grabación es demasiado corta.");
-            abrirGrabadora();
-            return;
-        }
-        procesarGrabacion(f, duracion, Evidencias.AUDIO, "audio", "m4a", "audio/mp4", "Audio");
+            final String error = fallo;
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                if (error != null) aviso("No se pudo sellar el tramo " + tramo + ": " + error);
+                else {
+                    Toast.makeText(this, "Tramo " + tramo + " (" + duracion(duracionMs) + ") sellado", Toast.LENGTH_SHORT).show();
+                    ColaAnclaje.programar(this);
+                }
+            });
+        }, "x39-tramo").start();
     }
 
-    /** Al salir de la pantalla de audio grabando: nada se guarda sin sellar. */
-    private void descartarAudio() {
-        android.media.MediaRecorder r = grabadoraAudio;
-        grabadoraAudio = null;
-        if (r != null) {
-            try {
-                r.stop();
-            } catch (RuntimeException ignorado) {
-                // Grabación interrumpida.
+    private void pararAudio(android.os.Handler reloj, Runnable tic) {
+        if (tic != null) reloj.removeCallbacks(tic);
+        soltarFoco();
+        long duracion = System.currentTimeMillis() - inicioTramo;
+        int tramo = numTramo;
+        File f = cerrarTramo();
+        if (f == null) {
+            if (tramo <= 1) {
+                aviso("La grabación es demasiado corta.");
+                abrirGrabadora();
+            } else {
+                mostrarPestana(Pestana.EVIDENCIAS);
             }
-            r.release();
+            return;
         }
-        if (audioTmp != null) {
-            //noinspection ResultOfMethodCallIgnored
-            audioTmp.delete();
-            audioTmp = null;
-        }
+        procesarGrabacion(f, duracion, Evidencias.AUDIO, "audio", "m4a", "audio/mp4", tramo > 1 ? "Audio · tramo " + tramo : "Audio", nombreTramo(tramo, "m4a"));
+    }
+
+    /** Una llamada entrante u otra app con el micrófono quitan el foco de audio: se para y se sella lo grabado. */
+    private void pedirFoco(android.os.Handler reloj, Runnable tic) {
+        android.media.AudioManager am = getSystemService(android.media.AudioManager.class);
+        if (am == null) return;
+        focoAudio = new android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
+                .setOnAudioFocusChangeListener(cambio -> {
+                    if (cambio == android.media.AudioManager.AUDIOFOCUS_LOSS || cambio == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                        if (grabadoraAudio != null) {
+                            pararAudio(reloj, tic);
+                            Toast.makeText(this, "Grabación cortada por una llamada u otra app: el tramo queda sellado", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }, new android.os.Handler(android.os.Looper.getMainLooper()))
+                .build();
+        am.requestAudioFocus(focoAudio);
+    }
+
+    private void soltarFoco() {
+        android.media.AudioManager am = getSystemService(android.media.AudioManager.class);
+        if (am != null && focoAudio != null) am.abandonAudioFocusRequest(focoAudio);
+        focoAudio = null;
+    }
+
+    /** Al salir de la pantalla de audio grabando (onStop): el tramo en curso se sella, no se pierde. */
+    private void descartarAudio() {
+        if (grabadoraAudio == null) return;
+        soltarFoco();
+        long duracion = System.currentTimeMillis() - inicioTramo;
+        int tramo = numTramo;
+        File f = cerrarTramo();
+        if (f != null) sellarTramo(f, tramo, duracion);
+    }
+
+    private void procesarGrabacion(File archivo, long duracionMs, String tipo, String prefijo, String extension, String mime, String titulo) {
+        procesarGrabacion(archivo, duracionMs, tipo, prefijo, extension, mime, titulo, null);
     }
 
     /** Sella una grabación temporal (vídeo o audio) como evidencia (huella, cifrado por trozos, firma) y la borra. */
-    private void procesarGrabacion(File archivo, long duracionMs, String tipo, String prefijo, String extension, String mime, String titulo) {
+    private void procesarGrabacion(File archivo, long duracionMs, String tipo, String prefijo, String extension, String mime, String titulo, String nombreFijo) {
         final long total = archivo.length();
-        final String nombre = prefijo + "-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", ES).format(new java.util.Date()) + "." + extension;
+        final String nombre = nombreFijo != null ? nombreFijo
+                : prefijo + "-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", ES).format(new java.util.Date()) + "." + extension;
         TextView estado = Ui.texto(this, "Calculando la huella y cifrando…", 14, Ui.TEXTO, false);
         estado.setPadding(dp(24), dp(20), dp(24), dp(8));
         AlertDialog espera = new AlertDialog.Builder(this).setTitle(titulo + " · " + duracion(duracionMs)).setView(estado).setCancelable(false).show();
