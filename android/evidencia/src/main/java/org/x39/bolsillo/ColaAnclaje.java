@@ -61,16 +61,17 @@ public class ColaAnclaje extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         if (aislado(this)) return false;
-        if (Orbot.soloTor(this) && !Orbot.listo(this)) {
-            // Regla sin excepciones: sin Orbot activo, la cola espera. Se le pide que arranque y se reintenta.
-            Orbot.pedirArranque(this);
-            jobFinished(params, params.getJobId() == JOB_AHORA);
-            return true;
-        }
+        // Todo en el hilo de trabajo: Orbot.listo() abre un socket y en el hilo principal Android mata la app.
         new Thread(() -> {
             boolean reintentar = false;
             try {
-                reintentar = trabajar(this);
+                if (Orbot.soloTor(this) && !Orbot.listo(this)) {
+                    // Regla sin excepciones: sin Orbot activo, la cola espera. Se le pide que arranque y se reintenta.
+                    Orbot.pedirArranque(this);
+                    reintentar = true;
+                } else {
+                    reintentar = trabajar(this);
+                }
             } catch (Exception e) {
                 reintentar = true;
             } finally {
