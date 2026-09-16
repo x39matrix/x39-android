@@ -34,6 +34,7 @@ fn main() {
         [_, dir, "mensaje", s, e, texto] => mensaje(dir, s, e, texto),
         [_, dir, "miembro", s, direccion] => miembro(dir, s, direccion),
         [_, dir, "leer", s, json, entradas @ ..] if !entradas.is_empty() => leer(dir, s, json, entradas),
+        [_, _, "kem-de", entrada, salida] => kem_de(entrada, salida),
         _ => {
             eprintln!("uso: ver cabecera de examples/cliente.rs");
             process::exit(2);
@@ -222,6 +223,13 @@ fn leer(dir: &str, s: &str, json: &str, entradas: &[&str]) {
         anterior = sala::de_hex(&hash).unwrap_or([0u8; 32]);
     }
     println!("mensajes correctos: {ok}");
+}
+
+/// Saca la clave ML-KEM de una entrada del directorio (para entregarle un sobre a esa persona).
+fn kem_de(entrada: &str, salida: &str) {
+    let e = directorio::leer(&leer_texto(Path::new(entrada))).unwrap_or_else(|e| fallo(e.to_string()));
+    fs::write(salida, e.kem_pk).unwrap_or_else(|e| fallo(e.to_string()));
+    println!("{}", directorio::direccion(&e.kem_pk));
 }
 
 // ---- JSON mínimo (los cuerpos del canister son planos y sin escapes raros)
