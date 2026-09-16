@@ -1,0 +1,101 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Length 5594 >>
+stream
+BT /F2 15 Tf 50.0 775.9 Td (Acta de pruebas de aceptación · x39 Evidencia 0.2.0 \(vídeo\)) Tj ET
+BT /F1 9.5 Tf 50.0 753.9 Td (Fecha: 16 de septiembre de 2026, 12:45–13:15 \(hora de Sevilla\). Objeto: la APK firmada) Tj ET
+BT /F1 9.5 Tf 50.0 741.4 Td (x39-0.2.0-release.apk, instalada como actualización sobre la 0.1.1 publicada. Dispositivo: Redmi Note 15) Tj ET
+BT /F1 9.5 Tf 50.0 728.9 Td (5G \(Android 16, HyperOS\), serie adb c64c43b9. Método: la persona pulsa en el móvil; el estado del) Tj ET
+BT /F1 9.5 Tf 50.0 716.4 Td (sistema se fuerza y se lee por adb desde el PC. Todo lo afirmado sale de esas lecturas.) Tj ET
+BT /F2 11.5 Tf 50.0 696.9 Td (Objeto probado) Tj ET
+BT /F3 8.5 Tf 50.0 680.9 Td (x39-0.2.0-release.apk · 2.415.961 bytes · SHA-256) Tj ET
+BT /F3 8.5 Tf 50.0 669.4 Td (7192a884840c67b46ccf15987cbd3bedb98ddf0b5ffffaa4c5b74688974ec41c) Tj ET
+BT /F3 8.5 Tf 50.0 654.9 Td (Firma v2 · CN=x39, O=x39matrix, C=ES · certificado SHA-256) Tj ET
+BT /F3 8.5 Tf 50.0 643.4 Td (72f0745f993605b1b3cd30966162b6d98d84fcacbd23e2e07e24c3d15f7d8935 \(el mismo que 0.1.1\)) Tj ET
+BT /F3 8.5 Tf 50.0 628.9 Td (org.x39matrix.evidencia · versionCode 3 · versionName 0.2.0 · no depurable · permisos: INTERNET,) Tj ET
+BT /F3 8.5 Tf 50.0 617.4 Td (ACCESS_NETWORK_STATE, CAMERA, RECORD_AUDIO · google/firebase/gms: 0) Tj ET
+BT /F1 9.5 Tf 50.0 602.9 Td (Nota: una primera compilación 0.2.0 \(SHA-256 fe8ef482…4001, misma firma y versión\) se descartó sin) Tj ET
+BT /F1 9.5 Tf 50.0 590.4 Td (publicar para añadir al recibo el campo signer_pk; las pruebas de vídeo 1–4 se hicieron con ella y la 5) Tj ET
+BT /F1 9.5 Tf 50.0 577.9 Td (con la definitiva. Ambas comparten todo el código de cámara, vídeo, sellado y cola.) Tj ET
+BT /F2 11.5 Tf 50.0 558.4 Td (Resultados) Tj ET
+BT /F2 10 Tf 50.0 542.4 Td (V1. Micrófono solo al grabar — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 528.4 Td (Con la app abierta, RECORD_AUDIO sin conceder \(dumpsys package: solo CAMERA granted=true\). Al pulsar) Tj ET
+BT /F1 9.5 Tf 50.0 515.9 Td («Vídeo» Android pidió el micrófono; después: RECORD_AUDIO granted=true, flags USER_SET. No se pide al) Tj ET
+BT /F1 9.5 Tf 50.0 503.4 Td (arrancar.) Tj ET
+BT /F2 10 Tf 50.0 487.9 Td (V2. Modo avión — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 473.9 Td (airplane_mode_on=1 \(forzado por adb\). Vídeo video-20260916-124925.mp4 grabado y sellado a las 12:49:25:) Tj ET
+BT /F1 9.5 Tf 50.0 461.4 Td («video/mp4 · 8,4 MB», «Firmada · en espera de ancla», huella) Tj ET
+BT /F1 9.5 Tf 50.0 448.9 Td (e2be4c93e54bc4d2f7883916de1b4a74f7c588460c2776042cb533ce9a6e958f, «Firma ML-DSA-87 · 4.627 bytes», hora) Tj ET
+BT /F1 9.5 Tf 50.0 436.4 Td (etiquetada «declarada, no verificable».) Tj ET
+BT /F2 10 Tf 50.0 420.9 Td (V3. Galería vacía — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 406.9 Td (MediaStore vídeos: 161 antes y 161 después; imágenes 1.732 antes y después. El MP4 temporal se cifra por) Tj ET
+BT /F1 9.5 Tf 50.0 394.4 Td (trozos en la bóveda y se borra; nada en la galería.) Tj ET
+BT /F2 10 Tf 50.0 378.9 Td (V4. Cola con la app matada y ahorro de batería — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 364.9 Td (POWER_SAVE_MODE_OPEN=1 \(activado a mano\). App al fondo y «am kill» \(pidof vacío\). Al quitar el modo) Tj ET
+BT /F1 9.5 Tf 50.0 352.4 Td (avión: JobScheduler START -22s, «app called jobFinished» -12s; la ficha del vídeo pasó a «Enviada a los) Tj ET
+BT /F1 9.5 Tf 50.0 339.9 Td (calendarios» sin abrir la app. Repetido a las 13:0x con el vídeo de las 13:01 \(jobFinished\).) Tj ET
+BT /F2 10 Tf 50.0 324.4 Td (V5. El fichero no sale solo; exportado a mano es exacto y con sonido — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 310.4 Td (El recibo no lleva el fichero \(v=1, sha256, sig, ots; location_included=false\). Exportado a mano por el) Tj ET
+BT /F1 9.5 Tf 50.0 297.9 Td (periodista \(«Exportar archivo» ? WhatsApp\): 8.398.397 bytes, SHA-256) Tj ET
+BT /F1 9.5 Tf 50.0 285.4 Td (e2be4c93e54bc4d2f7883916de1b4a74f7c588460c2776042cb533ce9a6e958f = huella de la ficha; cajas MP4:) Tj ET
+BT /F1 9.5 Tf 50.0 272.9 Td (handlers vide+soun, códecs avc1+mp4a \(H.264 + AAC\).) Tj ET
+BT /F2 11.5 Tf 50.0 253.4 Td (Prueba 8 desde fuera: tamaños medidos en un recibo exportado) Tj ET
+BT /F1 9.5 Tf 50.0 237.4 Td (Recibo e2be4c93e54bc4d2.json \(6.790 bytes, formato 0.1.1, recibido por WhatsApp a las 12:52\): campo sig) Tj ET
+BT /F1 9.5 Tf 50.0 224.9 Td (en base64 ? 4.627 bytes. La clave pública la enseña la app medida en Seguridad \(2.592 bytes\).) Tj ET
+BT /F1 9.5 Tf 50.0 209.4 Td (Recibo e2be4c93e54bc4d2.json \(formato 0.2.0 con signer_pk\): sig ? 4627 bytes; signer_pk ? 2592 bytes;) Tj ET
+BT /F1 9.5 Tf 50.0 196.9 Td (SHA-256\(signer_pk\) = 1c4e532189c803968eb733c6b2effe67… = signer_fp 1c4e532189c803968eb733c6b2effe67…;) Tj ET
+BT /F1 9.5 Tf 50.0 184.4 Td (sellado 2026-09-16T12:49:25+02:00. Firma comprobada con examples/recibo.rs sobre) Tj ET
+BT /F1 9.5 Tf 50.0 171.9 Td (X39-EVIDENCIA-v1|e2be4c93e54bc4d2…|2026-09-16T12:49:25+02:00: válida para la clave con esa huella —) Tj ET
+BT /F1 9.5 Tf 50.0 159.4 Td (PASA.) Tj ET
+BT /F2 11.5 Tf 50.0 139.9 Td (Observaciones) Tj ET
+BT /F1 9.5 Tf 50.0 123.9 Td (Ninguna prueba falló. En Xiaomi, adb no puede pulsar, desplazar ni cambiar ajustes seguros \(el ahorro de) Tj ET
+BT /F1 9.5 Tf 50.0 111.4 Td (batería lo activó la persona\). Las atestaciones OTS quedan pendientes hasta que el calendario entra en) Tj ET
+BT /F1 9.5 Tf 50.0 98.9 Td (un bloque de Bitcoin; se comprueban con «ots verify».) Tj ET
+BT /F2 11.5 Tf 50.0 79.4 Td (Firma de esta acta) Tj ET
+BT /F1 9.5 Tf 50.0 63.4 Td (Este PDF se sella con OpenTimestamps \(.ots junto a él\) y su SHA-256 queda en el repositorio) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 595.28 841.89] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 73 >>
+stream
+BT /F1 9.5 Tf 50.0 781.9 Td (x39_mensajeria \(pruebas_ots/actas\).) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 595.28 841.89] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+9 0 obj
+<< /Type /Catalog /Pages 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000303 00000 n 
+0000005949 00000 n 
+0000006101 00000 n 
+0000006224 00000 n 
+0000006376 00000 n 
+0000006439 00000 n 
+trailer
+<< /Size 10 /Root 9 0 R >>
+startxref
+6488
+%%EOF
