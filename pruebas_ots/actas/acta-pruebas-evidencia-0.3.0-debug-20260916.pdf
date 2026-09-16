@@ -1,0 +1,121 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Length 6341 >>
+stream
+BT /F2 15 Tf 50.0 775.9 Td (Acta de pruebas de aceptación · x39 Evidencia 0.3.0 \(anclaje por Tor\)) Tj ET
+BT /F1 9.5 Tf 50.0 753.9 Td (Fecha: 16 de septiembre de 2026, 14:11–15:46 \(hora de Sevilla\). Objeto: la compilación de DEPURACIÓN de) Tj ET
+BT /F1 9.5 Tf 50.0 741.4 Td (la 0.3.0, instalada en el Redmi de pruebas. Método: la persona pulsa en el móvil; el estado del sistema) Tj ET
+BT /F1 9.5 Tf 50.0 728.9 Td (se lee y se fuerza por adb desde el PC. Las conexiones de red se midieron con un bucle ejecutado en el) Tj ET
+BT /F1 9.5 Tf 50.0 716.4 Td (propio móvil que lee /proc/net/tcp y /proc/net/tcp6 una vez por segundo y filtra las filas del uid de la) Tj ET
+BT /F1 9.5 Tf 50.0 703.9 Td (app \(10423\), decodificando destino y estado; el bucle se validó antes contra un uid con una conexión) Tj ET
+BT /F1 9.5 Tf 50.0 691.4 Td (establecida real. Todo lo afirmado sale de esas lecturas.) Tj ET
+BT /F2 11.5 Tf 50.0 671.9 Td (Objeto probado) Tj ET
+BT /F3 8.5 Tf 50.0 655.9 Td (org.x39matrix.evidencia.debug · versionName 0.3.0 · versionCode 5 · tipo de compilación: DEBUG) Tj ET
+BT /F3 8.5 Tf 50.0 644.4 Td (\(depurable, firma de depuración\) · commit cf0de39) Tj ET
+BT /F3 8.5 Tf 50.0 629.9 Td (APK instalado \(pm path + sha256sum en el móvil\):) Tj ET
+BT /F3 8.5 Tf 50.0 618.4 Td (7a5cc4f4b68d0164d783b2fb1854da28ca1488be1d89d48062a69703ac1f3481 · 2.465.638 bytes) Tj ET
+BT /F3 8.5 Tf 50.0 603.9 Td (Móvil: Xiaomi Redmi Note 15 5G, modelo 25098RA98G, Android 16, HyperOS OS3.0, serie adb c64c43b9) Tj ET
+BT /F3 8.5 Tf 50.0 592.4 Td (· red: Wi-Fi doméstica \(Movistar\) + datos móviles) Tj ET
+BT /F3 8.5 Tf 50.0 577.9 Td (Orbot: 17.9.5-RC-4-tor-0.4.9.11 \(uid 10491\), reinstalado limpio a las 15:25:51, transporte) Tj ET
+BT /F3 8.5 Tf 50.0 566.4 Td (Snowflake, VPN de dispositivo completo · proxy HTTP 127.0.0.1:8118 · Tor «Bootstrapped 100%» a) Tj ET
+BT /F3 8.5 Tf 50.0 554.9 Td (las 15:28:14) Tj ET
+BT /F1 9.5 Tf 50.0 540.4 Td (Esta acta cubre la compilación de depuración. Antes de publicar la 0.3.0 hay que compilar la release) Tj ET
+BT /F1 9.5 Tf 50.0 527.9 Td (firmada \(CN=x39, certificado 72f0745f…8935\) y repetir sobre ella la radiografía de la APK y las pruebas) Tj ET
+BT /F1 9.5 Tf 50.0 515.4 Td (1 y 2 de esta acta, con un anexo sellado.) Tj ET
+BT /F2 11.5 Tf 50.0 495.9 Td (Resultados) Tj ET
+BT /F2 10 Tf 50.0 479.9 Td (T1. Sin Orbot no sale nada — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 465.9 Td (Interruptor «Anclar solo por Tor» encendido \(anclar_solo_tor=true en las preferencias\). Orbot cerrado) Tj ET
+BT /F1 9.5 Tf 50.0 453.4 Td (por adb \(am force-stop; sin proceso; 8118 y 9050 sin escuchar\). Foto sellada a las 14:18:28 \(huella) Tj ET
+BT /F1 9.5 Tf 50.0 440.9 Td (140dbc43fd8fd3741cc29975d7408e83e4aaa2810924011f1fe0be7eca51fd9e; recibo v1 con signer_pk recibido por) Tj ET
+BT /F1 9.5 Tf 50.0 428.4 Td (WhatsApp\). Bucle de 180 s \(14:18:26–14:21:40, una lectura por segundo, tcp y tcp6\): NINGÚN destino del) Tj ET
+BT /F1 9.5 Tf 50.0 415.9 Td (uid 10423. Contador de .ots: 2 antes y 2 después. Ficha en pantalla: «? Firmada · en espera de Tor» y) Tj ET
+BT /F1 9.5 Tf 50.0 403.4 Td («En espera de Tor \(Orbot\) para enviar la huella \(32 bytes\) a los calendarios. Sin Orbot activo no sale) Tj ET
+BT /F1 9.5 Tf 50.0 390.9 Td (nada». La app pidió a Orbot que arrancara \(broadcast START a las 14:18:10\), como está diseñado.) Tj ET
+BT /F2 10 Tf 50.0 375.4 Td (T2. Con Orbot conectado todo sale por 127.0.0.1:8118 — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 361.4 Td (Orbot «Conectado a la red Tor» \(Bootstrapped 100% 15:28:14\). App abierta a las 15:38:49 \(eso programa la) Tj ET
+BT /F1 9.5 Tf 50.0 348.9 Td (cola\). Bucle de 150 s \(15:38:49–15:41:38\): un único destino, 127.0.0.1:8118 en estado ESTAB, 1.155) Tj ET
+BT /F1 9.5 Tf 50.0 336.4 Td (lecturas entre 15:39:03 y 15:41:37; ningún otro destino. Contador de .ots: de 2 a 17 \(15 huellas) Tj ET
+BT /F1 9.5 Tf 50.0 323.9 Td (pendientes enviadas, entre ellas 140dbc43… de las 14:18 y e049c7f7… de las 14:01\). Registro de red de) Tj ET
+BT /F1 9.5 Tf 50.0 311.4 Td (Seguridad: 60 POST a a.pool.opentimestamps.org, b.pool.opentimestamps.org, a.pool.eternitywall.com y) Tj ET
+BT /F1 9.5 Tf 50.0 298.9 Td (ots.btc.catallaxy.com, todos «vía 127.0.0.1:8118», respuesta 200, 32 bytes subidos cada uno.) Tj ET
+BT /F2 10 Tf 50.0 283.4 Td (T2b. Ronda de actualización \(GET\) también por Tor — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 269.4 Td (App cerrada \(am force-stop\) y reabierta a las 15:42:18. Bucle de 90 s \(15:42:18–15:44:01\): único destino) Tj ET
+BT /F1 9.5 Tf 50.0 256.9 Td (127.0.0.1:8118 ESTAB, 489 lecturas. Registro: 80 GET a alice/bob.btc.calendar.opentimestamps.org,) Tj ET
+BT /F1 9.5 Tf 50.0 244.4 Td (btc.calendar.catallaxy.com y finney.calendar.eternitywall.com, todos «vía 127.0.0.1:8118», respuesta 404) Tj ET
+BT /F1 9.5 Tf 50.0 231.9 Td (\(= todavía no en un bloque de Bitcoin, lo esperado el mismo día\).) Tj ET
+BT /F2 10 Tf 50.0 216.4 Td (T2c. Comprobación desde fuera del móvil — PASA) Tj ET
+BT /F1 9.5 Tf 50.0 202.4 Td (El .ots de la foto de las 14:18 \(875 bytes, SHA-256) Tj ET
+BT /F1 9.5 Tf 50.0 189.9 Td (920bb4fc6c7ba2eb61b99914701187b8322ef36979d4db3cb1d94072a83bf12e\) extraído del móvil por adb y leído en) Tj ET
+BT /F1 9.5 Tf 50.0 177.4 Td (el PC con el cliente oficial: «ots info» muestra cuatro PendingAttestation \(alice, bob, catallaxy,) Tj ET
+BT /F1 9.5 Tf 50.0 164.9 Td (finney\) con marca 15:39–15:41; «ots verify -d 140dbc43…» responde en los cuatro calendarios «Pending) Tj ET
+BT /F1 9.5 Tf 50.0 152.4 Td (confirmation in Bitcoin blockchain». Un segundo .ots \(31aab2d340238ef3, 805 bytes, SHA-256) Tj ET
+BT /F1 9.5 Tf 50.0 139.9 Td (4a734bc1…e24e\) compartido desde la app por WhatsApp da el mismo resultado: la app solo adjunta el .ots) Tj ET
+BT /F1 9.5 Tf 50.0 127.4 Td (cuando existe, es decir, cuando la ficha ya no está «pending».) Tj ET
+BT /F2 11.5 Tf 50.0 107.9 Td (Fallo encontrado y corregido durante las pruebas) Tj ET
+BT /F1 9.5 Tf 50.0 91.9 Td (La primera 0.3.0 \(sha256 86ca4511…9d41, commit 326903d\) moría al arrancar la cola con el interruptor) Tj ET
+BT /F1 9.5 Tf 50.0 79.4 Td (encendido: ColaAnclaje.onStartJob llamaba a Orbot.listo\(\), que abre un socket a 127.0.0.1:8118, en el) Tj ET
+BT /F1 9.5 Tf 50.0 66.9 Td (hilo principal, y Android lo aborta \(NetworkOnMainThreadException; registrado a las 13:58 y a las) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 595.28 841.89] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 2372 >>
+stream
+BT /F1 9.5 Tf 50.0 781.9 Td (15:37\). Corregido en el commit cf0de39: la comprobación de Orbot pasa al hilo de trabajo x39-anclaje. La) Tj ET
+BT /F1 9.5 Tf 50.0 769.4 Td (prueba 1 se hizo con la compilación anterior \(el fallo no afecta a su resultado: la app no llegó a) Tj ET
+BT /F1 9.5 Tf 50.0 756.9 Td (intentar ninguna conexión\) y las pruebas 2, 2b y 2c con la corregida.) Tj ET
+BT /F2 11.5 Tf 50.0 737.4 Td (Observaciones) Tj ET
+BT /F1 9.5 Tf 50.0 721.4 Td (1\) Orbot 17.9.5-RC-4 \(tor 0.4.9.11\) instalado desde Google Play no funcionó en este móvil: el proceso) Tj ET
+BT /F1 9.5 Tf 50.0 708.9 Td (tor se quedaba sin abrir ninguna conexión \(9050 con 30 conexiones en cola sin aceptar\) o caía con) Tj ET
+BT /F1 9.5 Tf 50.0 696.4 Td (SIGSEGV en libtor.so \(14:50:09\), con y sin VPN, con datos limpios y con exención de batería; Tor Browser) Tj ET
+BT /F1 9.5 Tf 50.0 683.9 Td (conectó en segundos en el mismo móvil y red. Solo conectó reinstalado limpio con el transporte) Tj ET
+BT /F1 9.5 Tf 50.0 671.4 Td (Snowflake. 2\) El modo «VPN de dispositivo completo» de Orbot no hace falta para x39 \(usa el proxy HTTP\)) Tj ET
+BT /F1 9.5 Tf 50.0 658.9 Td (y, mientras Tor no conecta, deja sin red a todas las apps del móvil. 3\) «Modo aislado» de Seguridad) Tj ET
+BT /F1 9.5 Tf 50.0 646.4 Td (cancela todos los trabajos de anclaje; estuvo encendido por error entre las 14:2x y las 15:3x. 4\) En) Tj ET
+BT /F1 9.5 Tf 50.0 633.9 Td (HyperOS, «cmd jobscheduler run -f» no arranca el trabajo; la cola la programa la app al abrirse. 5\) La) Tj ET
+BT /F1 9.5 Tf 50.0 621.4 Td (pantalla Seguridad decía «estado arrancando» con Tor ya conectado porque conserva el último aviso STATUS) Tj ET
+BT /F1 9.5 Tf 50.0 608.9 Td (de Orbot \(de las 14:40\); el anclaje no depende de ese texto pasados 10 minutos, pero conviene mostrar) Tj ET
+BT /F1 9.5 Tf 50.0 596.4 Td («desconocido» cuando sea viejo. 6\) El recibo exportado dice ots_status=pending hasta que la cola recibe) Tj ET
+BT /F1 9.5 Tf 50.0 583.9 Td (respuesta de los calendarios; después dice calendar y la app adjunta el .ots.) Tj ET
+BT /F2 11.5 Tf 50.0 564.4 Td (Firma de esta acta) Tj ET
+BT /F1 9.5 Tf 50.0 548.4 Td (Este PDF se sella con OpenTimestamps \(.ots junto a él\) y su SHA-256 queda en el repositorio) Tj ET
+BT /F1 9.5 Tf 50.0 535.9 Td (x39_mensajeria \(pruebas_ots/actas\), junto con los dos .ots citados.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 595.28 841.89] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+9 0 obj
+<< /Type /Catalog /Pages 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000303 00000 n 
+0000006696 00000 n 
+0000006848 00000 n 
+0000009272 00000 n 
+0000009424 00000 n 
+0000009487 00000 n 
+trailer
+<< /Size 10 /Root 9 0 R >>
+startxref
+9536
+%%EOF
