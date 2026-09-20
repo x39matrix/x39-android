@@ -931,3 +931,52 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_callSas<'c>(
         })
         .resolve::<ThrowRuntimeExAndDefault>()
 }
+
+// ---------------------------------------------------------------- x39tunel v2 (x39-core/src/tunel.rs)
+
+/// Petición de PSK de WireGuard: devuelve `psk(32) || cápsula`. La PSK va al par WireGuard
+/// local; la cápsula, al servidor por la señalización (`{"type":"psk","capsula":base64}`).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_tunelPedirPsk<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    servidor_kem_pk: JByteArray<'c>,
+    mldsa_seed: JByteArray<'c>,
+    wg_pk: JByteArray<'c>,
+    hasta: jlong,
+    ahora: jlong,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = public_key_from(env, &servidor_kem_pk)?;
+            let seed = seed_from(env, &mldsa_seed)?;
+            let wg = fijo::<32>(env, &wg_pk, "clave WireGuard con longitud incorrecta")?;
+            let (capsula, psk) = x39_core::tunel::pedir_psk(
+                &pk,
+                &seed,
+                &wg,
+                seconds(hasta, "fecha de caducidad inválida")?,
+                seconds(ahora, "hora inválida")?,
+            )?;
+            let mut out = Zeroizing::new(Vec::with_capacity(32 + capsula.len()));
+            out.extend_from_slice(psk.as_ref());
+            out.extend_from_slice(&capsula);
+            Ok(env.byte_array_from_slice(&out)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Huella SHA-256 (hex) de la clave ML-KEM del servidor: la que la app enseña y compara.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_tunelHuellaServidor<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    servidor_kem_pk: JByteArray<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let pk = public_key_from(env, &servidor_kem_pk)?;
+            Ok(env.new_string(x39_core::tunel::huella_servidor(&pk))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
