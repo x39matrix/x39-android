@@ -16,6 +16,8 @@ pub mod invitacion;
 pub mod ots;
 pub mod sala;
 pub mod share;
+pub mod call_key;
+pub mod tunel;
 
 use aes_gcm::Aes256Gcm;
 use aes_gcm::aead::{AeadInOut, KeyInit};

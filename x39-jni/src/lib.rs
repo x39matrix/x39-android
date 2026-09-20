@@ -763,3 +763,171 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_maxPlaintextForQr<'c>(
 ) -> jint {
     share::max_plaintext_for_qr() as jint
 }
+
+// ============================================================================
+// X39-CALL-KEY — puente para las llamadas cifradas (app «x39» / Comunicaciones).
+// La criptografía está en x39_core::call_key (la que pasa los vectores byte a byte).
+// El bridge es sin estado: los secretos efímeros (dk, ss) viajan a Kotlin como
+// bytes y la app los guarda (Keystore) entre pasos; nunca salen del aparato.
+// ============================================================================
+use x39_core::CT_KEM_LEN;
+use x39_core::call_key;
+
+/// Oferta de llamada: par efímero ML-KEM + firma ML-DSA-87 de la cadena canónica.
+/// Devuelve `ek(1568) || dk(3168) || firma(4627)`. Kotlin guarda `dk` (secreto).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callOffer<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    call_hash: JString<'c>,
+    from_bh: JString<'c>,
+    epoch: jint,
+    mldsa_seed: JByteArray<'c>,
+    ts: JString<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let seed = seed_from(env, &mldsa_seed)?;
+            let (of, dk) = call_key::hacer_oferta(
+                &call_hash.to_string(),
+                epoca_from(epoch)?,
+                &from_bh.to_string(),
+                &seed,
+                &ts.to_string(),
+            )?;
+            let mut out = Zeroizing::new(Vec::with_capacity(PK_LEN + SK_LEN + firma::SIG_LEN));
+            out.extend_from_slice(&of.ek);
+            out.extend_from_slice(dk.as_slice());
+            out.extend_from_slice(&of.sig_mldsa);
+            Ok(env.byte_array_from_slice(&out)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Verifica una oferta recibida: reconstruye la cadena canónica con los campos
+/// recibidos y comprueba la firma ML-DSA-87 del emisor. Devuelve 1, o lanza.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callVerifyOffer<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    call_hash: JString<'c>,
+    from_bh: JString<'c>,
+    epoch: jint,
+    ek: JByteArray<'c>,
+    ts: JString<'c>,
+    signature: JByteArray<'c>,
+    emisor_pk: JByteArray<'c>,
+) -> jint {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let ek = public_key_from(env, &ek)?;
+            let sig = env.convert_byte_array(&signature)?;
+            let pk = signing_public_key_from(env, &emisor_pk)?;
+            let canonical = call_key::cadena_oferta(
+                &call_hash.to_string(),
+                &from_bh.to_string(),
+                epoca_from(epoch)?,
+                &ek,
+                &ts.to_string(),
+            );
+            if firma::verify(&pk, canonical.as_bytes(), call_key::CALL_CTX, &sig) {
+                Ok(1)
+            } else {
+                Err(PuenteError::X39(x39_core::Error::Firma))
+            }
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Encapsula contra la `ek` efímera del otro. Devuelve `ct(1568) || ss(32)`.
+/// Kotlin guarda `ss` (secreto) y envía `ct`.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callEncapsulate<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    ek_otro: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let ek = public_key_from(env, &ek_otro)?;
+            let (ct, ss) = call_key::encapsular(&ek)?;
+            let mut out = Zeroizing::new(Vec::with_capacity(CT_KEM_LEN + 32));
+            out.extend_from_slice(&ct);
+            out.extend_from_slice(ss.as_slice());
+            Ok(env.byte_array_from_slice(&out)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Desencapsula el `ct` que nos llegó con nuestra `dk` efímera. Devuelve `ss(32)`.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callDecapsulate<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    dk: JByteArray<'c>,
+    ct: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let dk = secret_key_from(env, &dk)?;
+            let ct = fijo::<CT_KEM_LEN>(env, &ct, "criptograma ML-KEM con longitud incorrecta")?;
+            let ss = call_key::desencapsular(&dk, &ct)?;
+            Ok(env.byte_array_from_slice(ss.as_slice())?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Deriva los 32 bytes de la clave de fotograma (lo que se entrega a LiveKit).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callDerive<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    bh_a: JString<'c>,
+    bh_b: JString<'c>,
+    ek_a: JByteArray<'c>,
+    ek_b: JByteArray<'c>,
+    ss_a: JByteArray<'c>,
+    ss_b: JByteArray<'c>,
+    call_hash: JString<'c>,
+    call_salt: JByteArray<'c>,
+    epoch: jint,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let eka = public_key_from(env, &ek_a)?;
+            let ekb = public_key_from(env, &ek_b)?;
+            let ssa = fijo::<32>(env, &ss_a, "secreto A con longitud incorrecta")?;
+            let ssb = fijo::<32>(env, &ss_b, "secreto B con longitud incorrecta")?;
+            let salt = fijo::<32>(env, &call_salt, "call_salt con longitud incorrecta")?;
+            let key = call_key::derivar_material(
+                &bh_a.to_string(),
+                &bh_b.to_string(),
+                &eka,
+                &ekb,
+                &ssa,
+                &ssb,
+                &call_hash.to_string(),
+                &salt,
+                epoca_from(epoch)?,
+            );
+            Ok(env.byte_array_from_slice(key.as_ref())?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Las seis palabras SAS para comparar por un canal aparte. Devuelve "p1 p2 ... p6".
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callSas<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    frame_key: JByteArray<'c>,
+    call_hash: JString<'c>,
+) -> JString<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let key = fijo::<32>(env, &frame_key, "clave de fotograma con longitud incorrecta")?;
+            let palabras = call_key::sas(&key, &call_hash.to_string());
+            Ok(env.new_string(palabras.join(" "))?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
