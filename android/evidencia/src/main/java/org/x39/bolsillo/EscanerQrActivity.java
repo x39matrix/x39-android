@@ -134,6 +134,7 @@ public final class EscanerQrActivity extends Activity {
         aviso.setPadding(24, 40, 24, 40);
         raiz.addView(aviso, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
         setContentView(raiz);
+        vista.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, orr, ob) -> ajustarVista());
         vista.setOnTouchListener((v, ev) -> {
             if (ev.getAction() == MotionEvent.ACTION_UP) { enfocar(ev.getX() / v.getWidth(), ev.getY() / v.getHeight()); v.performClick(); }
             return true;
@@ -180,7 +181,7 @@ public final class EscanerQrActivity extends Activity {
         if (vista.isAvailable()) abrirCamara();
         else vista.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override public void onSurfaceTextureAvailable(SurfaceTexture s, int w, int h) { abrirCamara(); }
-            @Override public void onSurfaceTextureSizeChanged(SurfaceTexture s, int w, int h) { }
+            @Override public void onSurfaceTextureSizeChanged(SurfaceTexture s, int w, int h) { ajustarVista(); }
             @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture s) { return true; }
             @Override public void onSurfaceTextureUpdated(SurfaceTexture s) { }
         });
@@ -249,12 +250,20 @@ public final class EscanerQrActivity extends Activity {
         }
     }
 
-    /** Pantalla en vertical y sensor en horizontal: la vista usa la proporción girada para no deformar. */
+    /**
+     * Sin deformar en cualquier pantalla: TextureView estira la imagen de la cámara hasta sus bordes, y la pantalla
+     * (p. ej. 1080×2392) es más alargada que la imagen (1920×1080 girada = 1080×1920). Se escala por igual en los dos
+     * ejes hasta llenar la vista y se recorta lo que sobra por los lados (como la cámara del sistema).
+     */
     private void ajustarVista() {
         runOnUiThread(() -> {
-            int ancho = vista.getWidth() > 0 ? vista.getWidth() : getResources().getDisplayMetrics().widthPixels;
-            int alto = Math.round(ancho * (float) tam.getWidth() / tam.getHeight());
-            vista.setLayoutParams(new FrameLayout.LayoutParams(ancho, alto, Gravity.CENTER));
+            int w = vista.getWidth(), h = vista.getHeight();
+            if (w == 0 || h == 0 || tam == null) return;
+            float iw = tam.getHeight(), ih = tam.getWidth();   // la imagen, ya en vertical
+            float esc = Math.max(w / iw, h / ih);
+            android.graphics.Matrix m = new android.graphics.Matrix();
+            m.setScale(iw * esc / w, ih * esc / h, w / 2f, h / 2f);
+            vista.setTransform(m);
         });
     }
 
