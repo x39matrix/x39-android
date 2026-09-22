@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Base64;
 
 import org.json.JSONArray;
+import org.x39matrix.evidencia.R;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -188,8 +189,9 @@ final class Evidencias {
         return sha256Hex(clavePublica());
     }
 
-    String nivelHardware() {
-        return boveda.nivelHardware();
+    /** Dónde vive la clave del Keystore. El texto lo pone la pantalla, desde strings.xml. */
+    Boveda.Nivel nivel() {
+        return boveda.nivel();
     }
 
     /** Mide en este móvil la clave pública y una firma de prueba recién hecha, y la verifica. {clave, firma}. */
@@ -275,7 +277,7 @@ final class Evidencias {
      * El flujo se lee una sola vez: lo que se hashea es exactamente lo que queda guardado.
      */
     Sellado sellar(InputStream in, String tipo, String nombre, String mime, Progreso progreso) throws Exception {
-        if (!tieneIdentidad()) throw new IllegalStateException("primero hay que crear la identidad");
+        if (!tieneIdentidad()) throw new FalloVisible(R.string.x39_motivo_sin_identidad);
         String archivo = "e-" + Boveda.aHex(aleatorio(8)) + ".dat";
         File destino = new File(dir, archivo);
         File tmp = new File(dir, archivo + ".tmp");
@@ -326,7 +328,7 @@ final class Evidencias {
         if (!tmp.renameTo(destino)) {
             //noinspection ResultOfMethodCallIgnored
             tmp.delete();
-            throw new IOException("no se pudo guardar la evidencia");
+            throw new FalloVisible(R.string.x39_motivo_no_guardar_evidencia);
         }
         synchronized (CERROJO) {
             List<Ficha> l = leer();
@@ -554,7 +556,7 @@ final class Evidencias {
             out.write(datos);
             out.getFD().sync();
         }
-        if (!tmp.renameTo(destino)) throw new IOException("no se pudo guardar " + destino.getName());
+        if (!tmp.renameTo(destino)) throw new FalloVisible(R.string.x39_motivo_no_guardar_fichero, destino.getName());
     }
 
     /** Restos de un sellado interrumpido (la app murió a mitad). Solo los de hace más de un día. */

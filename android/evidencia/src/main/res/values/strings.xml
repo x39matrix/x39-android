@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- x39 · Evidencia: textos de la app. Español (idioma por defecto). -->
+<resources>
+    <!-- Aplicación -->
+    <string name="x39_app_nombre">x39</string>
+
+    <!-- Comunes -->
+    <string name="x39_volver">Volver</string>
+    <string name="x39_entendido">Entendido</string>
+    <string name="x39_cancelar">Cancelar</string>
+    <string name="x39_continuar">Continuar</string>
+    <string name="x39_borrar">Borrar</string>
+    <string name="x39_ahora_no">Ahora no</string>
+    <string name="x39_foto">Foto</string>
+    <string name="x39_archivo">Archivo</string>
+    <string name="x39_video">Vídeo</string>
+    <string name="x39_audio">Audio</string>
+    <string name="x39_sin_nombre">(sin nombre)</string>
+    <string name="x39_huella_corta">huella %1$s…</string>
+    <string name="x39_error_guardar">No se pudo guardar: %1$s</string>
+    <string name="x39_error_leer_clave">No se pudo leer la clave: %1$s</string>
+    <string name="x39_copiar_huella">Copiar huella</string>
+    <string name="x39_huella_copiada">Huella copiada</string>
+    <string name="x39_clip_huella">Huella de la clave x39</string>
+    <string name="x39_clip_identidad">x39 identidad</string>
+    <string name="x39_version">x39 %1$s</string>
+
+    <!-- Navegación -->
+    <string name="x39_evidencias">Evidencias</string>
+    <string name="x39_hacer_una_foto">Hacer una foto</string>
+    <string name="x39_grabar_audio">Grabar audio</string>
+    <string name="x39_mensajes">Mensajes</string>
+    <string name="x39_contactos">Contactos</string>
+    <string name="x39_elegir_un_archivo">Elegir un archivo</string>
+    <string name="x39_seguridad">Seguridad</string>
+    <string name="x39_ajustes">Ajustes</string>
+
+    <!-- Identidad -->
+    <string name="x39_identidad_aviso">Esta clave vive solo en este móvil. Si se pierde o se borra, se pierde la identidad: los recibos ya emitidos siguen valiendo si exportaste la clave pública, pero las evidencias nuevas irán con otra identidad. No hay copia en la nube, a propósito.</string>
+    <string name="x39_tu_identidad">Tu identidad</string>
+    <string name="x39_identidad_sin_cuenta">Sin cuenta y sin registro</string>
+    <string name="x39_identidad_intro">Tu identidad es una clave de firma ML-DSA-87 que se crea ahora, en este móvil, y firma cada evidencia. No hay servidor ni alta: la clave es la identidad y nada más.</string>
+    <string name="x39_crear_identidad">Crear identidad</string>
+    <string name="x39_creando_clave">Creando la clave…</string>
+    <string name="x39_error_crear_identidad">No se pudo crear la identidad: %1$s</string>
+    <string name="x39_identidad_huella_titulo">Huella de tu clave</string>
+    <string name="x39_identidad_huella_nota">SHA-256 de la clave pública. Quien reciba un recibo compara la huella que trae con esta.</string>
+    <string name="x39_identidad_clave_publica">Clave pública</string>
+    <string name="x39_identidad_qr_desc">Código QR con la clave pública</string>
+    <string name="x39_identidad_clave_info">ML-DSA-87 · %1$s bytes. El QR lleva la clave entera (versión 40, 177 × 177 módulos): acerca bien la cámara al escanearlo.</string>
+    <string name="x39_exportar_clave_bin">Exportar clave pública (.bin)</string>
+    <string name="x39_comprobar_tamanos_titulo">Comprobar tamaños</string>
+    <string name="x39_comprobar_tamanos_texto">ML-DSA-87 son %1$s bytes de clave pública y %2$s de firma. Se miden aquí, en este móvil, con una firma de prueba.</string>
+    <string name="x39_comprobar_en_este_movil">Comprobar en este móvil</string>
+    <string name="x39_donde_vive">Dónde vive</string>
+    <string name="x39_donde_vive_texto">La semilla de la clave está cifrada con una clave del Keystore de Android (%1$s). Android aún no firma con ML-DSA dentro del Keystore, así que la firma se calcula en la app con la semilla descifrada solo en memoria y borrada al terminar.</string>
+    <string name="x39_nivel_strongbox">StrongBox</string>
+    <string name="x39_nivel_tee">Entorno seguro (TEE)</string>
+    <string name="x39_nivel_hardware_seguro">Hardware seguro</string>
+    <string name="x39_nivel_software">Software</string>
+    <string name="x39_nivel_desconocido">Desconocido</string>
+    <string name="x39_firmando_midiendo">Firmando y midiendo…</string>
+    <string name="x39_tamanos_clave_ok">Clave pública: %1$s bytes ✓</string>
+    <string name="x39_tamanos_clave_mal">Clave pública: %1$s bytes ✗ (esperados %2$s)</string>
+    <string name="x39_tamanos_firma_ok">Firma de prueba: %1$s bytes ✓</string>
+    <string name="x39_tamanos_firma_mal">Firma de prueba: %1$s bytes ✗ (esperados %2$s)</string>
+    <string name="x39_tamanos_verifica">La firma de prueba verifica con la clave ✓</string>
+    <string name="x39_tamanos_es_mldsa">Medido en este móvil: es ML-DSA-87.</string>
+    <string name="x39_tamanos_no_mldsa">Estos tamaños no son de ML-DSA-87.</string>
+    <string name="x39_tamanos_error">✗ La firma de prueba no se pudo hacer o no verifica: %1$s</string>
+
+    <!-- Evidencias (lista) -->
+    <string name="x39_evidencias_subtitulo">Lo que guardas no sale de este móvil. Solo viaja su huella.</string>
+    <string name="x39_error_leer_almacen">No se pudo leer el almacén: %1$s</string>
+    <string name="x39_evidencias_vacio_titulo">Aún no hay evidencias</string>
+    <string name="x39_evidencias_vacio_texto">Haz una foto desde aquí o elige cualquier archivo del móvil (PDF, vídeo, audio, lo que sea). Se guarda cifrado en este móvil, se firma con tu clave y su huella se ancla en Bitcoin sin que hagas nada más.</string>
+    <string name="x39_ficha_desc_foto">Foto del %1$s</string>
+    <string name="x39_ficha_desc_archivo">Archivo del %1$s</string>
+    <string name="x39_pildora_anclada">"●  Anclada · bloque %1$d"</string>
+    <string name="x39_pildora_calendarios">"◐  Enviada a los calendarios"</string>
+    <string name="x39_pildora_espera_tor">"○  Firmada · en espera de Tor"</string>
+    <string name="x39_pildora_espera_red">"○  Firmada · en espera de red"</string>
+
+    <!-- Sellar archivos y grabaciones -->
+    <string name="x39_sin_espacio_archivo">No hay espacio en el móvil para guardar una copia cifrada de este archivo (%1$s).</string>
+    <string name="x39_calculando_huella">Calculando la huella y cifrando…</string>
+    <string name="x39_calculando_huella_progreso">Calculando la huella y cifrando…\n%1$s</string>
+    <string name="x39_progreso_de_total_pct">%1$s de %2$s (%3$d %%)</string>
+    <string name="x39_progreso_de_total">%1$s de %2$s</string>
+    <string name="x39_motivo_sin_acceso_archivo">el sistema no dio acceso al archivo</string>
+    <string name="x39_error_sellar_archivo">No se pudo sellar el archivo: %1$s</string>
+    <string name="x39_archivo_ya_sellado">Este archivo ya estaba sellado: tiene la misma huella que una evidencia de la lista.</string>
+    <string name="x39_guardado_firmado_en">Guardado y firmado en %1$s</string>
+    <string name="x39_video_guardado_firmado">Vídeo guardado y firmado en %1$s</string>
+    <string name="x39_audio_guardado_firmado">Audio guardado y firmado en %1$s</string>
+    <string name="x39_audio_tramo_guardado_firmado">Audio · tramo %1$d guardado y firmado en %2$s</string>
+    <string name="x39_grabacion_ya_sellada">Esta grabación ya estaba sellada.</string>
+    <string name="x39_error_guardar_evidencia">No se pudo guardar la evidencia: %1$s</string>
+    <string name="x39_firmada_en">Firmada en %1$s</string>
+
+    <!-- Cámara -->
+    <string name="x39_camara">Cámara</string>
+    <string name="x39_camara_ayuda">Se guarda cifrada y se firma al instante</string>
+    <string name="x39_hacer_la_foto">Hacer la foto</string>
+    <string name="x39_parar">Parar</string>
+    <string name="x39_camara_grabando">Grabando · se cifra y se firma al parar</string>
+    <string name="x39_error_camara">No se pudo usar la cámara: %1$s</string>
+    <string name="x39_video_corto">Vídeo demasiado corto: mantén la grabación al menos un segundo</string>
+    <string name="x39_cam_sin_trasera">No se encontró la cámara trasera</string>
+    <string name="x39_cam_sin_tamanos">La cámara no proporciona tamaños de preview</string>
+    <string name="x39_cam_sin_tamanos_disponibles">No hay tamaños de preview disponibles</string>
+    <string name="x39_cam_sin_permiso">Permiso de cámara no concedido</string>
+    <string name="x39_cam_error">Error de cámara: %1$d</string>
+    <string name="x39_cam_no_abrir">No se pudo abrir la cámara: %1$s</string>
+    <string name="x39_cam_no_iniciar_preview">No se pudo iniciar el preview: %1$s</string>
+    <string name="x39_cam_no_configurar_preview">No se pudo configurar el preview</string>
+    <string name="x39_cam_error_preview">Error iniciando preview: %1$s</string>
+    <string name="x39_cam_no_foto">No se pudo tomar la foto: %1$s</string>
+    <string name="x39_cam_no_iniciar_video">No se pudo iniciar el vídeo: %1$s</string>
+    <string name="x39_cam_no_configurar_grabacion">No se pudo configurar la grabación</string>
+    <string name="x39_cam_error_preparar_video">Error preparando vídeo: %1$s</string>
+    <string name="x39_cam_grabacion_invalida">La grabación no es válida: %1$s</string>
+
+    <!-- Audio -->
+    <string name="x39_audio_ayuda">Se graba en tramos de 5 minutos; cada tramo se cifra, se firma y se ancla al cerrarse. El micrófono se pide al pulsar «Grabar».</string>
+    <string name="x39_grabar">Grabar</string>
+    <string name="x39_audio_error_tramo_siguiente">La grabación se cortó al abrir el tramo siguiente: %1$s. Lo anterior está sellado.</string>
+    <string name="x39_audio_sin_espacio">Quedan %1$s libres. Hacen falta al menos 100 MB para grabar con margen.</string>
+    <string name="x39_audio_grabando">Grabando · cada 5 minutos se sella un tramo · al parar se sella el último</string>
+    <string name="x39_error_grabar">No se pudo grabar: %1$s</string>
+    <plurals name="x39_audio_tramo_sellados">
+        <item quantity="one">Tramo %1$d · %2$d sellado</item>
+        <item quantity="many">Tramo %1$d · %2$d sellados</item>
+        <item quantity="other">Tramo %1$d · %2$d sellados</item>
+    </plurals>
+    <string name="x39_error_sellar_tramo">No se pudo sellar el tramo %1$d: %2$s</string>
+    <string name="x39_tramo_sellado">Tramo %1$d (%2$s) sellado</string>
+    <string name="x39_grabacion_corta">La grabación es demasiado corta.</string>
+    <string name="x39_audio_tramo_titulo">Audio · tramo %1$d</string>
+    <string name="x39_grabacion_cortada_llamada">Grabación cortada por una llamada u otra app: el tramo queda sellado</string>
+
+    <!-- Permisos -->
+    <string name="x39_ya_puedes_grabar">Ya puedes grabar: pulsa «Grabar»</string>
+    <string name="x39_sin_permiso_microfono_audio">Sin permiso de micrófono no se puede grabar audio. Puedes darlo en los ajustes de Android.</string>
+    <string name="x39_sin_microfono_video">Sin micrófono: el vídeo se grabará sin sonido</string>
+    <string name="x39_sin_permiso_camara">Sin permiso de cámara no se pueden hacer fotos ni vídeos. Puedes darlo en los ajustes de Android. Los archivos se pueden sellar igual.</string>
+
+    <!-- Ficha de una evidencia -->
+    <string name="x39_evidencia_titulo">Evidencia</string>
+    <string name="x39_ficha_huella">Huella SHA-256</string>
+    <string name="x39_ficha_hora">Hora del dispositivo al sellar (declarada, no verificable)</string>
+    <string name="x39_ficha_firmada_con_clave">Firmada con la clave</string>
+    <string name="x39_ficha_firmada_con_clave_bytes">Firmada con la clave · clave pública %1$s bytes</string>
+    <string name="x39_ficha_firma">Firma</string>
+    <string name="x39_ficha_firma_valor">ML-DSA-87 · %1$s bytes</string>
+    <string name="x39_ancla_bitcoin_foto">Esta foto existía con este contenido exacto al menos desde el bloque %1$d de Bitcoin, y no ha cambiado desde entonces.</string>
+    <string name="x39_ancla_bitcoin_video">Este vídeo existía con este contenido exacto al menos desde el bloque %1$d de Bitcoin, y no ha cambiado desde entonces.</string>
+    <string name="x39_ancla_bitcoin_audio">Este audio existía con este contenido exacto al menos desde el bloque %1$d de Bitcoin, y no ha cambiado desde entonces.</string>
+    <string name="x39_ancla_bitcoin_archivo">Este archivo existía con este contenido exacto al menos desde el bloque %1$d de Bitcoin, y no ha cambiado desde entonces.</string>
+    <string name="x39_ancla_calendarios">La huella está en los calendarios de OpenTimestamps. Bitcoin la confirma en una o dos horas.</string>
+    <string name="x39_ancla_espera_tor">En espera de Tor (Orbot) para enviar la huella (32 bytes) a los calendarios. Sin Orbot activo no sale nada.</string>
+    <string name="x39_ancla_espera_red">En espera de red para enviar la huella (32 bytes) a los calendarios.</string>
+    <string name="x39_ficha_ancla">Ancla en Bitcoin</string>
+    <string name="x39_verificar_ahora">Verificar ahora</string>
+    <string name="x39_compartir_recibo">Compartir recibo</string>
+    <string name="x39_compartir_capsula">Compartir cápsula</string>
+    <string name="x39_exportar_foto">Exportar foto</string>
+    <string name="x39_exportar_archivo">Exportar archivo</string>
+    <string name="x39_ficha_nota_foto">El recibo lleva la huella, la firma y la prueba .ots. No lleva la foto. Se verifica con herramientas públicas: OpenTimestamps.</string>
+    <string name="x39_ficha_nota_archivo">El recibo lleva la huella, la firma y la prueba .ots. No lleva el archivo. Se verifica con herramientas públicas: OpenTimestamps.</string>
+
+    <!-- Verificación -->
+    <string name="x39_verificando">Recalculando la huella de lo guardado…</string>
+    <string name="x39_verif_huella_ok_foto">✓ La huella coincide: la foto guardada no ha cambiado desde que se firmó.</string>
+    <string name="x39_verif_huella_ok_archivo">✓ La huella coincide: el archivo guardado no ha cambiado desde que se firmó.</string>
+    <string name="x39_verif_huella_mal_foto">✗ La huella no coincide: la foto guardada ha cambiado desde que se firmó.</string>
+    <string name="x39_verif_huella_mal_archivo">✗ La huella no coincide: el archivo guardado ha cambiado desde que se firmó.</string>
+    <string name="x39_verif_huella_danada_foto">✗ La huella no coincide: la foto guardada ha cambiado o está dañado desde que se firmó.</string>
+    <string name="x39_verif_huella_danada_archivo">✗ La huella no coincide: el archivo guardado ha cambiado o está dañado desde que se firmó.</string>
+    <string name="x39_verif_no_leer_foto">✗ No se pudo leer la foto guardada: %1$s</string>
+    <string name="x39_verif_no_leer_archivo">✗ No se pudo leer el archivo guardado: %1$s</string>
+    <string name="x39_verif_firma_ok">✓ Firma ML-DSA-87 válida, hecha con la clave de este móvil.</string>
+    <string name="x39_verif_firma_otra_clave">✗ La firma no es de la clave actual de este móvil.</string>
+    <string name="x39_verif_firma_invalida">✗ La firma no es válida.</string>
+    <string name="x39_verif_sin_ots">Ancla: todavía no hay prueba .ots (la huella no se ha enviado).</string>
+    <plurals name="x39_verif_ots_pendiente">
+        <item quantity="one">Ancla: prueba .ots válida, pendiente en %1$d calendarios.</item>
+        <item quantity="many">Ancla: prueba .ots válida, pendiente en %1$d calendarios.</item>
+        <item quantity="other">Ancla: prueba .ots válida, pendiente en %1$d calendarios.</item>
+    </plurals>
+    <string name="x39_verif_ots_bloque">✓ Ancla: prueba .ots con el bloque %1$s de Bitcoin. Compruébalo fuera de la app con «ots verify».</string>
+    <string name="x39_verif_ots_invalida">✗ La prueba .ots no es válida: %1$s</string>
+    <string name="x39_verificacion">Verificación</string>
+
+    <!-- Recibo, cápsula y exportar -->
+    <string name="x39_compartir_recibo_sin_foto">Compartir recibo (sin la foto)</string>
+    <string name="x39_compartir_recibo_sin_archivo">Compartir recibo (sin el archivo)</string>
+    <string name="x39_error_preparar_recibo">No se pudo preparar el recibo: %1$s</string>
+    <string name="x39_capsula_titulo">Compartir la cápsula</string>
+    <string name="x39_capsula_confirmar_foto">Un solo fichero con la foto ORIGINAL, sin tocar, más el recibo y la prueba .ots.\n\nLleva todos sus datos: si la foto tiene ubicación, hora o modelo del móvil, van dentro. Son parte de la prueba.\n\nQuien la reciba puede comprobarla sin esta app, con las instrucciones que van dentro.</string>
+    <string name="x39_capsula_confirmar_archivo">Un solo fichero con el archivo ORIGINAL, sin tocar, más el recibo y la prueba .ots.\n\nLleva todos sus datos: si el archivo tiene ubicación, hora o modelo del móvil, van dentro. Son parte de la prueba.\n\nQuien la reciba puede comprobarla sin esta app, con las instrucciones que van dentro.</string>
+    <string name="x39_preparar_capsula">Preparar cápsula</string>
+    <string name="x39_preparando_capsula">Preparando la cápsula…</string>
+    <string name="x39_motivo_danado_no_entrega">lo guardado ha cambiado o está dañado; no se entrega</string>
+    <string name="x39_motivo_original_no_cuadra">el original no da la huella del recibo; no se entrega la cápsula</string>
+    <string name="x39_error_preparar_capsula">No se pudo preparar la cápsula: %1$s</string>
+    <string name="x39_compartir_capsula_id">Compartir cápsula %1$s</string>
+    <string name="x39_exportar_titulo_foto">Exportar la foto</string>
+    <string name="x39_exportar_titulo_video">Exportar el vídeo</string>
+    <string name="x39_exportar_titulo_audio">Exportar el audio</string>
+    <string name="x39_exportar_titulo_archivo">Exportar el archivo</string>
+    <string name="x39_exportar_mensaje_foto">La foto se descifra y se entrega a la app que elijas. Fuera de la bóveda, este archivo puede sincronizarse con la nube de tu móvil. El recibo sigue valiendo: la huella es la misma.</string>
+    <string name="x39_exportar_mensaje_video">El vídeo se descifra y se entrega a la app que elijas. Fuera de la bóveda, este archivo puede sincronizarse con la nube de tu móvil. El recibo sigue valiendo: la huella es la misma.</string>
+    <string name="x39_exportar_mensaje_audio">El audio se descifra y se entrega a la app que elijas. Fuera de la bóveda, este archivo puede sincronizarse con la nube de tu móvil. El recibo sigue valiendo: la huella es la misma.</string>
+    <string name="x39_exportar_mensaje_archivo">El archivo se descifra y se entrega a la app que elijas. Fuera de la bóveda, este archivo puede sincronizarse con la nube de tu móvil. El recibo sigue valiendo: la huella es la misma.</string>
+    <string name="x39_elegir_destino">Elegir destino</string>
+    <string name="x39_descifrando">Descifrando…</string>
+    <string name="x39_motivo_danado_no_exporta">lo guardado ha cambiado o está dañado; no se exporta</string>
+    <string name="x39_error_exportar">No se pudo exportar: %1$s</string>
+    <string name="x39_exportar_nombre">Exportar %1$s</string>
+    <string name="x39_exportar_clave_publica">Exportar clave pública</string>
+    <string name="x39_borrar_evidencia_titulo">Borrar evidencia</string>
+    <string name="x39_borrar_evidencia_foto">Se borran la foto y su ficha de este móvil. Un recibo que ya hayas compartido sigue valiendo.</string>
+    <string name="x39_borrar_evidencia_archivo">Se borran el archivo y su ficha de este móvil. Un recibo que ya hayas compartido sigue valiendo.</string>
+    <string name="x39_motivo_sin_identidad">primero hay que crear la identidad</string>
+    <string name="x39_motivo_no_guardar_evidencia">no se pudo guardar la evidencia</string>
+    <string name="x39_motivo_no_guardar_fichero">no se pudo guardar %1$s</string>
+
+    <!-- Orbot -->
+    <string name="x39_orbot_no_instalado_titulo">Orbot no está instalado</string>
+    <string name="x39_orbot_no_instalado_texto">Para anclar por Tor hace falta Orbot (Guardian Project). Instálalo desde F-Droid o desde la web de Guardian Project. Mientras tanto, con el interruptor encendido, las huellas esperan y no salen por la red directa.</string>
+    <string name="x39_guardian_project">Guardian Project</string>
+    <string name="x39_f_droid">F-Droid</string>
+    <string name="x39_sin_navegador">No hay navegador. La dirección es %1$s</string>
+
+    <!-- Contactos -->
+    <string name="x39_mi_identidad">Mi identidad</string>
+    <string name="x39_contactos_mi_huella_nota">Esta es tu huella. Compártela con quien quieras hablar; que la compruebe por otro canal (en persona, etc.).</string>
+    <string name="x39_contactos_qr_desc">Código QR de tu identidad</string>
+    <string name="x39_copiar_mi_huella">Copiar mi huella</string>
+    <string name="x39_copiar_identidad_mensajes">Copiar mi identidad para mensajes</string>
+    <string name="x39_contactos_identidad_nota">La identidad para mensajes (X39ID1:…) lleva tu clave de cifrar y la de firmar. Sin ella nadie puede escribirte; con la huella sola, no.</string>
+    <string name="x39_error_leer_identidad">No se pudo leer la identidad.</string>
+    <string name="x39_sin_identidad">Aún no tienes identidad. Créala primero.</string>
+    <string name="x39_anadir_contacto">Añadir contacto</string>
+    <string name="x39_hint_nombre_contacto">Nombre (como lo verás tú)</string>
+    <string name="x39_hint_identidad_contacto">Su identidad para mensajes (X39ID1:…) o su huella (64 caracteres)</string>
+    <string name="x39_guardar_contacto">Guardar contacto</string>
+    <string name="x39_contacto_sin_nombre">Ponle un nombre al contacto.</string>
+    <string name="x39_contacto_guardado_mensajes">Contacto guardado. Ya puedes escribirle desde Mensajes.</string>
+    <string name="x39_identidad_no_valida">Esa identidad no es válida: %1$s</string>
+    <string name="x39_huella_64">La huella debe tener 64 caracteres (0-9, a-f).</string>
+    <string name="x39_contacto_guardado">Contacto guardado.</string>
+    <string name="x39_tus_contactos">Tus contactos</string>
+    <string name="x39_sin_contactos">Todavía no tienes contactos. Añade uno con su huella.</string>
+    <string name="x39_crea_identidad_primero">Crea primero tu identidad.</string>
+    <string name="x39_identidad_copiada">Copiada. Pásasela a tu contacto; que compruebe tu huella por otro canal.</string>
+    <string name="x39_error_copiar">No se pudo copiar: %1$s</string>
+    <string name="x39_su_huella">Su huella</string>
+    <string name="x39_su_huella_nota">Compruébala con esta persona por otro canal (en persona, etc.) antes de fiarte.</string>
+    <string name="x39_contacto_sin_identidad_mensajes">Para escribirle hace falta su identidad para mensajes (el texto que empieza por X39ID1:). Pídesela y vuelve a añadirlo con ella en «Añadir contacto».</string>
+    <string name="x39_escribir_a">Escribir a %1$s</string>
+    <string name="x39_borrar_contacto">Borrar contacto</string>
+    <string name="x39_mandar_mensaje">Mandar mensaje</string>
+    <string name="x39_ver_ficha">Ver ficha</string>
+
+    <!-- Seguridad -->
+    <string name="x39_seguridad_subtitulo">Lo que la app afirma de sí misma, comprobado en este móvil.</string>
+    <string name="x39_permisos_titulo">Permisos del manifiesto, tal cual</string>
+    <string name="x39_error_leer_permisos">No se pudieron leer: %1$s</string>
+    <string name="x39_permisos_internet">Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas (directo o, si lo activas, solo por Tor). Nunca fotos, vídeos ni archivos. Micrófono: solo mientras grabas un vídeo o un audio; si lo niegas, el vídeo se graba sin sonido y el audio no se puede grabar.</string>
+    <string name="x39_estado_capturas">Capturas de pantalla</string>
+    <string name="x39_estado_bloqueadas">Bloqueadas</string>
+    <string name="x39_estado_galeria">Evidencias en la galería</string>
+    <string name="x39_estado_nunca">Nunca</string>
+    <string name="x39_estado_copias">Copias en la nube</string>
+    <string name="x39_estado_activadas">Activadas</string>
+    <string name="x39_estado_desactivadas">Desactivadas</string>
+    <string name="x39_estado_ubicacion">Ubicación en las fotos</string>
+    <string name="x39_estado_no">No</string>
+    <string name="x39_modo_aislado">Modo aislado</string>
+    <string name="x39_estado_aislado_activo">Activo: nada sale del móvil</string>
+    <string name="x39_estado_apagado">Apagado</string>
+    <string name="x39_anclar_solo_tor">Anclar solo por Tor</string>
+    <string name="x39_tor_explicacion">Las huellas salen solo a través de Tor (Orbot). Oculta tu dirección IP a los calendarios. Tu operadora puede ver que usas Tor; en algunos países eso llama la atención. Si Orbot no está activo, las huellas esperan.</string>
+    <string name="x39_orbot_no_instalado_estado">Orbot no está instalado.</string>
+    <string name="x39_tor_estado_conectado_listo">Orbot instalado · estado conectado · proxy 127.0.0.1:8118 listo</string>
+    <string name="x39_tor_estado_conectado_no_disponible">Orbot instalado · estado conectado · proxy 127.0.0.1:8118 no disponible</string>
+    <string name="x39_tor_estado_arrancando_listo">Orbot instalado · estado arrancando · proxy 127.0.0.1:8118 listo</string>
+    <string name="x39_tor_estado_arrancando_no_disponible">Orbot instalado · estado arrancando · proxy 127.0.0.1:8118 no disponible</string>
+    <string name="x39_tor_estado_apagado_listo">Orbot instalado · estado apagado · proxy 127.0.0.1:8118 listo</string>
+    <string name="x39_tor_estado_apagado_no_disponible">Orbot instalado · estado apagado · proxy 127.0.0.1:8118 no disponible</string>
+    <string name="x39_tor_estado_desconocido_listo">Orbot instalado · estado no conocido (abre Orbot para que avise) · proxy 127.0.0.1:8118 listo</string>
+    <string name="x39_tor_estado_desconocido_no_disponible">Orbot instalado · estado no conocido (abre Orbot para que avise) · proxy 127.0.0.1:8118 no disponible</string>
+    <string name="x39_instalar_orbot_fdroid">Instalar Orbot desde F-Droid</string>
+    <string name="x39_orbot_guardian">O desde Guardian Project</string>
+    <string name="x39_pedir_arranque_orbot">Pedir a Orbot que arranque</string>
+    <string name="x39_pedido_orbot">Pedido a Orbot; abre Orbot si no conecta solo</string>
+    <string name="x39_seguridad_clave_medida">Clave pública ML-DSA-87: %1$s bytes (medido ahora)</string>
+    <string name="x39_ver_identidad">Ver identidad, QR y tamaños</string>
+    <string name="x39_registro_red">Registro de red</string>
+    <string name="x39_red_sin_conexiones">Todavía no ha habido ninguna conexión.</string>
+    <string name="x39_red_via">%1$s vía %2$s</string>
+    <string name="x39_red_sin_respuesta">sin respuesta</string>
+
+    <!-- Ajustes -->
+    <string name="x39_ajuste_auto">Anclar automáticamente</string>
+    <string name="x39_ajuste_auto_desc">Envía la huella a los calendarios en cuanto hay red.</string>
+    <string name="x39_ajuste_wifi">Solo por Wi-Fi</string>
+    <string name="x39_ajuste_wifi_desc">No usa datos móviles para anclar.</string>
+    <string name="x39_ajuste_aislado_desc">Nada sale del móvil hasta que lo apagues: ni huellas ni mensajes.</string>
+    <string name="x39_ajuste_fondo">Recibir con la app cerrada</string>
+    <string name="x39_ajuste_fondo_desc">Mantiene la línea del chat abierta. Deja una notificación fija que muestra que tienes x39 Evidencia: si eso te pone en riesgo, apágalo y recibirás solo con la app abierta.</string>
+
+    <!-- Mensajes -->
+    <string name="x39_adjuntar_titulo">Adjuntar (se sella antes de enviar)</string>
+    <string name="x39_evidencia_ya_guardada">Una evidencia ya guardada</string>
+    <string name="x39_error_leer_evidencias">No se pudieron leer las evidencias: %1$s</string>
+    <string name="x39_sin_evidencias_guardadas">Todavía no tienes evidencias guardadas.</string>
+    <string name="x39_que_evidencia_mandas">¿Qué evidencia mandas a %1$s?</string>
+    <string name="x39_error_preparar">No se pudo preparar: %1$s</string>
+    <string name="x39_compartir_capsula_de">Compartir cápsula de %1$s</string>
+    <string name="x39_crea_identidad_en_contactos">Crea primero tu identidad (en Contactos).</string>
+    <string name="x39_chat_en_linea">"●  En línea"</string>
+    <string name="x39_chat_conectando">"○  Conectando con x39matrix.org…"</string>
+    <string name="x39_sin_mensajes_todavia">Sin mensajes todavía</string>
+    <string name="x39_chat_ultimo_mio">Tú: %1$s</string>
+    <string name="x39_chat_evidencia_nombre">Evidencia: %1$s</string>
+    <string name="x39_chat_ultimo_mio_evidencia">Tú: Evidencia: %1$s</string>
+    <string name="x39_sin_conversaciones">Aún no tienes conversaciones. Busca a la persona en Contactos y pulsa «Mandar mensaje». Para poder escribirle, tiene que estar guardada con su identidad para mensajes (el texto que empieza por X39ID1:).</string>
+    <string name="x39_chat_transporte_nota">El chat es solo transporte: lo que prueba algo es la cápsula, que se comprueba sola fuera de la app. Aquí nada caduca ni se borra solo.</string>
+    <string name="x39_chat_vacio">Lo que escribas va cerrado a la clave de %1$s.</string>
+    <string name="x39_chat_trozos">%1$s trozos</string>
+    <string name="x39_chat_trozos_tam">%1$s · %2$s trozos</string>
+    <string name="x39_chat_capsula_mia">cápsula: original intacto + recibo + .ots</string>
+    <string name="x39_chat_capsula_mia_tam">%1$s · cápsula: original intacto + recibo + .ots</string>
+    <string name="x39_pie_pendiente">%1$s · ⏳ pendiente, se enviará cuando esté en línea</string>
+    <string name="x39_pie_esperando_ancla">%1$s · ⏳ esperando la prueba de Bitcoin (.ots) para salir</string>
+    <string name="x39_pie_demasiado_grande">%1$s · ✗ pasa de 25 MB: no sale por el chat; usa «Compartir cápsula» en la evidencia</string>
+    <string name="x39_pie_enviado">%1$s · ✓ enviado</string>
+    <string name="x39_pie_entregado">%1$s · ✓✓ entregado</string>
+    <string name="x39_pie_evidencia_no_esta">%1$s · la evidencia ya no está</string>
+    <string name="x39_pie_recibiendo">%1$s · recibiendo…</string>
+    <string name="x39_adjuntar">Adjuntar</string>
+    <string name="x39_hint_mensaje">Mensaje</string>
+    <string name="x39_enviar">Enviar</string>
+    <string name="x39_comp_incompleta">✗ La cápsula está incompleta: no se puede comprobar.</string>
+    <string name="x39_comp_original_ok">✓ El original es el que se selló</string>
+    <string name="x39_comp_original_mal">✗ El original NO da la huella del recibo</string>
+    <string name="x39_comp_firma_ok">✓ Firma ML-DSA-87 válida</string>
+    <string name="x39_comp_firma_mal">✗ La firma NO es válida</string>
+    <string name="x39_comp_remitente_ok">✓ La firmó quien te la manda</string>
+    <string name="x39_comp_otra_clave">⚠ La firmó otra clave: %1$s…</string>
+    <string name="x39_comp_sin_ots">○ Sin prueba .ots: no hay ancla en Bitcoin</string>
+    <string name="x39_comp_ots_pendiente">○ Ancla en Bitcoin pendiente (se completa con «ots upgrade»)</string>
+    <string name="x39_comp_ots_bloque">✓ Anclada en el bloque %1$s de Bitcoin</string>
+    <string name="x39_comp_error_leer">✗ No se pudo leer la cápsula: %1$s</string>
+
+    <!-- Notificaciones -->
+    <string name="x39_notif_titulo">x39 Evidencia</string>
+    <string name="x39_notif_en_linea">En línea para recibir mensajes</string>
+    <string name="x39_notif_mensaje_nuevo">Mensaje nuevo de %1$s</string>
+    <string name="x39_un_contacto">un contacto</string>
+    <string name="x39_canal_linea">Línea del chat</string>
+    <string name="x39_idioma">Idioma</string>
+    <string name="x39_idioma_sistema">Sistema</string>
+</resources>

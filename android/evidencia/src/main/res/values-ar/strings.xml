@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- x39 · Evidencia: نصوص التطبيق. العربية. -->
+<resources>
+    <!-- Aplicación -->
+    <string name="x39_app_nombre">x39</string>
+
+    <!-- Comunes -->
+    <string name="x39_volver">رجوع</string>
+    <string name="x39_entendido">حسنًا</string>
+    <string name="x39_cancelar">إلغاء</string>
+    <string name="x39_continuar">متابعة</string>
+    <string name="x39_borrar">حذف</string>
+    <string name="x39_ahora_no">ليس الآن</string>
+    <string name="x39_foto">صورة</string>
+    <string name="x39_archivo">ملف</string>
+    <string name="x39_video">فيديو</string>
+    <string name="x39_audio">صوت</string>
+    <string name="x39_sin_nombre">(بلا اسم)</string>
+    <string name="x39_huella_corta">البصمة %1$s…</string>
+    <string name="x39_error_guardar">تعذّر الحفظ: %1$s</string>
+    <string name="x39_error_leer_clave">تعذّرت قراءة المفتاح: %1$s</string>
+    <string name="x39_copiar_huella">نسخ البصمة</string>
+    <string name="x39_huella_copiada">نُسخت البصمة</string>
+    <string name="x39_clip_huella">بصمة مفتاح x39</string>
+    <string name="x39_clip_identidad">هوية x39</string>
+    <string name="x39_version">x39 %1$s</string>
+
+    <!-- Navegación -->
+    <string name="x39_evidencias">الأدلة</string>
+    <string name="x39_hacer_una_foto">التقاط صورة</string>
+    <string name="x39_grabar_audio">تسجيل صوت</string>
+    <string name="x39_mensajes">الرسائل</string>
+    <string name="x39_contactos">جهات الاتصال</string>
+    <string name="x39_elegir_un_archivo">اختيار ملف</string>
+    <string name="x39_seguridad">الأمان</string>
+    <string name="x39_ajustes">الإعدادات</string>
+
+    <!-- Identidad -->
+    <string name="x39_identidad_aviso">هذا المفتاح موجود على هذا الهاتف فقط. إذا فُقد أو حُذف، تُفقد الهوية: الإيصالات الصادرة تبقى صالحة إذا صدّرت المفتاح العام، لكن الأدلة الجديدة ستحمل هوية أخرى. لا توجد نسخة في السحابة، عن قصد.</string>
+    <string name="x39_tu_identidad">هويتك</string>
+    <string name="x39_identidad_sin_cuenta">دون حساب ودون تسجيل</string>
+    <string name="x39_identidad_intro">هويتك مفتاح توقيع ML-DSA-87 يُنشأ الآن على هذا الهاتف، ويوقّع كل دليل. لا خادم ولا تسجيل: المفتاح هو الهوية، لا أكثر.</string>
+    <string name="x39_crear_identidad">إنشاء الهوية</string>
+    <string name="x39_creando_clave">جارٍ إنشاء المفتاح…</string>
+    <string name="x39_error_crear_identidad">تعذّر إنشاء الهوية: %1$s</string>
+    <string name="x39_identidad_huella_titulo">بصمة مفتاحك</string>
+    <string name="x39_identidad_huella_nota">قيمة SHA-256 للمفتاح العام. من يستلم إيصالًا يقارن البصمة التي فيه بهذه.</string>
+    <string name="x39_identidad_clave_publica">المفتاح العام</string>
+    <string name="x39_identidad_qr_desc">رمز QR بالمفتاح العام</string>
+    <string name="x39_identidad_clave_info">ML-DSA-87 · %1$s بايت. رمز QR يحمل المفتاح كاملًا (الإصدار 40، 177 × 177 وحدة): قرّب الكاميرا جيدًا عند مسحه.</string>
+    <string name="x39_exportar_clave_bin">تصدير المفتاح العام (.bin)</string>
+    <string name="x39_comprobar_tamanos_titulo">التحقق من الأحجام</string>
+    <string name="x39_comprobar_tamanos_texto">في ML-DSA-87 يكون المفتاح العام %1$s بايت والتوقيع %2$s بايت. تُقاس هنا، على هذا الهاتف، بتوقيع تجريبي.</string>
+    <string name="x39_comprobar_en_este_movil">التحقق على هذا الهاتف</string>
+    <string name="x39_donde_vive">أين يوجد</string>
+    <string name="x39_donde_vive_texto">بذرة المفتاح مشفّرة بمفتاح من Keystore في Android (%1$s). لا يوقّع Android بعد بخوارزمية ML-DSA داخل Keystore، لذا يُحسب التوقيع داخل التطبيق والبذرة مفكوكة التشفير في الذاكرة فقط، وتُمحى عند الانتهاء.</string>
+    <string name="x39_nivel_strongbox">StrongBox</string>
+    <string name="x39_nivel_tee">بيئة آمنة (TEE)</string>
+    <string name="x39_nivel_hardware_seguro">عتاد آمن</string>
+    <string name="x39_nivel_software">برمجي</string>
+    <string name="x39_nivel_desconocido">غير معروف</string>
+    <string name="x39_firmando_midiendo">جارٍ التوقيع والقياس…</string>
+    <string name="x39_tamanos_clave_ok">المفتاح العام: %1$s بايت ✓</string>
+    <string name="x39_tamanos_clave_mal">المفتاح العام: %1$s بايت ✗ (المتوقع %2$s)</string>
+    <string name="x39_tamanos_firma_ok">التوقيع التجريبي: %1$s بايت ✓</string>
+    <string name="x39_tamanos_firma_mal">التوقيع التجريبي: %1$s بايت ✗ (المتوقع %2$s)</string>
+    <string name="x39_tamanos_verifica">التوقيع التجريبي يتحقق بالمفتاح ✓</string>
+    <string name="x39_tamanos_es_mldsa">قيس على هذا الهاتف: إنه ML-DSA-87.</string>
+    <string name="x39_tamanos_no_mldsa">هذه الأحجام ليست أحجام ML-DSA-87.</string>
+    <string name="x39_tamanos_error">✗ تعذّر إنشاء التوقيع التجريبي أو أنه لا يتحقق: %1$s</string>
+
+    <!-- Evidencias (lista) -->
+    <string name="x39_evidencias_subtitulo">ما تحفظه لا يغادر هذا الهاتف. بصمته فقط هي التي تنتقل.</string>
+    <string name="x39_error_leer_almacen">تعذّرت قراءة المخزن: %1$s</string>
+    <string name="x39_evidencias_vacio_titulo">لا توجد أدلة بعد</string>
+    <string name="x39_evidencias_vacio_texto">التقط صورة من هنا أو اختر أي ملف من الهاتف (PDF، فيديو، صوت، أي شيء). يُحفظ مشفّرًا على هذا الهاتف، ويُوقَّع بمفتاحك، وتُثبَّت بصمته في Bitcoin دون أن تفعل شيئًا آخر.</string>
+    <string name="x39_ficha_desc_foto">صورة بتاريخ %1$s</string>
+    <string name="x39_ficha_desc_archivo">ملف بتاريخ %1$s</string>
+    <string name="x39_pildora_anclada">"●  مُثبَّت · الكتلة %1$d"</string>
+    <string name="x39_pildora_calendarios">"◐  أُرسل إلى خوادم التقويم"</string>
+    <string name="x39_pildora_espera_tor">"○  موقَّع · بانتظار Tor"</string>
+    <string name="x39_pildora_espera_red">"○  موقَّع · بانتظار الشبكة"</string>
+
+    <!-- Sellar archivos y grabaciones -->
+    <string name="x39_sin_espacio_archivo">لا توجد مساحة على الهاتف لحفظ نسخة مشفّرة من هذا الملف (%1$s).</string>
+    <string name="x39_calculando_huella">جارٍ حساب البصمة والتشفير…</string>
+    <string name="x39_calculando_huella_progreso">جارٍ حساب البصمة والتشفير…\n%1$s</string>
+    <string name="x39_progreso_de_total_pct">%1$s من %2$s (%3$d %%)</string>
+    <string name="x39_progreso_de_total">%1$s من %2$s</string>
+    <string name="x39_motivo_sin_acceso_archivo">لم يمنح النظام الوصول إلى الملف</string>
+    <string name="x39_error_sellar_archivo">تعذّر ختم الملف: %1$s</string>
+    <string name="x39_archivo_ya_sellado">هذا الملف مختوم من قبل: له البصمة نفسها لدليل موجود في القائمة.</string>
+    <string name="x39_guardado_firmado_en">حُفظ ووُقِّع خلال %1$s</string>
+    <string name="x39_video_guardado_firmado">حُفظ الفيديو ووُقِّع خلال %1$s</string>
+    <string name="x39_audio_guardado_firmado">حُفظ الصوت ووُقِّع خلال %1$s</string>
+    <string name="x39_audio_tramo_guardado_firmado">صوت · حُفظ المقطع %1$d ووُقِّع خلال %2$s</string>
+    <string name="x39_grabacion_ya_sellada">هذا التسجيل مختوم من قبل.</string>
+    <string name="x39_error_guardar_evidencia">تعذّر حفظ الدليل: %1$s</string>
+    <string name="x39_firmada_en">وُقِّع خلال %1$s</string>
+
+    <!-- Cámara -->
+    <string name="x39_camara">الكاميرا</string>
+    <string name="x39_camara_ayuda">تُحفظ مشفّرة وتُوقَّع فورًا</string>
+    <string name="x39_hacer_la_foto">التقاط الصورة</string>
+    <string name="x39_parar">إيقاف</string>
+    <string name="x39_camara_grabando">جارٍ التسجيل · يُشفَّر ويُوقَّع عند الإيقاف</string>
+    <string name="x39_error_camara">تعذّر استخدام الكاميرا: %1$s</string>
+    <string name="x39_video_corto">الفيديو قصير جدًا: واصل التسجيل ثانية واحدة على الأقل</string>
+    <string name="x39_cam_sin_trasera">لم يُعثر على الكاميرا الخلفية</string>
+    <string name="x39_cam_sin_tamanos">الكاميرا لا توفّر أحجامًا للمعاينة</string>
+    <string name="x39_cam_sin_tamanos_disponibles">لا تتوفر أحجام للمعاينة</string>
+    <string name="x39_cam_sin_permiso">لم يُمنح إذن الكاميرا</string>
+    <string name="x39_cam_error">خطأ في الكاميرا: %1$d</string>
+    <string name="x39_cam_no_abrir">تعذّر فتح الكاميرا: %1$s</string>
+    <string name="x39_cam_no_iniciar_preview">تعذّر بدء المعاينة: %1$s</string>
+    <string name="x39_cam_no_configurar_preview">تعذّر إعداد المعاينة</string>
+    <string name="x39_cam_error_preview">خطأ أثناء بدء المعاينة: %1$s</string>
+    <string name="x39_cam_no_foto">تعذّر التقاط الصورة: %1$s</string>
+    <string name="x39_cam_no_iniciar_video">تعذّر بدء الفيديو: %1$s</string>
+    <string name="x39_cam_no_configurar_grabacion">تعذّر إعداد التسجيل</string>
+    <string name="x39_cam_error_preparar_video">خطأ أثناء تحضير الفيديو: %1$s</string>
+    <string name="x39_cam_grabacion_invalida">التسجيل غير صالح: %1$s</string>
+
+    <!-- Audio -->
+    <string name="x39_audio_ayuda">يُسجَّل على مقاطع مدة كل منها 5 دقائق؛ كل مقطع يُشفَّر ويُوقَّع ويُثبَّت عند إغلاقه. يُطلب الميكروفون عند الضغط على «تسجيل».</string>
+    <string name="x39_grabar">تسجيل</string>
+    <string name="x39_audio_error_tramo_siguiente">انقطع التسجيل عند فتح المقطع التالي: %1$s. ما سبقه مختوم.</string>
+    <string name="x39_audio_sin_espacio">المساحة الحرة %1$s. تحتاج إلى 100 MB على الأقل للتسجيل بهامش كافٍ.</string>
+    <string name="x39_audio_grabando">جارٍ التسجيل · كل 5 دقائق يُختم مقطع · وعند الإيقاف يُختم الأخير</string>
+    <string name="x39_error_grabar">تعذّر التسجيل: %1$s</string>
+    <plurals name="x39_audio_tramo_sellados">
+        <item quantity="zero">المقطع %1$d · المختوم: %2$d</item>
+        <item quantity="one">المقطع %1$d · المختوم: %2$d</item>
+        <item quantity="two">المقطع %1$d · المختوم: %2$d</item>
+        <item quantity="few">المقطع %1$d · المختوم: %2$d</item>
+        <item quantity="many">المقطع %1$d · المختوم: %2$d</item>
+        <item quantity="other">المقطع %1$d · المختوم: %2$d</item>
+    </plurals>
+    <string name="x39_error_sellar_tramo">تعذّر ختم المقطع %1$d: %2$s</string>
+    <string name="x39_tramo_sellado">خُتم المقطع %1$d (%2$s)</string>
+    <string name="x39_grabacion_corta">التسجيل قصير جدًا.</string>
+    <string name="x39_audio_tramo_titulo">صوت · المقطع %1$d</string>
+    <string name="x39_grabacion_cortada_llamada">قطعت مكالمةٌ أو تطبيقٌ آخر التسجيل: المقطع مختوم</string>
+
+    <!-- Permisos -->
+    <string name="x39_ya_puedes_grabar">يمكنك التسجيل الآن: اضغط على «تسجيل»</string>
+    <string name="x39_sin_permiso_microfono_audio">دون إذن الميكروفون لا يمكن تسجيل الصوت. يمكنك منحه من إعدادات Android.</string>
+    <string name="x39_sin_microfono_video">دون ميكروفون: سيُسجَّل الفيديو بلا صوت</string>
+    <string name="x39_sin_permiso_camara">دون إذن الكاميرا لا يمكن التقاط الصور ولا الفيديو. يمكنك منحه من إعدادات Android. ويبقى بالإمكان ختم الملفات.</string>
+
+    <!-- Ficha de una evidencia -->
+    <string name="x39_evidencia_titulo">دليل</string>
+    <string name="x39_ficha_huella">بصمة SHA-256</string>
+    <string name="x39_ficha_hora">وقت الجهاز عند الختم (مُعلَن، لا يمكن التحقق منه)</string>
+    <string name="x39_ficha_firmada_con_clave">موقَّع بالمفتاح</string>
+    <string name="x39_ficha_firmada_con_clave_bytes">موقَّع بالمفتاح · المفتاح العام %1$s بايت</string>
+    <string name="x39_ficha_firma">التوقيع</string>
+    <string name="x39_ficha_firma_valor">ML-DSA-87 · %1$s بايت</string>
+    <string name="x39_ancla_bitcoin_foto">هذه الصورة كانت موجودة بهذا المحتوى تمامًا منذ الكتلة %1$d من Bitcoin على الأقل، ولم تتغير منذ ذلك الحين.</string>
+    <string name="x39_ancla_bitcoin_video">هذا الفيديو كان موجودًا بهذا المحتوى تمامًا منذ الكتلة %1$d من Bitcoin على الأقل، ولم يتغير منذ ذلك الحين.</string>
+    <string name="x39_ancla_bitcoin_audio">هذا الصوت كان موجودًا بهذا المحتوى تمامًا منذ الكتلة %1$d من Bitcoin على الأقل، ولم يتغير منذ ذلك الحين.</string>
+    <string name="x39_ancla_bitcoin_archivo">هذا الملف كان موجودًا بهذا المحتوى تمامًا منذ الكتلة %1$d من Bitcoin على الأقل، ولم يتغير منذ ذلك الحين.</string>
+    <string name="x39_ancla_calendarios">البصمة موجودة في خوادم التقويم لدى OpenTimestamps. تؤكدها Bitcoin خلال ساعة أو ساعتين.</string>
+    <string name="x39_ancla_espera_tor">بانتظار Tor (Orbot) لإرسال البصمة (32 بايت) إلى خوادم التقويم. دون تشغيل Orbot لا يخرج شيء.</string>
+    <string name="x39_ancla_espera_red">بانتظار الشبكة لإرسال البصمة (32 بايت) إلى خوادم التقويم.</string>
+    <string name="x39_ficha_ancla">التثبيت في Bitcoin</string>
+    <string name="x39_verificar_ahora">التحقق الآن</string>
+    <string name="x39_compartir_recibo">مشاركة الإيصال</string>
+    <string name="x39_compartir_capsula">مشاركة الكبسولة</string>
+    <string name="x39_exportar_foto">تصدير الصورة</string>
+    <string name="x39_exportar_archivo">تصدير الملف</string>
+    <string name="x39_ficha_nota_foto">يحمل الإيصال البصمة والتوقيع وإثبات .ots. ولا يحمل الصورة. يمكن التحقق منه بأدوات عامة: OpenTimestamps.</string>
+    <string name="x39_ficha_nota_archivo">يحمل الإيصال البصمة والتوقيع وإثبات .ots. ولا يحمل الملف. يمكن التحقق منه بأدوات عامة: OpenTimestamps.</string>
+
+    <!-- Verificación -->
+    <string name="x39_verificando">جارٍ إعادة حساب بصمة المحفوظ…</string>
+    <string name="x39_verif_huella_ok_foto">✓ البصمة متطابقة: الصورة المحفوظة لم تتغير منذ توقيعها.</string>
+    <string name="x39_verif_huella_ok_archivo">✓ البصمة متطابقة: الملف المحفوظ لم يتغير منذ توقيعه.</string>
+    <string name="x39_verif_huella_mal_foto">✗ البصمة غير متطابقة: الصورة المحفوظة تغيّرت منذ توقيعها.</string>
+    <string name="x39_verif_huella_mal_archivo">✗ البصمة غير متطابقة: الملف المحفوظ تغيّر منذ توقيعه.</string>
+    <string name="x39_verif_huella_danada_foto">✗ البصمة غير متطابقة: الصورة المحفوظة تغيّرت أو تلفت منذ توقيعها.</string>
+    <string name="x39_verif_huella_danada_archivo">✗ البصمة غير متطابقة: الملف المحفوظ تغيّر أو تلف منذ توقيعه.</string>
+    <string name="x39_verif_no_leer_foto">✗ تعذّرت قراءة الصورة المحفوظة: %1$s</string>
+    <string name="x39_verif_no_leer_archivo">✗ تعذّرت قراءة الملف المحفوظ: %1$s</string>
+    <string name="x39_verif_firma_ok">✓ توقيع ML-DSA-87 صالح، أُنشئ بمفتاح هذا الهاتف.</string>
+    <string name="x39_verif_firma_otra_clave">✗ التوقيع ليس من المفتاح الحالي لهذا الهاتف.</string>
+    <string name="x39_verif_firma_invalida">✗ التوقيع غير صالح.</string>
+    <string name="x39_verif_sin_ots">التثبيت: لا يوجد إثبات .ots بعد (لم تُرسل البصمة).</string>
+    <plurals name="x39_verif_ots_pendiente">
+        <item quantity="zero">التثبيت: إثبات .ots صالح، قيد الانتظار في %1$d خادم تقويم.</item>
+        <item quantity="one">التثبيت: إثبات .ots صالح، قيد الانتظار في %1$d خادم تقويم.</item>
+        <item quantity="two">التثبيت: إثبات .ots صالح، قيد الانتظار في %1$d خادمَي تقويم.</item>
+        <item quantity="few">التثبيت: إثبات .ots صالح، قيد الانتظار في %1$d خوادم تقويم.</item>
+        <item quantity="many">التثبيت: إثبات .ots صالح، قيد الانتظار في %1$d خادم تقويم.</item>
+        <item quantity="other">التثبيت: إثبات .ots صالح، قيد الانتظار في %1$d خادم تقويم.</item>
+    </plurals>
+    <string name="x39_verif_ots_bloque">✓ التثبيت: إثبات .ots مع الكتلة %1$s من Bitcoin. تحقّق منه خارج التطبيق باستخدام «ots verify».</string>
+    <string name="x39_verif_ots_invalida">✗ إثبات .ots غير صالح: %1$s</string>
+    <string name="x39_verificacion">التحقق</string>
+
+    <!-- Recibo, cápsula y exportar -->
+    <string name="x39_compartir_recibo_sin_foto">مشاركة الإيصال (دون الصورة)</string>
+    <string name="x39_compartir_recibo_sin_archivo">مشاركة الإيصال (دون الملف)</string>
+    <string name="x39_error_preparar_recibo">تعذّر تحضير الإيصال: %1$s</string>
+    <string name="x39_capsula_titulo">مشاركة الكبسولة</string>
+    <string name="x39_capsula_confirmar_foto">ملف واحد يضم الصورة الأصلية، دون أي تعديل، إضافة إلى الإيصال وإثبات .ots.\n\nيحمل كل بياناتها: إذا كانت الصورة تحتوي على الموقع أو الوقت أو طراز الهاتف، فهي بداخله. إنها جزء من الإثبات.\n\nيستطيع من يستلمها التحقق منها دون هذا التطبيق، باتباع التعليمات الموجودة بداخلها.</string>
+    <string name="x39_capsula_confirmar_archivo">ملف واحد يضم الملف الأصلي، دون أي تعديل، إضافة إلى الإيصال وإثبات .ots.\n\nيحمل كل بياناته: إذا كان الملف يحتوي على الموقع أو الوقت أو طراز الهاتف، فهي بداخله. إنها جزء من الإثبات.\n\nيستطيع من يستلمها التحقق منها دون هذا التطبيق، باتباع التعليمات الموجودة بداخلها.</string>
+    <string name="x39_preparar_capsula">تحضير الكبسولة</string>
+    <string name="x39_preparando_capsula">جارٍ تحضير الكبسولة…</string>
+    <string name="x39_motivo_danado_no_entrega">المحفوظ تغيّر أو تلف؛ لن يُسلَّم</string>
+    <string name="x39_motivo_original_no_cuadra">الأصل لا يعطي بصمة الإيصال؛ لن تُسلَّم الكبسولة</string>
+    <string name="x39_error_preparar_capsula">تعذّر تحضير الكبسولة: %1$s</string>
+    <string name="x39_compartir_capsula_id">مشاركة الكبسولة %1$s</string>
+    <string name="x39_exportar_titulo_foto">تصدير الصورة</string>
+    <string name="x39_exportar_titulo_video">تصدير الفيديو</string>
+    <string name="x39_exportar_titulo_audio">تصدير الصوت</string>
+    <string name="x39_exportar_titulo_archivo">تصدير الملف</string>
+    <string name="x39_exportar_mensaje_foto">يُفك تشفير الصورة وتُسلَّم إلى التطبيق الذي تختاره. خارج الخزنة، قد يتزامن هذا الملف مع سحابة هاتفك. يبقى الإيصال صالحًا: البصمة هي نفسها.</string>
+    <string name="x39_exportar_mensaje_video">يُفك تشفير الفيديو ويُسلَّم إلى التطبيق الذي تختاره. خارج الخزنة، قد يتزامن هذا الملف مع سحابة هاتفك. يبقى الإيصال صالحًا: البصمة هي نفسها.</string>
+    <string name="x39_exportar_mensaje_audio">يُفك تشفير الصوت ويُسلَّم إلى التطبيق الذي تختاره. خارج الخزنة، قد يتزامن هذا الملف مع سحابة هاتفك. يبقى الإيصال صالحًا: البصمة هي نفسها.</string>
+    <string name="x39_exportar_mensaje_archivo">يُفك تشفير الملف ويُسلَّم إلى التطبيق الذي تختاره. خارج الخزنة، قد يتزامن هذا الملف مع سحابة هاتفك. يبقى الإيصال صالحًا: البصمة هي نفسها.</string>
+    <string name="x39_elegir_destino">اختيار الوجهة</string>
+    <string name="x39_descifrando">جارٍ فك التشفير…</string>
+    <string name="x39_motivo_danado_no_exporta">المحفوظ تغيّر أو تلف؛ لن يُصدَّر</string>
+    <string name="x39_error_exportar">تعذّر التصدير: %1$s</string>
+    <string name="x39_exportar_nombre">تصدير %1$s</string>
+    <string name="x39_exportar_clave_publica">تصدير المفتاح العام</string>
+    <string name="x39_borrar_evidencia_titulo">حذف الدليل</string>
+    <string name="x39_borrar_evidencia_foto">تُحذف الصورة وبطاقتها من هذا الهاتف. أي إيصال شاركته من قبل يبقى صالحًا.</string>
+    <string name="x39_borrar_evidencia_archivo">يُحذف الملف وبطاقته من هذا الهاتف. أي إيصال شاركته من قبل يبقى صالحًا.</string>
+    <string name="x39_motivo_sin_identidad">يجب إنشاء الهوية أولًا</string>
+    <string name="x39_motivo_no_guardar_evidencia">تعذّر حفظ الدليل</string>
+    <string name="x39_motivo_no_guardar_fichero">تعذّر حفظ %1$s</string>
+
+    <!-- Orbot -->
+    <string name="x39_orbot_no_instalado_titulo">Orbot غير مثبّت</string>
+    <string name="x39_orbot_no_instalado_texto">للتثبيت عبر Tor تحتاج إلى Orbot (Guardian Project). ثبّته من F-Droid أو من موقع Guardian Project. وفي الأثناء، ما دام المفتاح مفعّلًا، تنتظر البصمات ولا تخرج عبر الشبكة المباشرة.</string>
+    <string name="x39_guardian_project">Guardian Project</string>
+    <string name="x39_f_droid">F-Droid</string>
+    <string name="x39_sin_navegador">لا يوجد متصفح. العنوان هو %1$s</string>
+
+    <!-- Contactos -->
+    <string name="x39_mi_identidad">هويتي</string>
+    <string name="x39_contactos_mi_huella_nota">هذه بصمتك. شاركها مع من تريد التحدث إليه؛ وليتحقق منها عبر قناة أخرى (وجهًا لوجه، إلخ).</string>
+    <string name="x39_contactos_qr_desc">رمز QR لهويتك</string>
+    <string name="x39_copiar_mi_huella">نسخ بصمتي</string>
+    <string name="x39_copiar_identidad_mensajes">نسخ هويتي للرسائل</string>
+    <string name="x39_contactos_identidad_nota">هوية الرسائل (X39ID1:…) تحمل مفتاح التشفير ومفتاح التوقيع الخاصين بك. من دونها لا يستطيع أحد الكتابة إليك؛ والبصمة وحدها لا تكفي.</string>
+    <string name="x39_error_leer_identidad">تعذّرت قراءة الهوية.</string>
+    <string name="x39_sin_identidad">ليست لديك هوية بعد. أنشئها أولًا.</string>
+    <string name="x39_anadir_contacto">إضافة جهة اتصال</string>
+    <string name="x39_hint_nombre_contacto">الاسم (كما ستراه أنت)</string>
+    <string name="x39_hint_identidad_contacto">هويته للرسائل (X39ID1:…) أو بصمته (64 حرفًا)</string>
+    <string name="x39_guardar_contacto">حفظ جهة الاتصال</string>
+    <string name="x39_contacto_sin_nombre">أعطِ جهة الاتصال اسمًا.</string>
+    <string name="x39_contacto_guardado_mensajes">حُفظت جهة الاتصال. يمكنك الآن الكتابة إليها من الرسائل.</string>
+    <string name="x39_identidad_no_valida">هذه الهوية غير صالحة: %1$s</string>
+    <string name="x39_huella_64">يجب أن تتكون البصمة من 64 حرفًا (0-9، a-f).</string>
+    <string name="x39_contacto_guardado">حُفظت جهة الاتصال.</string>
+    <string name="x39_tus_contactos">جهات اتصالك</string>
+    <string name="x39_sin_contactos">ليست لديك جهات اتصال بعد. أضف واحدة ببصمتها.</string>
+    <string name="x39_crea_identidad_primero">أنشئ هويتك أولًا.</string>
+    <string name="x39_identidad_copiada">نُسخت. أرسلها إلى جهة اتصالك؛ وليتحقق من بصمتك عبر قناة أخرى.</string>
+    <string name="x39_error_copiar">تعذّر النسخ: %1$s</string>
+    <string name="x39_su_huella">بصمته</string>
+    <string name="x39_su_huella_nota">تحقّق منها مع هذا الشخص عبر قناة أخرى (وجهًا لوجه، إلخ) قبل أن تثق بها.</string>
+    <string name="x39_contacto_sin_identidad_mensajes">للكتابة إليه تحتاج إلى هويته للرسائل (النص الذي يبدأ بـ X39ID1:). اطلبها منه وأضفه من جديد بها في «إضافة جهة اتصال».</string>
+    <string name="x39_escribir_a">الكتابة إلى %1$s</string>
+    <string name="x39_borrar_contacto">حذف جهة الاتصال</string>
+    <string name="x39_mandar_mensaje">إرسال رسالة</string>
+    <string name="x39_ver_ficha">عرض البطاقة</string>
+
+    <!-- Seguridad -->
+    <string name="x39_seguridad_subtitulo">ما يقوله التطبيق عن نفسه، مُتحقَّق منه على هذا الهاتف.</string>
+    <string name="x39_permisos_titulo">أذونات ملف البيان، كما هي</string>
+    <string name="x39_error_leer_permisos">تعذّرت قراءتها: %1$s</string>
+    <string name="x39_permisos_internet">الإنترنت: نعم، فقط لإرسال البصمات (32 بايت) إلى خوادم التقويم لدى OpenTimestamps واستلام الإثباتات (مباشرةً أو، إذا فعّلت ذلك، عبر Tor فقط). لا صور ولا فيديو ولا ملفات أبدًا. الميكروفون: فقط أثناء تسجيل فيديو أو صوت؛ إذا رفضته، يُسجَّل الفيديو بلا صوت ولا يمكن تسجيل الصوت.</string>
+    <string name="x39_estado_capturas">لقطات الشاشة</string>
+    <string name="x39_estado_bloqueadas">محظورة</string>
+    <string name="x39_estado_galeria">الأدلة في المعرض</string>
+    <string name="x39_estado_nunca">أبدًا</string>
+    <string name="x39_estado_copias">النسخ في السحابة</string>
+    <string name="x39_estado_activadas">مفعّلة</string>
+    <string name="x39_estado_desactivadas">معطّلة</string>
+    <string name="x39_estado_ubicacion">الموقع في الصور</string>
+    <string name="x39_estado_no">لا</string>
+    <string name="x39_modo_aislado">الوضع المعزول</string>
+    <string name="x39_estado_aislado_activo">مفعّل: لا شيء يغادر الهاتف</string>
+    <string name="x39_estado_apagado">متوقف</string>
+    <string name="x39_anclar_solo_tor">التثبيت عبر Tor فقط</string>
+    <string name="x39_tor_explicacion">تخرج البصمات عبر Tor (Orbot) فقط. هذا يخفي عنوان IP الخاص بك عن خوادم التقويم. يستطيع مشغّل شبكتك أن يرى أنك تستخدم Tor؛ وفي بعض البلدان يلفت ذلك الانتباه. إذا لم يكن Orbot يعمل، تنتظر البصمات.</string>
+    <string name="x39_orbot_no_instalado_estado">Orbot غير مثبّت.</string>
+    <string name="x39_tor_estado_conectado_listo">Orbot مثبّت · الحالة: متصل · الوكيل 127.0.0.1:8118 جاهز</string>
+    <string name="x39_tor_estado_conectado_no_disponible">Orbot مثبّت · الحالة: متصل · الوكيل 127.0.0.1:8118 غير متاح</string>
+    <string name="x39_tor_estado_arrancando_listo">Orbot مثبّت · الحالة: قيد التشغيل · الوكيل 127.0.0.1:8118 جاهز</string>
+    <string name="x39_tor_estado_arrancando_no_disponible">Orbot مثبّت · الحالة: قيد التشغيل · الوكيل 127.0.0.1:8118 غير متاح</string>
+    <string name="x39_tor_estado_apagado_listo">Orbot مثبّت · الحالة: متوقف · الوكيل 127.0.0.1:8118 جاهز</string>
+    <string name="x39_tor_estado_apagado_no_disponible">Orbot مثبّت · الحالة: متوقف · الوكيل 127.0.0.1:8118 غير متاح</string>
+    <string name="x39_tor_estado_desconocido_listo">Orbot مثبّت · الحالة غير معروفة (افتح Orbot ليُبلغ عنها) · الوكيل 127.0.0.1:8118 جاهز</string>
+    <string name="x39_tor_estado_desconocido_no_disponible">Orbot مثبّت · الحالة غير معروفة (افتح Orbot ليُبلغ عنها) · الوكيل 127.0.0.1:8118 غير متاح</string>
+    <string name="x39_instalar_orbot_fdroid">تثبيت Orbot من F-Droid</string>
+    <string name="x39_orbot_guardian">أو من Guardian Project</string>
+    <string name="x39_pedir_arranque_orbot">طلب تشغيل Orbot</string>
+    <string name="x39_pedido_orbot">طُلب من Orbot؛ افتح Orbot إذا لم يتصل من تلقاء نفسه</string>
+    <string name="x39_seguridad_clave_medida">المفتاح العام ML-DSA-87: %1$s بايت (قيس الآن)</string>
+    <string name="x39_ver_identidad">عرض الهوية ورمز QR والأحجام</string>
+    <string name="x39_registro_red">سجل الشبكة</string>
+    <string name="x39_red_sin_conexiones">لم يحدث أي اتصال بعد.</string>
+    <string name="x39_red_via">%1$s عبر %2$s</string>
+    <string name="x39_red_sin_respuesta">لا رد</string>
+
+    <!-- Ajustes -->
+    <string name="x39_ajuste_auto">التثبيت تلقائيًا</string>
+    <string name="x39_ajuste_auto_desc">يرسل البصمة إلى خوادم التقويم فور توفر الشبكة.</string>
+    <string name="x39_ajuste_wifi">عبر Wi-Fi فقط</string>
+    <string name="x39_ajuste_wifi_desc">لا يستخدم بيانات الجوال للتثبيت.</string>
+    <string name="x39_ajuste_aislado_desc">لا شيء يغادر الهاتف حتى توقفه: لا بصمات ولا رسائل.</string>
+    <string name="x39_ajuste_fondo">الاستلام والتطبيق مغلق</string>
+    <string name="x39_ajuste_fondo_desc">يُبقي خط الدردشة مفتوحًا. يترك إشعارًا ثابتًا يُظهر أن لديك x39 Evidencia: إذا كان ذلك يعرّضك للخطر، فأوقفه ولن تستلم إلا والتطبيق مفتوح.</string>
+
+    <!-- Mensajes -->
+    <string name="x39_adjuntar_titulo">إرفاق (يُختم قبل الإرسال)</string>
+    <string name="x39_evidencia_ya_guardada">دليل محفوظ مسبقًا</string>
+    <string name="x39_error_leer_evidencias">تعذّرت قراءة الأدلة: %1$s</string>
+    <string name="x39_sin_evidencias_guardadas">ليست لديك أدلة محفوظة بعد.</string>
+    <string name="x39_que_evidencia_mandas">أي دليل ترسل إلى %1$s؟</string>
+    <string name="x39_error_preparar">تعذّر التحضير: %1$s</string>
+    <string name="x39_compartir_capsula_de">مشاركة كبسولة %1$s</string>
+    <string name="x39_crea_identidad_en_contactos">أنشئ هويتك أولًا (في جهات الاتصال).</string>
+    <string name="x39_chat_en_linea">"●  متصل"</string>
+    <string name="x39_chat_conectando">"○  جارٍ الاتصال بـ x39matrix.org…"</string>
+    <string name="x39_sin_mensajes_todavia">لا رسائل بعد</string>
+    <string name="x39_chat_ultimo_mio">أنت: %1$s</string>
+    <string name="x39_chat_evidencia_nombre">دليل: %1$s</string>
+    <string name="x39_chat_ultimo_mio_evidencia">أنت: دليل: %1$s</string>
+    <string name="x39_sin_conversaciones">ليست لديك محادثات بعد. ابحث عن الشخص في جهات الاتصال واضغط على «إرسال رسالة». لتتمكن من الكتابة إليه، يجب أن يكون محفوظًا بهويته للرسائل (النص الذي يبدأ بـ X39ID1:).</string>
+    <string name="x39_chat_transporte_nota">الدردشة مجرد وسيلة نقل: ما يُثبت شيئًا هو الكبسولة، ويمكن التحقق منها وحدها خارج التطبيق. هنا لا ينتهي شيء ولا يُحذف تلقائيًا.</string>
+    <string name="x39_chat_vacio">ما تكتبه يُختم بمفتاح %1$s.</string>
+    <string name="x39_chat_trozos">القطع: %1$s</string>
+    <string name="x39_chat_trozos_tam">%1$s · القطع: %2$s</string>
+    <string name="x39_chat_capsula_mia">كبسولة: الأصل دون تعديل + الإيصال + .ots</string>
+    <string name="x39_chat_capsula_mia_tam">%1$s · كبسولة: الأصل دون تعديل + الإيصال + .ots</string>
+    <string name="x39_pie_pendiente">%1$s · ⏳ معلّقة، ستُرسل عند الاتصال بالشبكة</string>
+    <string name="x39_pie_esperando_ancla">%1$s · ⏳ بانتظار إثبات Bitcoin (.ots) قبل الإرسال</string>
+    <string name="x39_pie_demasiado_grande">%1$s · ✗ يتجاوز 25 MB: لا يمر عبر الدردشة؛ استخدم «مشاركة الكبسولة» في الدليل</string>
+    <string name="x39_pie_enviado">%1$s · ✓ أُرسلت</string>
+    <string name="x39_pie_entregado">%1$s · ✓✓ سُلّمت</string>
+    <string name="x39_pie_evidencia_no_esta">%1$s · الدليل لم يعد موجودًا</string>
+    <string name="x39_pie_recibiendo">%1$s · جارٍ الاستلام…</string>
+    <string name="x39_adjuntar">إرفاق</string>
+    <string name="x39_hint_mensaje">رسالة</string>
+    <string name="x39_enviar">إرسال</string>
+    <string name="x39_comp_incompleta">✗ الكبسولة ناقصة: لا يمكن التحقق منها.</string>
+    <string name="x39_comp_original_ok">✓ الأصل هو نفسه الذي خُتم</string>
+    <string name="x39_comp_original_mal">✗ الأصل لا يعطي بصمة الإيصال</string>
+    <string name="x39_comp_firma_ok">✓ توقيع ML-DSA-87 صالح</string>
+    <string name="x39_comp_firma_mal">✗ التوقيع غير صالح</string>
+    <string name="x39_comp_remitente_ok">✓ وقّعها من أرسلها إليك</string>
+    <string name="x39_comp_otra_clave">⚠ وقّعها مفتاح آخر: %1$s…</string>
+    <string name="x39_comp_sin_ots">○ لا يوجد إثبات .ots: لا تثبيت في Bitcoin</string>
+    <string name="x39_comp_ots_pendiente">○ التثبيت في Bitcoin معلّق (يكتمل بـ «ots upgrade»)</string>
+    <string name="x39_comp_ots_bloque">✓ مُثبَّتة في الكتلة %1$s من Bitcoin</string>
+    <string name="x39_comp_error_leer">✗ تعذّرت قراءة الكبسولة: %1$s</string>
+
+    <!-- Notificaciones -->
+    <string name="x39_notif_titulo">x39 Evidencia</string>
+    <string name="x39_notif_en_linea">متصل لاستلام الرسائل</string>
+    <string name="x39_notif_mensaje_nuevo">رسالة جديدة من %1$s</string>
+    <string name="x39_un_contacto">جهة اتصال</string>
+    <string name="x39_canal_linea">خط الدردشة</string>
+    <string name="x39_idioma">اللغة</string>
+    <string name="x39_idioma_sistema">النظام</string>
+</resources>

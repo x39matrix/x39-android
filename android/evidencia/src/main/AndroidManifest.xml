@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  x39 · Evidencia. Cuatro permisos y ninguno más (prueba de aceptación 7):
-  - INTERNET: solo para enviar huellas SHA-256 (32 bytes) a los calendarios de OpenTimestamps y recoger pruebas.
-    Nunca fotos ni vídeos. Cada petición queda en el registro de red de la pantalla Seguridad.
+  x39 · Evidencia. Permisos, y para qué es cada uno:
+  - INTERNET: huellas SHA-256 (32 bytes) a los calendarios de OpenTimestamps, y desde 0.4 el chat con
+    x39matrix.org (sobres cerrados con París; el servidor no puede leerlos). Cada conexión queda en Seguridad.
   - ACCESS_NETWORK_STATE: saber si hay red antes de intentar anclar.
   - CAMERA: la cámara propia de la app. Las fotos y los vídeos no pasan por la galería.
-  - RECORD_AUDIO (desde 0.2): el sonido del vídeo y las grabaciones de audio, solo mientras se graba; se pide al
-    pulsar «Vídeo» o «Grabar», nunca al abrir la app; si se niega, el vídeo va sin sonido y el audio no se graba.
+  - RECORD_AUDIO (desde 0.2): el sonido del vídeo y las grabaciones de audio, solo mientras se graba.
+  - FOREGROUND_SERVICE + FOREGROUND_SERVICE_SPECIAL_USE + POST_NOTIFICATIONS (desde 0.4): recibir mensajes con la
+    app cerrada. Es un interruptor de Ajustes («Recibir con la app cerrada»); apagado, no se usan.
+    OJO: esto cambia la prueba de aceptación 7, que pedía cuatro permisos y ninguno más.
   Sin copias de seguridad en la nube.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -15,20 +17,22 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature android:name="android.hardware.camera.any" android:required="true" />
 
     <!-- Solo para saber si Orbot está instalado (anclaje por Tor opcional, 0.3). No es un permiso. -->
     <queries>
         <package android:name="org.torproject.android" />
-        <!-- Solo para saber si Signal está instalado y poder abrirlo (botón «Signal»). No es un permiso. -->
-        <package android:name="org.thoughtcrime.securesms" />
     </queries>
 
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"
-        android:label="x39"
+        android:label="@string/x39_app_nombre"
+        android:localeConfig="@xml/locales_config"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -45,6 +49,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- La línea del chat con la app cerrada (interruptor en Ajustes). Sin llamadas: solo mensajes. -->
+        <service
+            android:name="org.x39.bolsillo.ServicioEvidencia"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Mantiene abierta la conexión para recibir mensajes y evidencias selladas, cifrados de extremo a extremo, sin servicios de notificaciones de terceros." />
+        </service>
 
         <!-- Cola de anclaje: JobScheduler del sistema, sin AndroidX. -->
         <service

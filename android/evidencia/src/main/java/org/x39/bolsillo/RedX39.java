@@ -3,6 +3,7 @@ package org.x39.bolsillo;
 import android.content.Context;
 
 import org.json.JSONObject;
+import org.x39matrix.evidencia.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,6 +46,8 @@ final class RedX39 {
     static final int MAX_RESPUESTA = 10_000;
     private static final String REGISTRO = "registro_red.jsonl";
     private static final int MAX_LINEAS = 200;
+    /** Separador guardado en el registro (formato del fichero, no texto de pantalla: ver hostVisible). */
+    private static final String VIA = " vía ";
 
     static final class Respuesta {
         final int codigo;
@@ -96,7 +99,7 @@ final class RedX39 {
             con = (HttpsURLConnection) u.openConnection();
         }
         // En el registro de Seguridad cada línea por Tor lo dice: «calendario vía 127.0.0.1:8118».
-        final String destino = tor ? u.getHost() + " vía " + Orbot.PROXY_HOST + ":" + Orbot.PROXY_PUERTO : u.getHost();
+        final String destino = tor ? u.getHost() + VIA + Orbot.PROXY_HOST + ":" + Orbot.PROXY_PUERTO : u.getHost();
         int enviados = 0;
         int recibidos = 0;
         int codigo = -1;
@@ -158,6 +161,16 @@ final class RedX39 {
         }
     }
 
+    /**
+     * El registro guarda «calendario vía 127.0.0.1:8118» tal cual (es un dato, no se reescribe);
+     * al enseñarlo, «vía» sale en el idioma de la app.
+     */
+    private static String hostVisible(Context c, String host) {
+        int i = host.indexOf(VIA);
+        if (i < 0) return host;
+        return c.getString(R.string.x39_red_via, host.substring(0, i), host.substring(i + VIA.length()));
+    }
+
     /** Últimas peticiones, de la más reciente a la más antigua, ya formateadas para la pantalla. */
     static synchronized List<String> ultimas(Context c, int n) {
         List<String> salida = new ArrayList<>();
@@ -170,8 +183,9 @@ final class RedX39 {
             for (String s : l) {
                 if (s.trim().isEmpty()) continue;
                 JSONObject o = new JSONObject(s);
-                salida.add(hora.format(new Date(o.getLong("t"))) + "  " + o.getString("m") + " " + o.getString("host")
-                        + "  ↑" + o.getInt("up") + " B ↓" + o.getInt("down") + " B  " + (o.getInt("code") < 0 ? "sin respuesta" : o.getInt("code")));
+                salida.add(hora.format(new Date(o.getLong("t"))) + "  " + o.getString("m") + " " + hostVisible(c, o.getString("host"))
+                        + "  ↑" + o.getInt("up") + " B ↓" + o.getInt("down") + " B  "
+                        + (o.getInt("code") < 0 ? c.getString(R.string.x39_red_sin_respuesta) : o.getInt("code")));
                 if (salida.size() >= n) break;
             }
         } catch (Exception ignorado) {

@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- x39 · Evidencia: アプリのテキスト。日本語。 -->
+<resources>
+    <!-- アプリ -->
+    <string name="x39_app_nombre">x39</string>
+
+    <!-- 共通 -->
+    <string name="x39_volver">戻る</string>
+    <string name="x39_entendido">了解</string>
+    <string name="x39_cancelar">キャンセル</string>
+    <string name="x39_continuar">続ける</string>
+    <string name="x39_borrar">削除</string>
+    <string name="x39_ahora_no">後で</string>
+    <string name="x39_foto">写真</string>
+    <string name="x39_archivo">ファイル</string>
+    <string name="x39_video">動画</string>
+    <string name="x39_audio">音声</string>
+    <string name="x39_sin_nombre">（名前なし）</string>
+    <string name="x39_huella_corta">フィンガープリント %1$s…</string>
+    <string name="x39_error_guardar">保存できませんでした：%1$s</string>
+    <string name="x39_error_leer_clave">鍵を読み込めませんでした：%1$s</string>
+    <string name="x39_copiar_huella">フィンガープリントをコピー</string>
+    <string name="x39_huella_copiada">フィンガープリントをコピーしました</string>
+    <string name="x39_clip_huella">x39の鍵のフィンガープリント</string>
+    <string name="x39_clip_identidad">x39のID</string>
+    <string name="x39_version">x39 %1$s</string>
+
+    <!-- ナビゲーション -->
+    <string name="x39_evidencias">証拠一覧</string>
+    <string name="x39_hacer_una_foto">写真を撮る</string>
+    <string name="x39_grabar_audio">音声を録音</string>
+    <string name="x39_mensajes">メッセージ</string>
+    <string name="x39_contactos">連絡先</string>
+    <string name="x39_elegir_un_archivo">ファイルを選ぶ</string>
+    <string name="x39_seguridad">セキュリティ</string>
+    <string name="x39_ajustes">設定</string>
+
+    <!-- ID -->
+    <string name="x39_identidad_aviso">この鍵はこの端末にだけ保存されています。紛失したり削除したりすると、IDも失われます。公開鍵をエクスポートしていれば発行済みのレシートは有効なままですが、新しい証拠は別のIDで署名されます。クラウドへのコピーは、意図的に作っていません。</string>
+    <string name="x39_tu_identidad">あなたのID</string>
+    <string name="x39_identidad_sin_cuenta">アカウントも登録も不要</string>
+    <string name="x39_identidad_intro">あなたのIDは、いまこの端末で作成されるML-DSA-87の署名鍵で、証拠の一つひとつに署名します。サーバーも登録もありません。鍵がIDであり、それ以外は何もありません。</string>
+    <string name="x39_crear_identidad">IDを作成</string>
+    <string name="x39_creando_clave">鍵を作成中…</string>
+    <string name="x39_error_crear_identidad">IDを作成できませんでした：%1$s</string>
+    <string name="x39_identidad_huella_titulo">あなたの鍵のフィンガープリント</string>
+    <string name="x39_identidad_huella_nota">公開鍵のSHA-256です。レシートを受け取った人は、そこに記載されたフィンガープリントとこれを比べます。</string>
+    <string name="x39_identidad_clave_publica">公開鍵</string>
+    <string name="x39_identidad_qr_desc">公開鍵のQRコード</string>
+    <string name="x39_identidad_clave_info">ML-DSA-87 · %1$sバイト。QRには鍵全体が入っています（バージョン40、177×177モジュール）。スキャンするときはカメラを十分に近づけてください。</string>
+    <string name="x39_exportar_clave_bin">公開鍵をエクスポート（.bin）</string>
+    <string name="x39_comprobar_tamanos_titulo">サイズを確認</string>
+    <string name="x39_comprobar_tamanos_texto">ML-DSA-87では、公開鍵が%1$sバイト、署名が%2$sバイトです。この端末で、テスト署名を使って実際に計測します。</string>
+    <string name="x39_comprobar_en_este_movil">この端末で確認</string>
+    <string name="x39_donde_vive">保存場所</string>
+    <string name="x39_donde_vive_texto">鍵のシードは、AndroidのKeystoreの鍵（%1$s）で暗号化されています。AndroidはまだKeystore内でML-DSAの署名ができないため、署名はアプリ内で計算します。シードはメモリ上でのみ復号され、処理後に消去されます。</string>
+    <string name="x39_nivel_strongbox">StrongBox</string>
+    <string name="x39_nivel_tee">セキュア環境（TEE）</string>
+    <string name="x39_nivel_hardware_seguro">セキュアハードウェア</string>
+    <string name="x39_nivel_software">ソフトウェア</string>
+    <string name="x39_nivel_desconocido">不明</string>
+    <string name="x39_firmando_midiendo">署名して計測中…</string>
+    <string name="x39_tamanos_clave_ok">公開鍵：%1$sバイト ✓</string>
+    <string name="x39_tamanos_clave_mal">公開鍵：%1$sバイト ✗（想定 %2$s）</string>
+    <string name="x39_tamanos_firma_ok">テスト署名：%1$sバイト ✓</string>
+    <string name="x39_tamanos_firma_mal">テスト署名：%1$sバイト ✗（想定 %2$s）</string>
+    <string name="x39_tamanos_verifica">テスト署名は鍵で検証できました ✓</string>
+    <string name="x39_tamanos_es_mldsa">この端末で計測：ML-DSA-87です。</string>
+    <string name="x39_tamanos_no_mldsa">このサイズはML-DSA-87のものではありません。</string>
+    <string name="x39_tamanos_error">✗ テスト署名を作成できないか、検証できません：%1$s</string>
+
+    <!-- 証拠（一覧） -->
+    <string name="x39_evidencias_subtitulo">保存したものはこの端末から出ません。送られるのはフィンガープリントだけです。</string>
+    <string name="x39_error_leer_almacen">保存領域を読み込めませんでした：%1$s</string>
+    <string name="x39_evidencias_vacio_titulo">まだ証拠はありません</string>
+    <string name="x39_evidencias_vacio_texto">ここから写真を撮るか、端末内の好きなファイル（PDF、動画、音声など）を選んでください。この端末に暗号化して保存され、あなたの鍵で署名され、フィンガープリントが自動でBitcoinにアンカーされます。</string>
+    <string name="x39_ficha_desc_foto">%1$sの写真</string>
+    <string name="x39_ficha_desc_archivo">%1$sのファイル</string>
+    <string name="x39_pildora_anclada">"●  アンカー済み · ブロック %1$d"</string>
+    <string name="x39_pildora_calendarios">"◐  カレンダーに送信済み"</string>
+    <string name="x39_pildora_espera_tor">"○  署名済み · Tor待ち"</string>
+    <string name="x39_pildora_espera_red">"○  署名済み · ネットワーク待ち"</string>
+
+    <!-- ファイルと録音の封印 -->
+    <string name="x39_sin_espacio_archivo">このファイル（%1$s）の暗号化コピーを保存する空き容量が端末にありません。</string>
+    <string name="x39_calculando_huella">フィンガープリントを計算して暗号化中…</string>
+    <string name="x39_calculando_huella_progreso">フィンガープリントを計算して暗号化中…\n%1$s</string>
+    <string name="x39_progreso_de_total_pct">%1$s / %2$s（%3$d%%）</string>
+    <string name="x39_progreso_de_total">%1$s / %2$s</string>
+    <string name="x39_motivo_sin_acceso_archivo">システムがファイルへのアクセスを許可しませんでした</string>
+    <string name="x39_error_sellar_archivo">ファイルを封印できませんでした：%1$s</string>
+    <string name="x39_archivo_ya_sellado">このファイルはすでに封印されています。一覧にある証拠と同じフィンガープリントです。</string>
+    <string name="x39_guardado_firmado_en">保存・署名しました（%1$s）</string>
+    <string name="x39_video_guardado_firmado">動画を保存・署名しました（%1$s）</string>
+    <string name="x39_audio_guardado_firmado">音声を保存・署名しました（%1$s）</string>
+    <string name="x39_audio_tramo_guardado_firmado">音声 · 区間%1$dを保存・署名しました（%2$s）</string>
+    <string name="x39_grabacion_ya_sellada">この録音はすでに封印されています。</string>
+    <string name="x39_error_guardar_evidencia">証拠を保存できませんでした：%1$s</string>
+    <string name="x39_firmada_en">署名しました（%1$s）</string>
+
+    <!-- カメラ -->
+    <string name="x39_camara">カメラ</string>
+    <string name="x39_camara_ayuda">撮影と同時に暗号化して保存し、署名します</string>
+    <string name="x39_hacer_la_foto">撮影</string>
+    <string name="x39_parar">停止</string>
+    <string name="x39_camara_grabando">録画中 · 停止すると暗号化して署名します</string>
+    <string name="x39_error_camara">カメラを使用できませんでした：%1$s</string>
+    <string name="x39_video_corto">動画が短すぎます。1秒以上録画してください</string>
+    <string name="x39_cam_sin_trasera">背面カメラが見つかりません</string>
+    <string name="x39_cam_sin_tamanos">カメラがプレビューサイズを提供していません</string>
+    <string name="x39_cam_sin_tamanos_disponibles">利用できるプレビューサイズがありません</string>
+    <string name="x39_cam_sin_permiso">カメラの権限が許可されていません</string>
+    <string name="x39_cam_error">カメラエラー：%1$d</string>
+    <string name="x39_cam_no_abrir">カメラを開けませんでした：%1$s</string>
+    <string name="x39_cam_no_iniciar_preview">プレビューを開始できませんでした：%1$s</string>
+    <string name="x39_cam_no_configurar_preview">プレビューを設定できませんでした</string>
+    <string name="x39_cam_error_preview">プレビューの開始中にエラー：%1$s</string>
+    <string name="x39_cam_no_foto">写真を撮れませんでした：%1$s</string>
+    <string name="x39_cam_no_iniciar_video">動画を開始できませんでした：%1$s</string>
+    <string name="x39_cam_no_configurar_grabacion">録画を設定できませんでした</string>
+    <string name="x39_cam_error_preparar_video">動画の準備中にエラー：%1$s</string>
+    <string name="x39_cam_grabacion_invalida">録画が無効です：%1$s</string>
+
+    <!-- 音声 -->
+    <string name="x39_audio_ayuda">5分ごとの区間に分けて録音します。各区間は終わるたびに暗号化・署名され、アンカーされます。マイクの権限は「録音」を押したときに求められます。</string>
+    <string name="x39_grabar">録音</string>
+    <string name="x39_audio_error_tramo_siguiente">次の区間を開くときに録音が中断されました：%1$s。それまでの分は封印済みです。</string>
+    <string name="x39_audio_sin_espacio">空き容量は%1$sです。余裕を持って録音するには100 MB以上必要です。</string>
+    <string name="x39_audio_grabando">録音中 · 5分ごとに区間を封印 · 停止すると最後の区間を封印します</string>
+    <string name="x39_error_grabar">録音できませんでした：%1$s</string>
+    <plurals name="x39_audio_tramo_sellados">
+        <item quantity="other">区間%1$d · %2$d件封印済み</item>
+    </plurals>
+    <string name="x39_error_sellar_tramo">区間%1$dを封印できませんでした：%2$s</string>
+    <string name="x39_tramo_sellado">区間%1$d（%2$s）を封印しました</string>
+    <string name="x39_grabacion_corta">録音が短すぎます。</string>
+    <string name="x39_audio_tramo_titulo">音声 · 区間%1$d</string>
+    <string name="x39_grabacion_cortada_llamada">通話または他のアプリにより録音が中断されました。区間は封印済みです</string>
+
+    <!-- 権限 -->
+    <string name="x39_ya_puedes_grabar">録音できるようになりました。「録音」を押してください</string>
+    <string name="x39_sin_permiso_microfono_audio">マイクの権限がないと音声を録音できません。Androidの設定で許可できます。</string>
+    <string name="x39_sin_microfono_video">マイクなし：動画は音声なしで録画されます</string>
+    <string name="x39_sin_permiso_camara">カメラの権限がないと写真や動画を撮れません。Androidの設定で許可できます。ファイルの封印はそのまま使えます。</string>
+
+    <!-- 証拠の詳細 -->
+    <string name="x39_evidencia_titulo">証拠</string>
+    <string name="x39_ficha_huella">SHA-256フィンガープリント</string>
+    <string name="x39_ficha_hora">封印時の端末の時刻（自己申告、検証不可）</string>
+    <string name="x39_ficha_firmada_con_clave">署名に使った鍵</string>
+    <string name="x39_ficha_firmada_con_clave_bytes">署名に使った鍵 · 公開鍵%1$sバイト</string>
+    <string name="x39_ficha_firma">署名</string>
+    <string name="x39_ficha_firma_valor">ML-DSA-87 · %1$sバイト</string>
+    <string name="x39_ancla_bitcoin_foto">この写真は、少なくともBitcoinのブロック%1$dの時点でこの内容のまま存在し、それ以降変更されていません。</string>
+    <string name="x39_ancla_bitcoin_video">この動画は、少なくともBitcoinのブロック%1$dの時点でこの内容のまま存在し、それ以降変更されていません。</string>
+    <string name="x39_ancla_bitcoin_audio">この音声は、少なくともBitcoinのブロック%1$dの時点でこの内容のまま存在し、それ以降変更されていません。</string>
+    <string name="x39_ancla_bitcoin_archivo">このファイルは、少なくともBitcoinのブロック%1$dの時点でこの内容のまま存在し、それ以降変更されていません。</string>
+    <string name="x39_ancla_calendarios">フィンガープリントはOpenTimestampsのカレンダーにあります。Bitcoinでの確認には1〜2時間かかります。</string>
+    <string name="x39_ancla_espera_tor">フィンガープリント（32バイト）をカレンダーに送るため、Tor（Orbot）を待っています。Orbotが動いていなければ何も送信されません。</string>
+    <string name="x39_ancla_espera_red">フィンガープリント（32バイト）をカレンダーに送るため、ネットワークを待っています。</string>
+    <string name="x39_ficha_ancla">Bitcoinアンカー</string>
+    <string name="x39_verificar_ahora">今すぐ検証</string>
+    <string name="x39_compartir_recibo">レシートを共有</string>
+    <string name="x39_compartir_capsula">カプセルを共有</string>
+    <string name="x39_exportar_foto">写真をエクスポート</string>
+    <string name="x39_exportar_archivo">ファイルをエクスポート</string>
+    <string name="x39_ficha_nota_foto">レシートにはフィンガープリント、署名、.ots証明が含まれます。写真は含まれません。公開ツールのOpenTimestampsで検証できます。</string>
+    <string name="x39_ficha_nota_archivo">レシートにはフィンガープリント、署名、.ots証明が含まれます。ファイルは含まれません。公開ツールのOpenTimestampsで検証できます。</string>
+
+    <!-- 検証 -->
+    <string name="x39_verificando">保存データのフィンガープリントを再計算中…</string>
+    <string name="x39_verif_huella_ok_foto">✓ フィンガープリントが一致：保存された写真は署名後に変更されていません。</string>
+    <string name="x39_verif_huella_ok_archivo">✓ フィンガープリントが一致：保存されたファイルは署名後に変更されていません。</string>
+    <string name="x39_verif_huella_mal_foto">✗ フィンガープリントが不一致：保存された写真は署名後に変更されています。</string>
+    <string name="x39_verif_huella_mal_archivo">✗ フィンガープリントが不一致：保存されたファイルは署名後に変更されています。</string>
+    <string name="x39_verif_huella_danada_foto">✗ フィンガープリントが不一致：保存された写真は署名後に変更されたか、破損しています。</string>
+    <string name="x39_verif_huella_danada_archivo">✗ フィンガープリントが不一致：保存されたファイルは署名後に変更されたか、破損しています。</string>
+    <string name="x39_verif_no_leer_foto">✗ 保存された写真を読み込めませんでした：%1$s</string>
+    <string name="x39_verif_no_leer_archivo">✗ 保存されたファイルを読み込めませんでした：%1$s</string>
+    <string name="x39_verif_firma_ok">✓ 有効なML-DSA-87署名です。この端末の鍵で作成されています。</string>
+    <string name="x39_verif_firma_otra_clave">✗ この署名は、この端末の現在の鍵によるものではありません。</string>
+    <string name="x39_verif_firma_invalida">✗ 署名が無効です。</string>
+    <string name="x39_verif_sin_ots">アンカー：まだ.ots証明はありません（フィンガープリントは未送信です）。</string>
+    <plurals name="x39_verif_ots_pendiente">
+        <item quantity="other">アンカー：.ots証明は有効です。%1$d件のカレンダーで保留中です。</item>
+    </plurals>
+    <string name="x39_verif_ots_bloque">✓ アンカー：Bitcoinのブロック%1$sを含む.ots証明です。アプリの外で「ots verify」を使って確認してください。</string>
+    <string name="x39_verif_ots_invalida">✗ .ots証明が無効です：%1$s</string>
+    <string name="x39_verificacion">検証</string>
+
+    <!-- レシート、カプセル、エクスポート -->
+    <string name="x39_compartir_recibo_sin_foto">レシートを共有（写真なし）</string>
+    <string name="x39_compartir_recibo_sin_archivo">レシートを共有（ファイルなし）</string>
+    <string name="x39_error_preparar_recibo">レシートを準備できませんでした：%1$s</string>
+    <string name="x39_capsula_titulo">カプセルを共有</string>
+    <string name="x39_capsula_confirmar_foto">手を加えていない元の写真に、レシートと.ots証明をまとめた1つのファイルです。\n\n写真のデータはすべて含まれます。位置情報、時刻、端末の機種が写真に記録されていれば、それも含まれます。これらは証明の一部です。\n\n受け取った人は、同梱の手順に従えば、このアプリがなくても確認できます。</string>
+    <string name="x39_capsula_confirmar_archivo">手を加えていない元のファイルに、レシートと.ots証明をまとめた1つのファイルです。\n\nファイルのデータはすべて含まれます。位置情報、時刻、端末の機種がファイルに記録されていれば、それも含まれます。これらは証明の一部です。\n\n受け取った人は、同梱の手順に従えば、このアプリがなくても確認できます。</string>
+    <string name="x39_preparar_capsula">カプセルを準備</string>
+    <string name="x39_preparando_capsula">カプセルを準備中…</string>
+    <string name="x39_motivo_danado_no_entrega">保存データが変更されたか破損しているため、渡しません</string>
+    <string name="x39_motivo_original_no_cuadra">元のデータがレシートのフィンガープリントと一致しないため、カプセルを渡しません</string>
+    <string name="x39_error_preparar_capsula">カプセルを準備できませんでした：%1$s</string>
+    <string name="x39_compartir_capsula_id">カプセル%1$sを共有</string>
+    <string name="x39_exportar_titulo_foto">写真をエクスポート</string>
+    <string name="x39_exportar_titulo_video">動画をエクスポート</string>
+    <string name="x39_exportar_titulo_audio">音声をエクスポート</string>
+    <string name="x39_exportar_titulo_archivo">ファイルをエクスポート</string>
+    <string name="x39_exportar_mensaje_foto">写真を復号し、選んだアプリに渡します。保管庫の外に出ると、このファイルは端末のクラウドと同期される可能性があります。フィンガープリントは同じなので、レシートは有効なままです。</string>
+    <string name="x39_exportar_mensaje_video">動画を復号し、選んだアプリに渡します。保管庫の外に出ると、このファイルは端末のクラウドと同期される可能性があります。フィンガープリントは同じなので、レシートは有効なままです。</string>
+    <string name="x39_exportar_mensaje_audio">音声を復号し、選んだアプリに渡します。保管庫の外に出ると、このファイルは端末のクラウドと同期される可能性があります。フィンガープリントは同じなので、レシートは有効なままです。</string>
+    <string name="x39_exportar_mensaje_archivo">ファイルを復号し、選んだアプリに渡します。保管庫の外に出ると、このファイルは端末のクラウドと同期される可能性があります。フィンガープリントは同じなので、レシートは有効なままです。</string>
+    <string name="x39_elegir_destino">保存先を選ぶ</string>
+    <string name="x39_descifrando">復号中…</string>
+    <string name="x39_motivo_danado_no_exporta">保存データが変更されたか破損しているため、エクスポートしません</string>
+    <string name="x39_error_exportar">エクスポートできませんでした：%1$s</string>
+    <string name="x39_exportar_nombre">%1$sをエクスポート</string>
+    <string name="x39_exportar_clave_publica">公開鍵をエクスポート</string>
+    <string name="x39_borrar_evidencia_titulo">証拠を削除</string>
+    <string name="x39_borrar_evidencia_foto">写真とその記録がこの端末から削除されます。すでに共有したレシートは有効なままです。</string>
+    <string name="x39_borrar_evidencia_archivo">ファイルとその記録がこの端末から削除されます。すでに共有したレシートは有効なままです。</string>
+    <string name="x39_motivo_sin_identidad">先にIDを作成する必要があります</string>
+    <string name="x39_motivo_no_guardar_evidencia">証拠を保存できませんでした</string>
+    <string name="x39_motivo_no_guardar_fichero">%1$sを保存できませんでした</string>
+
+    <!-- Orbot -->
+    <string name="x39_orbot_no_instalado_titulo">Orbotがインストールされていません</string>
+    <string name="x39_orbot_no_instalado_texto">Tor経由でアンカーするにはOrbot（Guardian Project）が必要です。F-DroidまたはGuardian Projectのサイトからインストールしてください。それまでの間、スイッチがオンなら、フィンガープリントは送信を待ち、直接のネットワークには出ません。</string>
+    <string name="x39_guardian_project">Guardian Project</string>
+    <string name="x39_f_droid">F-Droid</string>
+    <string name="x39_sin_navegador">ブラウザがありません。アドレスは%1$sです</string>
+
+    <!-- 連絡先 -->
+    <string name="x39_mi_identidad">自分のID</string>
+    <string name="x39_contactos_mi_huella_nota">これがあなたのフィンガープリントです。話したい相手と共有し、別の手段（対面など）で確認してもらってください。</string>
+    <string name="x39_contactos_qr_desc">あなたのIDのQRコード</string>
+    <string name="x39_copiar_mi_huella">自分のフィンガープリントをコピー</string>
+    <string name="x39_copiar_identidad_mensajes">メッセージ用の自分のIDをコピー</string>
+    <string name="x39_contactos_identidad_nota">メッセージ用ID（X39ID1:…）には、あなたの暗号化鍵と署名鍵が含まれます。これがないと誰もあなたにメッセージを送れません。フィンガープリントだけでは足りません。</string>
+    <string name="x39_error_leer_identidad">IDを読み込めませんでした。</string>
+    <string name="x39_sin_identidad">まだIDがありません。先に作成してください。</string>
+    <string name="x39_anadir_contacto">連絡先を追加</string>
+    <string name="x39_hint_nombre_contacto">名前（自分に表示される名前）</string>
+    <string name="x39_hint_identidad_contacto">相手のメッセージ用ID（X39ID1:…）またはフィンガープリント（64文字）</string>
+    <string name="x39_guardar_contacto">連絡先を保存</string>
+    <string name="x39_contacto_sin_nombre">連絡先に名前を付けてください。</string>
+    <string name="x39_contacto_guardado_mensajes">連絡先を保存しました。「メッセージ」から送信できます。</string>
+    <string name="x39_identidad_no_valida">そのIDは無効です：%1$s</string>
+    <string name="x39_huella_64">フィンガープリントは64文字（0〜9、a〜f）で入力してください。</string>
+    <string name="x39_contacto_guardado">連絡先を保存しました。</string>
+    <string name="x39_tus_contactos">連絡先</string>
+    <string name="x39_sin_contactos">まだ連絡先がありません。相手のフィンガープリントで追加してください。</string>
+    <string name="x39_crea_identidad_primero">先にIDを作成してください。</string>
+    <string name="x39_identidad_copiada">コピーしました。相手に渡し、別の手段であなたのフィンガープリントを確認してもらってください。</string>
+    <string name="x39_error_copiar">コピーできませんでした：%1$s</string>
+    <string name="x39_su_huella">相手のフィンガープリント</string>
+    <string name="x39_su_huella_nota">信頼する前に、別の手段（対面など）でこの人と確認してください。</string>
+    <string name="x39_contacto_sin_identidad_mensajes">メッセージを送るには、相手のメッセージ用ID（X39ID1:で始まるテキスト）が必要です。相手にもらい、「連絡先を追加」からそのIDで追加し直してください。</string>
+    <string name="x39_escribir_a">%1$sにメッセージ</string>
+    <string name="x39_borrar_contacto">連絡先を削除</string>
+    <string name="x39_mandar_mensaje">メッセージを送る</string>
+    <string name="x39_ver_ficha">詳細を見る</string>
+
+    <!-- セキュリティ -->
+    <string name="x39_seguridad_subtitulo">アプリが自ら表明している内容を、この端末で確認した結果です。</string>
+    <string name="x39_permisos_titulo">マニフェストの権限（そのまま表示）</string>
+    <string name="x39_error_leer_permisos">読み込めませんでした：%1$s</string>
+    <string name="x39_permisos_internet">インターネット：あり。OpenTimestampsのカレンダーにフィンガープリント（32バイト）を送り、証明を受け取るためだけに使います（直接、またはオンにした場合はTor経由のみ）。写真、動画、ファイルは一切送りません。マイク：動画または音声の録音中のみ。拒否すると、動画は音声なしで録画され、音声は録音できません。</string>
+    <string name="x39_estado_capturas">スクリーンショット</string>
+    <string name="x39_estado_bloqueadas">ブロック</string>
+    <string name="x39_estado_galeria">ギャラリー内の証拠</string>
+    <string name="x39_estado_nunca">なし</string>
+    <string name="x39_estado_copias">クラウドバックアップ</string>
+    <string name="x39_estado_activadas">オン</string>
+    <string name="x39_estado_desactivadas">オフ</string>
+    <string name="x39_estado_ubicacion">写真の位置情報</string>
+    <string name="x39_estado_no">なし</string>
+    <string name="x39_modo_aislado">隔離モード</string>
+    <string name="x39_estado_aislado_activo">オン：端末から何も送信されません</string>
+    <string name="x39_estado_apagado">オフ</string>
+    <string name="x39_anclar_solo_tor">Tor経由でのみアンカー</string>
+    <string name="x39_tor_explicacion">フィンガープリントはTor（Orbot）経由でのみ送信されます。カレンダーからあなたのIPアドレスが見えなくなります。通信事業者には、あなたがTorを使っていることがわかります。国によっては、それだけで注目を集めることがあります。Orbotが動いていない場合、フィンガープリントは送信を待ちます。</string>
+    <string name="x39_orbot_no_instalado_estado">Orbotがインストールされていません。</string>
+    <string name="x39_tor_estado_conectado_listo">Orbotインストール済み · 状態：接続済み · プロキシ 127.0.0.1:8118 準備完了</string>
+    <string name="x39_tor_estado_conectado_no_disponible">Orbotインストール済み · 状態：接続済み · プロキシ 127.0.0.1:8118 利用不可</string>
+    <string name="x39_tor_estado_arrancando_listo">Orbotインストール済み · 状態：起動中 · プロキシ 127.0.0.1:8118 準備完了</string>
+    <string name="x39_tor_estado_arrancando_no_disponible">Orbotインストール済み · 状態：起動中 · プロキシ 127.0.0.1:8118 利用不可</string>
+    <string name="x39_tor_estado_apagado_listo">Orbotインストール済み · 状態：オフ · プロキシ 127.0.0.1:8118 準備完了</string>
+    <string name="x39_tor_estado_apagado_no_disponible">Orbotインストール済み · 状態：オフ · プロキシ 127.0.0.1:8118 利用不可</string>
+    <string name="x39_tor_estado_desconocido_listo">Orbotインストール済み · 状態：不明（Orbotを開くと通知されます） · プロキシ 127.0.0.1:8118 準備完了</string>
+    <string name="x39_tor_estado_desconocido_no_disponible">Orbotインストール済み · 状態：不明（Orbotを開くと通知されます） · プロキシ 127.0.0.1:8118 利用不可</string>
+    <string name="x39_instalar_orbot_fdroid">F-DroidからOrbotをインストール</string>
+    <string name="x39_orbot_guardian">またはGuardian Projectから</string>
+    <string name="x39_pedir_arranque_orbot">Orbotに起動を要求</string>
+    <string name="x39_pedido_orbot">Orbotに要求しました。自動で接続しない場合はOrbotを開いてください</string>
+    <string name="x39_seguridad_clave_medida">ML-DSA-87公開鍵：%1$sバイト（今計測）</string>
+    <string name="x39_ver_identidad">ID、QR、サイズを見る</string>
+    <string name="x39_registro_red">ネットワークログ</string>
+    <string name="x39_red_sin_conexiones">まだ接続は一度もありません。</string>
+    <string name="x39_red_via">%1$s（%2$s経由）</string>
+    <string name="x39_red_sin_respuesta">応答なし</string>
+
+    <!-- 設定 -->
+    <string name="x39_ajuste_auto">自動でアンカー</string>
+    <string name="x39_ajuste_auto_desc">ネットワークにつながったらすぐにフィンガープリントをカレンダーに送ります。</string>
+    <string name="x39_ajuste_wifi">Wi-Fiのみ</string>
+    <string name="x39_ajuste_wifi_desc">アンカーにモバイルデータを使いません。</string>
+    <string name="x39_ajuste_aislado_desc">オフにするまで、端末からは何も送信されません。フィンガープリントもメッセージもです。</string>
+    <string name="x39_ajuste_fondo">アプリを閉じていても受信</string>
+    <string name="x39_ajuste_fondo_desc">チャットの回線を開いたままにします。x39 Evidenciaを使っていることがわかる常時通知が表示されます。それが危険につながる場合はオフにしてください。その場合、受信はアプリを開いているときだけになります。</string>
+
+    <!-- メッセージ -->
+    <string name="x39_adjuntar_titulo">添付（送信前に封印）</string>
+    <string name="x39_evidencia_ya_guardada">保存済みの証拠</string>
+    <string name="x39_error_leer_evidencias">証拠を読み込めませんでした：%1$s</string>
+    <string name="x39_sin_evidencias_guardadas">まだ保存された証拠はありません。</string>
+    <string name="x39_que_evidencia_mandas">%1$sにどの証拠を送りますか？</string>
+    <string name="x39_error_preparar">準備できませんでした：%1$s</string>
+    <string name="x39_compartir_capsula_de">%1$sのカプセルを共有</string>
+    <string name="x39_crea_identidad_en_contactos">先に（連絡先で）IDを作成してください。</string>
+    <string name="x39_chat_en_linea">"●  オンライン"</string>
+    <string name="x39_chat_conectando">"○  x39matrix.orgに接続中…"</string>
+    <string name="x39_sin_mensajes_todavia">まだメッセージはありません</string>
+    <string name="x39_chat_ultimo_mio">自分：%1$s</string>
+    <string name="x39_chat_evidencia_nombre">証拠：%1$s</string>
+    <string name="x39_chat_ultimo_mio_evidencia">自分：証拠：%1$s</string>
+    <string name="x39_sin_conversaciones">まだ会話はありません。連絡先で相手を探し、「メッセージを送る」を押してください。メッセージを送るには、相手がメッセージ用ID（X39ID1:で始まるテキスト）付きで保存されている必要があります。</string>
+    <string name="x39_chat_transporte_nota">チャットは運ぶための手段にすぎません。証明になるのはカプセルで、アプリの外で単独で確認できます。ここでは何も期限切れにならず、自動で削除もされません。</string>
+    <string name="x39_chat_vacio">入力した内容は%1$sの鍵で封印されます。</string>
+    <string name="x39_chat_trozos">断片%1$s個</string>
+    <string name="x39_chat_trozos_tam">%1$s · 断片%2$s個</string>
+    <string name="x39_chat_capsula_mia">カプセル：手を加えていない元データ＋レシート＋.ots</string>
+    <string name="x39_chat_capsula_mia_tam">%1$s · カプセル：手を加えていない元データ＋レシート＋.ots</string>
+    <string name="x39_pie_pendiente">%1$s · ⏳ 保留中、オンラインになると送信されます</string>
+    <string name="x39_pie_esperando_ancla">%1$s · ⏳ 送信前にBitcoinの証明（.ots）を待っています</string>
+    <string name="x39_pie_demasiado_grande">%1$s · ✗ 25 MBを超えているため、チャットでは送れません。証拠の「カプセルを共有」を使ってください</string>
+    <string name="x39_pie_enviado">%1$s · ✓ 送信済み</string>
+    <string name="x39_pie_entregado">%1$s · ✓✓ 配信済み</string>
+    <string name="x39_pie_evidencia_no_esta">%1$s · 証拠はもうありません</string>
+    <string name="x39_pie_recibiendo">%1$s · 受信中…</string>
+    <string name="x39_adjuntar">添付</string>
+    <string name="x39_hint_mensaje">メッセージ</string>
+    <string name="x39_enviar">送信</string>
+    <string name="x39_comp_incompleta">✗ カプセルが不完全なため、確認できません。</string>
+    <string name="x39_comp_original_ok">✓ 元データは封印されたものと同じです</string>
+    <string name="x39_comp_original_mal">✗ 元データがレシートのフィンガープリントと一致しません</string>
+    <string name="x39_comp_firma_ok">✓ 有効なML-DSA-87署名</string>
+    <string name="x39_comp_firma_mal">✗ 署名が無効です</string>
+    <string name="x39_comp_remitente_ok">✓ 送信者本人が署名しています</string>
+    <string name="x39_comp_otra_clave">⚠ 別の鍵で署名されています：%1$s…</string>
+    <string name="x39_comp_sin_ots">○ .ots証明なし：Bitcoinアンカーはありません</string>
+    <string name="x39_comp_ots_pendiente">○ Bitcoinアンカー保留中（「ots upgrade」で完了します）</string>
+    <string name="x39_comp_ots_bloque">✓ Bitcoinのブロック%1$sにアンカー済み</string>
+    <string name="x39_comp_error_leer">✗ カプセルを読み込めませんでした：%1$s</string>
+
+    <!-- 通知 -->
+    <string name="x39_notif_titulo">x39 Evidencia</string>
+    <string name="x39_notif_en_linea">メッセージ受信のためオンライン</string>
+    <string name="x39_notif_mensaje_nuevo">%1$sから新しいメッセージ</string>
+    <string name="x39_un_contacto">ある連絡先</string>
+    <string name="x39_canal_linea">チャット回線</string>
+    <string name="x39_idioma">言語</string>
+    <string name="x39_idioma_sistema">システム</string>
+</resources>

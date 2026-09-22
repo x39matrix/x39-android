@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- x39 · Evidencia：应用文字。简体中文。 -->
+<resources>
+    <!-- 应用 -->
+    <string name="x39_app_nombre">x39</string>
+
+    <!-- 通用 -->
+    <string name="x39_volver">返回</string>
+    <string name="x39_entendido">知道了</string>
+    <string name="x39_cancelar">取消</string>
+    <string name="x39_continuar">继续</string>
+    <string name="x39_borrar">删除</string>
+    <string name="x39_ahora_no">以后再说</string>
+    <string name="x39_foto">照片</string>
+    <string name="x39_archivo">文件</string>
+    <string name="x39_video">视频</string>
+    <string name="x39_audio">音频</string>
+    <string name="x39_sin_nombre">（无名称）</string>
+    <string name="x39_huella_corta">指纹 %1$s…</string>
+    <string name="x39_error_guardar">无法保存：%1$s</string>
+    <string name="x39_error_leer_clave">无法读取密钥：%1$s</string>
+    <string name="x39_copiar_huella">复制指纹</string>
+    <string name="x39_huella_copiada">指纹已复制</string>
+    <string name="x39_clip_huella">x39 密钥指纹</string>
+    <string name="x39_clip_identidad">x39 身份</string>
+    <string name="x39_version">x39 %1$s</string>
+
+    <!-- 导航 -->
+    <string name="x39_evidencias">证据</string>
+    <string name="x39_hacer_una_foto">拍照</string>
+    <string name="x39_grabar_audio">录音</string>
+    <string name="x39_mensajes">消息</string>
+    <string name="x39_contactos">联系人</string>
+    <string name="x39_elegir_un_archivo">选择文件</string>
+    <string name="x39_seguridad">安全</string>
+    <string name="x39_ajustes">设置</string>
+
+    <!-- 身份 -->
+    <string name="x39_identidad_aviso">这把密钥只保存在这台手机上。如果丢失或被删除，身份也就丢失了：如果你导出过公钥，已经发出的回执仍然有效，但新的证据会使用另一个身份。我们有意不在云端保留副本。</string>
+    <string name="x39_tu_identidad">你的身份</string>
+    <string name="x39_identidad_sin_cuenta">无需账号，无需注册</string>
+    <string name="x39_identidad_intro">你的身份是一把 ML-DSA-87 签名密钥，现在在这台手机上生成，用来给每份证据签名。没有服务器，也不用注册：密钥就是身份，仅此而已。</string>
+    <string name="x39_crear_identidad">创建身份</string>
+    <string name="x39_creando_clave">正在生成密钥…</string>
+    <string name="x39_error_crear_identidad">无法创建身份：%1$s</string>
+    <string name="x39_identidad_huella_titulo">你的密钥指纹</string>
+    <string name="x39_identidad_huella_nota">公钥的 SHA-256。收到回执的人可以把回执里的指纹和这个指纹进行比对。</string>
+    <string name="x39_identidad_clave_publica">公钥</string>
+    <string name="x39_identidad_qr_desc">包含公钥的二维码</string>
+    <string name="x39_identidad_clave_info">ML-DSA-87 · %1$s 字节。二维码包含完整的密钥（版本 40，177 × 177 模块）：扫描时请把摄像头靠近一些。</string>
+    <string name="x39_exportar_clave_bin">导出公钥（.bin）</string>
+    <string name="x39_comprobar_tamanos_titulo">检查大小</string>
+    <string name="x39_comprobar_tamanos_texto">ML-DSA-87 的公钥为 %1$s 字节，签名为 %2$s 字节。这里会在这台手机上用一次测试签名来测量。</string>
+    <string name="x39_comprobar_en_este_movil">在这台手机上检查</string>
+    <string name="x39_donde_vive">存放位置</string>
+    <string name="x39_donde_vive_texto">密钥种子由 Android Keystore 中的一把密钥加密（%1$s）。Android 目前还不能在 Keystore 内部用 ML-DSA 签名，所以签名在应用中计算：种子只在内存中解密，用完即清除。</string>
+    <string name="x39_nivel_strongbox">StrongBox</string>
+    <string name="x39_nivel_tee">可信执行环境（TEE）</string>
+    <string name="x39_nivel_hardware_seguro">安全硬件</string>
+    <string name="x39_nivel_software">软件</string>
+    <string name="x39_nivel_desconocido">未知</string>
+    <string name="x39_firmando_midiendo">正在签名并测量…</string>
+    <string name="x39_tamanos_clave_ok">公钥：%1$s 字节 ✓</string>
+    <string name="x39_tamanos_clave_mal">公钥：%1$s 字节 ✗（应为 %2$s）</string>
+    <string name="x39_tamanos_firma_ok">测试签名：%1$s 字节 ✓</string>
+    <string name="x39_tamanos_firma_mal">测试签名：%1$s 字节 ✗（应为 %2$s）</string>
+    <string name="x39_tamanos_verifica">测试签名可以用该密钥验证 ✓</string>
+    <string name="x39_tamanos_es_mldsa">在这台手机上测得：是 ML-DSA-87。</string>
+    <string name="x39_tamanos_no_mldsa">这些大小不符合 ML-DSA-87。</string>
+    <string name="x39_tamanos_error">✗ 测试签名无法完成或验证未通过：%1$s</string>
+
+    <!-- 证据（列表） -->
+    <string name="x39_evidencias_subtitulo">你保存的内容不会离开这台手机。只有它的指纹会发出去。</string>
+    <string name="x39_error_leer_almacen">无法读取存储：%1$s</string>
+    <string name="x39_evidencias_vacio_titulo">还没有证据</string>
+    <string name="x39_evidencias_vacio_texto">在这里拍照，或选择手机里的任意文件（PDF、视频、音频，什么都可以）。文件会加密保存在这台手机上，用你的密钥签名，其指纹会自动锚定到 Bitcoin，你无需再做任何操作。</string>
+    <string name="x39_ficha_desc_foto">%1$s 的照片</string>
+    <string name="x39_ficha_desc_archivo">%1$s 的文件</string>
+    <string name="x39_pildora_anclada">"●  已锚定 · 区块 %1$d"</string>
+    <string name="x39_pildora_calendarios">"◐  已发送到日历服务器"</string>
+    <string name="x39_pildora_espera_tor">"○  已签名 · 等待 Tor"</string>
+    <string name="x39_pildora_espera_red">"○  已签名 · 等待网络"</string>
+
+    <!-- 封存文件和录音 -->
+    <string name="x39_sin_espacio_archivo">手机空间不足，无法保存此文件的加密副本（%1$s）。</string>
+    <string name="x39_calculando_huella">正在计算指纹并加密…</string>
+    <string name="x39_calculando_huella_progreso">正在计算指纹并加密…\n%1$s</string>
+    <string name="x39_progreso_de_total_pct">%1$s / %2$s（%3$d%%）</string>
+    <string name="x39_progreso_de_total">%1$s / %2$s</string>
+    <string name="x39_motivo_sin_acceso_archivo">系统未授予该文件的访问权限</string>
+    <string name="x39_error_sellar_archivo">无法封存文件：%1$s</string>
+    <string name="x39_archivo_ya_sellado">此文件已经封存过：它与列表中某份证据的指纹相同。</string>
+    <string name="x39_guardado_firmado_en">已保存并签名，用时 %1$s</string>
+    <string name="x39_video_guardado_firmado">视频已保存并签名，用时 %1$s</string>
+    <string name="x39_audio_guardado_firmado">音频已保存并签名，用时 %1$s</string>
+    <string name="x39_audio_tramo_guardado_firmado">音频 · 第 %1$d 段已保存并签名，用时 %2$s</string>
+    <string name="x39_grabacion_ya_sellada">这段录音已经封存过。</string>
+    <string name="x39_error_guardar_evidencia">无法保存证据：%1$s</string>
+    <string name="x39_firmada_en">签名用时 %1$s</string>
+
+    <!-- 相机 -->
+    <string name="x39_camara">相机</string>
+    <string name="x39_camara_ayuda">立即加密保存并签名</string>
+    <string name="x39_hacer_la_foto">拍照</string>
+    <string name="x39_parar">停止</string>
+    <string name="x39_camara_grabando">正在录制 · 停止时加密并签名</string>
+    <string name="x39_error_camara">无法使用相机：%1$s</string>
+    <string name="x39_video_corto">视频太短：请至少录制一秒</string>
+    <string name="x39_cam_sin_trasera">找不到后置摄像头</string>
+    <string name="x39_cam_sin_tamanos">相机未提供预览尺寸</string>
+    <string name="x39_cam_sin_tamanos_disponibles">没有可用的预览尺寸</string>
+    <string name="x39_cam_sin_permiso">未授予相机权限</string>
+    <string name="x39_cam_error">相机错误：%1$d</string>
+    <string name="x39_cam_no_abrir">无法打开相机：%1$s</string>
+    <string name="x39_cam_no_iniciar_preview">无法启动预览：%1$s</string>
+    <string name="x39_cam_no_configurar_preview">无法配置预览</string>
+    <string name="x39_cam_error_preview">启动预览出错：%1$s</string>
+    <string name="x39_cam_no_foto">无法拍照：%1$s</string>
+    <string name="x39_cam_no_iniciar_video">无法开始录像：%1$s</string>
+    <string name="x39_cam_no_configurar_grabacion">无法配置录制</string>
+    <string name="x39_cam_error_preparar_video">准备录像出错：%1$s</string>
+    <string name="x39_cam_grabacion_invalida">录制内容无效：%1$s</string>
+
+    <!-- 音频 -->
+    <string name="x39_audio_ayuda">按每段 5 分钟录制；每段结束时都会加密、签名并锚定。点按“录音”时才会申请麦克风权限。</string>
+    <string name="x39_grabar">录音</string>
+    <string name="x39_audio_error_tramo_siguiente">开始下一段时录音中断：%1$s。之前的内容已封存。</string>
+    <string name="x39_audio_sin_espacio">剩余空间 %1$s。至少需要 100 MB 才能留有余量地录音。</string>
+    <string name="x39_audio_grabando">正在录音 · 每 5 分钟封存一段 · 停止时封存最后一段</string>
+    <string name="x39_error_grabar">无法录音：%1$s</string>
+    <plurals name="x39_audio_tramo_sellados">
+        <item quantity="other">第 %1$d 段 · 已封存 %2$d 段</item>
+    </plurals>
+    <string name="x39_error_sellar_tramo">无法封存第 %1$d 段：%2$s</string>
+    <string name="x39_tramo_sellado">第 %1$d 段（%2$s）已封存</string>
+    <string name="x39_grabacion_corta">录音太短。</string>
+    <string name="x39_audio_tramo_titulo">音频 · 第 %1$d 段</string>
+    <string name="x39_grabacion_cortada_llamada">录音被来电或其他应用中断：该段已封存</string>
+
+    <!-- 权限 -->
+    <string name="x39_ya_puedes_grabar">现在可以录音了：点按“录音”</string>
+    <string name="x39_sin_permiso_microfono_audio">没有麦克风权限，无法录音。你可以在 Android 设置中授予。</string>
+    <string name="x39_sin_microfono_video">没有麦克风：视频将无声录制</string>
+    <string name="x39_sin_permiso_camara">没有相机权限，无法拍照或录像。你可以在 Android 设置中授予。文件仍然可以封存。</string>
+
+    <!-- 证据详情 -->
+    <string name="x39_evidencia_titulo">证据</string>
+    <string name="x39_ficha_huella">SHA-256 指纹</string>
+    <string name="x39_ficha_hora">封存时的设备时间（自行声明，无法验证）</string>
+    <string name="x39_ficha_firmada_con_clave">签名所用密钥</string>
+    <string name="x39_ficha_firmada_con_clave_bytes">签名所用密钥 · 公钥 %1$s 字节</string>
+    <string name="x39_ficha_firma">签名</string>
+    <string name="x39_ficha_firma_valor">ML-DSA-87 · %1$s 字节</string>
+    <string name="x39_ancla_bitcoin_foto">这张照片至少从 Bitcoin 第 %1$d 号区块起就以完全相同的内容存在，此后没有变化。</string>
+    <string name="x39_ancla_bitcoin_video">这段视频至少从 Bitcoin 第 %1$d 号区块起就以完全相同的内容存在，此后没有变化。</string>
+    <string name="x39_ancla_bitcoin_audio">这段音频至少从 Bitcoin 第 %1$d 号区块起就以完全相同的内容存在，此后没有变化。</string>
+    <string name="x39_ancla_bitcoin_archivo">这个文件至少从 Bitcoin 第 %1$d 号区块起就以完全相同的内容存在，此后没有变化。</string>
+    <string name="x39_ancla_calendarios">指纹已在 OpenTimestamps 日历服务器上。Bitcoin 会在一到两小时内确认。</string>
+    <string name="x39_ancla_espera_tor">正在等待 Tor（Orbot），以便把指纹（32 字节）发送到日历服务器。Orbot 未开启时不会发出任何内容。</string>
+    <string name="x39_ancla_espera_red">正在等待网络，以便把指纹（32 字节）发送到日历服务器。</string>
+    <string name="x39_ficha_ancla">Bitcoin 锚定</string>
+    <string name="x39_verificar_ahora">立即验证</string>
+    <string name="x39_compartir_recibo">分享回执</string>
+    <string name="x39_compartir_capsula">分享证据包</string>
+    <string name="x39_exportar_foto">导出照片</string>
+    <string name="x39_exportar_archivo">导出文件</string>
+    <string name="x39_ficha_nota_foto">回执包含指纹、签名和 .ots 证明，不包含照片本身。可以用公开工具验证：OpenTimestamps。</string>
+    <string name="x39_ficha_nota_archivo">回执包含指纹、签名和 .ots 证明，不包含文件本身。可以用公开工具验证：OpenTimestamps。</string>
+
+    <!-- 验证 -->
+    <string name="x39_verificando">正在重新计算已保存内容的指纹…</string>
+    <string name="x39_verif_huella_ok_foto">✓ 指纹一致：已保存的照片自签名以来没有变化。</string>
+    <string name="x39_verif_huella_ok_archivo">✓ 指纹一致：已保存的文件自签名以来没有变化。</string>
+    <string name="x39_verif_huella_mal_foto">✗ 指纹不一致：已保存的照片自签名以来发生了变化。</string>
+    <string name="x39_verif_huella_mal_archivo">✗ 指纹不一致：已保存的文件自签名以来发生了变化。</string>
+    <string name="x39_verif_huella_danada_foto">✗ 指纹不一致：已保存的照片自签名以来发生了变化或已损坏。</string>
+    <string name="x39_verif_huella_danada_archivo">✗ 指纹不一致：已保存的文件自签名以来发生了变化或已损坏。</string>
+    <string name="x39_verif_no_leer_foto">✗ 无法读取已保存的照片：%1$s</string>
+    <string name="x39_verif_no_leer_archivo">✗ 无法读取已保存的文件：%1$s</string>
+    <string name="x39_verif_firma_ok">✓ ML-DSA-87 签名有效，由这台手机的密钥生成。</string>
+    <string name="x39_verif_firma_otra_clave">✗ 该签名不是由这台手机当前的密钥生成的。</string>
+    <string name="x39_verif_firma_invalida">✗ 签名无效。</string>
+    <string name="x39_verif_sin_ots">锚定：还没有 .ots 证明（指纹尚未发送）。</string>
+    <plurals name="x39_verif_ots_pendiente">
+        <item quantity="other">锚定：.ots 证明有效，在 %1$d 个日历服务器上待确认。</item>
+    </plurals>
+    <string name="x39_verif_ots_bloque">✓ 锚定：.ots 证明对应 Bitcoin 第 %1$s 号区块。可以在应用之外用“ots verify”核实。</string>
+    <string name="x39_verif_ots_invalida">✗ .ots 证明无效：%1$s</string>
+    <string name="x39_verificacion">验证</string>
+
+    <!-- 回执、证据包和导出 -->
+    <string name="x39_compartir_recibo_sin_foto">分享回执（不含照片）</string>
+    <string name="x39_compartir_recibo_sin_archivo">分享回执（不含文件）</string>
+    <string name="x39_error_preparar_recibo">无法准备回执：%1$s</string>
+    <string name="x39_capsula_titulo">分享证据包</string>
+    <string name="x39_capsula_confirmar_foto">一个文件，包含未经改动的原始照片，以及回执和 .ots 证明。\n\n照片的所有信息都会包含在内：如果照片带有位置、时间或手机型号，这些都会一起发出。它们是证明的一部分。\n\n收到的人不需要这个应用，按照包内的说明就能核实。</string>
+    <string name="x39_capsula_confirmar_archivo">一个文件，包含未经改动的原始文件，以及回执和 .ots 证明。\n\n文件的所有信息都会包含在内：如果文件带有位置、时间或手机型号，这些都会一起发出。它们是证明的一部分。\n\n收到的人不需要这个应用，按照包内的说明就能核实。</string>
+    <string name="x39_preparar_capsula">准备证据包</string>
+    <string name="x39_preparando_capsula">正在准备证据包…</string>
+    <string name="x39_motivo_danado_no_entrega">已保存的内容发生了变化或已损坏；不予提供</string>
+    <string name="x39_motivo_original_no_cuadra">原始文件的指纹与回执不符；不提供证据包</string>
+    <string name="x39_error_preparar_capsula">无法准备证据包：%1$s</string>
+    <string name="x39_compartir_capsula_id">分享证据包 %1$s</string>
+    <string name="x39_exportar_titulo_foto">导出照片</string>
+    <string name="x39_exportar_titulo_video">导出视频</string>
+    <string name="x39_exportar_titulo_audio">导出音频</string>
+    <string name="x39_exportar_titulo_archivo">导出文件</string>
+    <string name="x39_exportar_mensaje_foto">照片会被解密，并交给你选择的应用。离开保险库后，这个文件可能会同步到手机的云端。回执仍然有效：指纹不变。</string>
+    <string name="x39_exportar_mensaje_video">视频会被解密，并交给你选择的应用。离开保险库后，这个文件可能会同步到手机的云端。回执仍然有效：指纹不变。</string>
+    <string name="x39_exportar_mensaje_audio">音频会被解密，并交给你选择的应用。离开保险库后，这个文件可能会同步到手机的云端。回执仍然有效：指纹不变。</string>
+    <string name="x39_exportar_mensaje_archivo">文件会被解密，并交给你选择的应用。离开保险库后，这个文件可能会同步到手机的云端。回执仍然有效：指纹不变。</string>
+    <string name="x39_elegir_destino">选择目标</string>
+    <string name="x39_descifrando">正在解密…</string>
+    <string name="x39_motivo_danado_no_exporta">已保存的内容发生了变化或已损坏；不予导出</string>
+    <string name="x39_error_exportar">无法导出：%1$s</string>
+    <string name="x39_exportar_nombre">导出 %1$s</string>
+    <string name="x39_exportar_clave_publica">导出公钥</string>
+    <string name="x39_borrar_evidencia_titulo">删除证据</string>
+    <string name="x39_borrar_evidencia_foto">照片及其详情会从这台手机上删除。你已经分享过的回执仍然有效。</string>
+    <string name="x39_borrar_evidencia_archivo">文件及其详情会从这台手机上删除。你已经分享过的回执仍然有效。</string>
+    <string name="x39_motivo_sin_identidad">需要先创建身份</string>
+    <string name="x39_motivo_no_guardar_evidencia">无法保存证据</string>
+    <string name="x39_motivo_no_guardar_fichero">无法保存 %1$s</string>
+
+    <!-- Orbot -->
+    <string name="x39_orbot_no_instalado_titulo">未安装 Orbot</string>
+    <string name="x39_orbot_no_instalado_texto">通过 Tor 锚定需要 Orbot（Guardian Project）。请从 F-Droid 或 Guardian Project 网站安装。在此期间，只要开关处于开启状态，指纹就会等待，不会通过直连网络发出。</string>
+    <string name="x39_guardian_project">Guardian Project</string>
+    <string name="x39_f_droid">F-Droid</string>
+    <string name="x39_sin_navegador">没有浏览器。网址是 %1$s</string>
+
+    <!-- 联系人 -->
+    <string name="x39_mi_identidad">我的身份</string>
+    <string name="x39_contactos_mi_huella_nota">这是你的指纹。把它分享给想和你交流的人；请对方通过其他渠道（当面等）核对。</string>
+    <string name="x39_contactos_qr_desc">你的身份二维码</string>
+    <string name="x39_copiar_mi_huella">复制我的指纹</string>
+    <string name="x39_copiar_identidad_mensajes">复制我的消息身份</string>
+    <string name="x39_contactos_identidad_nota">消息身份（X39ID1:…）包含你的加密密钥和签名密钥。没有它，谁也无法给你发消息；只有指纹是不够的。</string>
+    <string name="x39_error_leer_identidad">无法读取身份。</string>
+    <string name="x39_sin_identidad">你还没有身份。请先创建。</string>
+    <string name="x39_anadir_contacto">添加联系人</string>
+    <string name="x39_hint_nombre_contacto">名字（你自己看到的名字）</string>
+    <string name="x39_hint_identidad_contacto">对方的消息身份（X39ID1:…）或指纹（64 个字符）</string>
+    <string name="x39_guardar_contacto">保存联系人</string>
+    <string name="x39_contacto_sin_nombre">请给联系人起个名字。</string>
+    <string name="x39_contacto_guardado_mensajes">联系人已保存。现在可以在“消息”中给对方发消息了。</string>
+    <string name="x39_identidad_no_valida">该身份无效：%1$s</string>
+    <string name="x39_huella_64">指纹必须是 64 个字符（0-9，a-f）。</string>
+    <string name="x39_contacto_guardado">联系人已保存。</string>
+    <string name="x39_tus_contactos">你的联系人</string>
+    <string name="x39_sin_contactos">你还没有联系人。用对方的指纹添加一个吧。</string>
+    <string name="x39_crea_identidad_primero">请先创建你的身份。</string>
+    <string name="x39_identidad_copiada">已复制。把它发给你的联系人；请对方通过其他渠道核对你的指纹。</string>
+    <string name="x39_error_copiar">无法复制：%1$s</string>
+    <string name="x39_su_huella">对方的指纹</string>
+    <string name="x39_su_huella_nota">在信任对方之前，请通过其他渠道（当面等）和对方核对。</string>
+    <string name="x39_contacto_sin_identidad_mensajes">要给对方发消息，需要对方的消息身份（以 X39ID1: 开头的文字）。请向对方索取，然后在“添加联系人”中用它重新添加。</string>
+    <string name="x39_escribir_a">给 %1$s 发消息</string>
+    <string name="x39_borrar_contacto">删除联系人</string>
+    <string name="x39_mandar_mensaje">发送消息</string>
+    <string name="x39_ver_ficha">查看详情</string>
+
+    <!-- 安全 -->
+    <string name="x39_seguridad_subtitulo">应用对自身的说明，在这台手机上核实。</string>
+    <string name="x39_permisos_titulo">清单中声明的权限，原样列出</string>
+    <string name="x39_error_leer_permisos">无法读取：%1$s</string>
+    <string name="x39_permisos_internet">网络：是，只用于把指纹（32 字节）发送到 OpenTimestamps 日历服务器并接收证明（直连，或在你开启后只通过 Tor）。绝不发送照片、视频或文件。麦克风：只在你录制视频或音频时使用；如果你拒绝，视频将无声录制，音频则无法录制。</string>
+    <string name="x39_estado_capturas">截屏</string>
+    <string name="x39_estado_bloqueadas">已阻止</string>
+    <string name="x39_estado_galeria">证据出现在相册中</string>
+    <string name="x39_estado_nunca">从不</string>
+    <string name="x39_estado_copias">云端备份</string>
+    <string name="x39_estado_activadas">已开启</string>
+    <string name="x39_estado_desactivadas">已关闭</string>
+    <string name="x39_estado_ubicacion">照片中的位置信息</string>
+    <string name="x39_estado_no">否</string>
+    <string name="x39_modo_aislado">隔离模式</string>
+    <string name="x39_estado_aislado_activo">已开启：任何内容都不会离开手机</string>
+    <string name="x39_estado_apagado">已关闭</string>
+    <string name="x39_anclar_solo_tor">只通过 Tor 锚定</string>
+    <string name="x39_tor_explicacion">指纹只通过 Tor（Orbot）发出。这会对日历服务器隐藏你的 IP 地址。你的运营商可以看到你在使用 Tor；在某些国家，这会引人注意。如果 Orbot 未开启，指纹会等待。</string>
+    <string name="x39_orbot_no_instalado_estado">未安装 Orbot。</string>
+    <string name="x39_tor_estado_conectado_listo">Orbot 已安装 · 状态：已连接 · 代理 127.0.0.1:8118 可用</string>
+    <string name="x39_tor_estado_conectado_no_disponible">Orbot 已安装 · 状态：已连接 · 代理 127.0.0.1:8118 不可用</string>
+    <string name="x39_tor_estado_arrancando_listo">Orbot 已安装 · 状态：正在启动 · 代理 127.0.0.1:8118 可用</string>
+    <string name="x39_tor_estado_arrancando_no_disponible">Orbot 已安装 · 状态：正在启动 · 代理 127.0.0.1:8118 不可用</string>
+    <string name="x39_tor_estado_apagado_listo">Orbot 已安装 · 状态：已关闭 · 代理 127.0.0.1:8118 可用</string>
+    <string name="x39_tor_estado_apagado_no_disponible">Orbot 已安装 · 状态：已关闭 · 代理 127.0.0.1:8118 不可用</string>
+    <string name="x39_tor_estado_desconocido_listo">Orbot 已安装 · 状态未知（打开 Orbot 让它通知状态） · 代理 127.0.0.1:8118 可用</string>
+    <string name="x39_tor_estado_desconocido_no_disponible">Orbot 已安装 · 状态未知（打开 Orbot 让它通知状态） · 代理 127.0.0.1:8118 不可用</string>
+    <string name="x39_instalar_orbot_fdroid">从 F-Droid 安装 Orbot</string>
+    <string name="x39_orbot_guardian">或从 Guardian Project 安装</string>
+    <string name="x39_pedir_arranque_orbot">请求 Orbot 启动</string>
+    <string name="x39_pedido_orbot">已向 Orbot 发出请求；如果它没有自动连接，请打开 Orbot</string>
+    <string name="x39_seguridad_clave_medida">ML-DSA-87 公钥：%1$s 字节（刚刚测得）</string>
+    <string name="x39_ver_identidad">查看身份、二维码和大小</string>
+    <string name="x39_registro_red">网络记录</string>
+    <string name="x39_red_sin_conexiones">还没有任何连接。</string>
+    <string name="x39_red_via">%1$s，经由 %2$s</string>
+    <string name="x39_red_sin_respuesta">无响应</string>
+
+    <!-- 设置 -->
+    <string name="x39_ajuste_auto">自动锚定</string>
+    <string name="x39_ajuste_auto_desc">一有网络就把指纹发送到日历服务器。</string>
+    <string name="x39_ajuste_wifi">仅限 Wi-Fi</string>
+    <string name="x39_ajuste_wifi_desc">锚定时不使用移动数据。</string>
+    <string name="x39_ajuste_aislado_desc">在你关闭之前，任何内容都不会离开手机：指纹和消息都不会。</string>
+    <string name="x39_ajuste_fondo">应用关闭时也接收</string>
+    <string name="x39_ajuste_fondo_desc">保持聊天线路开启。会留下一条常驻通知，显示你装有 x39 Evidencia：如果这会让你陷入危险，请关闭此项，这样只有在应用打开时才会接收。</string>
+
+    <!-- 消息 -->
+    <string name="x39_adjuntar_titulo">附件（发送前先封存）</string>
+    <string name="x39_evidencia_ya_guardada">已保存的证据</string>
+    <string name="x39_error_leer_evidencias">无法读取证据：%1$s</string>
+    <string name="x39_sin_evidencias_guardadas">你还没有保存任何证据。</string>
+    <string name="x39_que_evidencia_mandas">要把哪份证据发给 %1$s？</string>
+    <string name="x39_error_preparar">无法准备：%1$s</string>
+    <string name="x39_compartir_capsula_de">分享 %1$s 的证据包</string>
+    <string name="x39_crea_identidad_en_contactos">请先创建你的身份（在“联系人”中）。</string>
+    <string name="x39_chat_en_linea">"●  在线"</string>
+    <string name="x39_chat_conectando">"○  正在连接 x39matrix.org…"</string>
+    <string name="x39_sin_mensajes_todavia">还没有消息</string>
+    <string name="x39_chat_ultimo_mio">我：%1$s</string>
+    <string name="x39_chat_evidencia_nombre">证据：%1$s</string>
+    <string name="x39_chat_ultimo_mio_evidencia">我：证据：%1$s</string>
+    <string name="x39_sin_conversaciones">你还没有会话。在“联系人”中找到对方，点按“发送消息”。要能给对方发消息，必须用对方的消息身份（以 X39ID1: 开头的文字）保存对方。</string>
+    <string name="x39_chat_transporte_nota">聊天只负责传送：能证明事情的是证据包，它可以在应用之外独立核实。这里的内容不会过期，也不会自动删除。</string>
+    <string name="x39_chat_vacio">你写的内容会用 %1$s 的密钥加密。</string>
+    <string name="x39_chat_trozos">%1$s 块</string>
+    <string name="x39_chat_trozos_tam">%1$s · %2$s 块</string>
+    <string name="x39_chat_capsula_mia">证据包：完整原件 + 回执 + .ots</string>
+    <string name="x39_chat_capsula_mia_tam">%1$s · 证据包：完整原件 + 回执 + .ots</string>
+    <string name="x39_pie_pendiente">%1$s · ⏳ 待发送，上线后发送</string>
+    <string name="x39_pie_esperando_ancla">%1$s · ⏳ 正在等待 Bitcoin 证明（.ots）后再发出</string>
+    <string name="x39_pie_demasiado_grande">%1$s · ✗ 超过 25 MB：无法通过聊天发送；请在证据中使用“分享证据包”</string>
+    <string name="x39_pie_enviado">%1$s · ✓ 已发送</string>
+    <string name="x39_pie_entregado">%1$s · ✓✓ 已送达</string>
+    <string name="x39_pie_evidencia_no_esta">%1$s · 该证据已不存在</string>
+    <string name="x39_pie_recibiendo">%1$s · 正在接收…</string>
+    <string name="x39_adjuntar">附件</string>
+    <string name="x39_hint_mensaje">消息</string>
+    <string name="x39_enviar">发送</string>
+    <string name="x39_comp_incompleta">✗ 证据包不完整：无法核实。</string>
+    <string name="x39_comp_original_ok">✓ 原件就是当初封存的那一份</string>
+    <string name="x39_comp_original_mal">✗ 原件的指纹与回执不符</string>
+    <string name="x39_comp_firma_ok">✓ ML-DSA-87 签名有效</string>
+    <string name="x39_comp_firma_mal">✗ 签名无效</string>
+    <string name="x39_comp_remitente_ok">✓ 由发送者本人签名</string>
+    <string name="x39_comp_otra_clave">⚠ 由另一把密钥签名：%1$s…</string>
+    <string name="x39_comp_sin_ots">○ 没有 .ots 证明：未锚定到 Bitcoin</string>
+    <string name="x39_comp_ots_pendiente">○ Bitcoin 锚定待完成（用“ots upgrade”补全）</string>
+    <string name="x39_comp_ots_bloque">✓ 已锚定在 Bitcoin 第 %1$s 号区块</string>
+    <string name="x39_comp_error_leer">✗ 无法读取证据包：%1$s</string>
+
+    <!-- 通知 -->
+    <string name="x39_notif_titulo">x39 Evidencia</string>
+    <string name="x39_notif_en_linea">在线，可接收消息</string>
+    <string name="x39_notif_mensaje_nuevo">来自 %1$s 的新消息</string>
+    <string name="x39_un_contacto">一位联系人</string>
+    <string name="x39_canal_linea">聊天线路</string>
+    <string name="x39_idioma">语言</string>
+    <string name="x39_idioma_sistema">跟随系统</string>
+</resources>

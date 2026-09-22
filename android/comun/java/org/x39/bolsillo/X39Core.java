@@ -16,6 +16,14 @@ final class X39Core {
 
     private X39Core() {}
 
+    // API JNI del protocolo de llamadas existente; no modifica el motor criptográfico.
+    static native byte[] callOffer(String callHash, String fromBh, int epoch, byte[] seed, String ts);
+    static native int callVerifyOffer(String callHash, String fromBh, int epoch, byte[] ek, String ts, byte[] signature, byte[] emisorPk);
+    static native byte[] callEncapsulate(byte[] ekOtro);
+    static native byte[] callDecapsulate(byte[] dk, byte[] ct);
+    static native byte[] callDerive(String bhA, String bhB, byte[] ekA, byte[] ekB, byte[] ssA, byte[] ssB, String callHash, byte[] callSalt, int epoch);
+    static native String callSas(byte[] frameKey, String callHash);
+
     /** Cuerpo abierto con firma ML-DSA-87: 0x02 || firma(4627) || carga. */
     static boolean estaFirmado(byte[] cuerpo) {
         return cuerpo.length >= 1 + SIG_LEN && cuerpo[0] == SIGNED_TAG;

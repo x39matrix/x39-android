@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- x39 · Evidencia: app texts. English. -->
+<resources>
+    <!-- Aplicación -->
+    <string name="x39_app_nombre">x39</string>
+
+    <!-- Comunes -->
+    <string name="x39_volver">Back</string>
+    <string name="x39_entendido">OK</string>
+    <string name="x39_cancelar">Cancel</string>
+    <string name="x39_continuar">Continue</string>
+    <string name="x39_borrar">Delete</string>
+    <string name="x39_ahora_no">Not now</string>
+    <string name="x39_foto">Photo</string>
+    <string name="x39_archivo">File</string>
+    <string name="x39_video">Video</string>
+    <string name="x39_audio">Audio</string>
+    <string name="x39_sin_nombre">(no name)</string>
+    <string name="x39_huella_corta">fingerprint %1$s…</string>
+    <string name="x39_error_guardar">Could not save: %1$s</string>
+    <string name="x39_error_leer_clave">Could not read the key: %1$s</string>
+    <string name="x39_copiar_huella">Copy fingerprint</string>
+    <string name="x39_huella_copiada">Fingerprint copied</string>
+    <string name="x39_clip_huella">x39 key fingerprint</string>
+    <string name="x39_clip_identidad">x39 identity</string>
+    <string name="x39_version">x39 %1$s</string>
+
+    <!-- Navegación -->
+    <string name="x39_evidencias">Evidence</string>
+    <string name="x39_hacer_una_foto">Take a photo</string>
+    <string name="x39_grabar_audio">Record audio</string>
+    <string name="x39_mensajes">Messages</string>
+    <string name="x39_contactos">Contacts</string>
+    <string name="x39_elegir_un_archivo">Choose a file</string>
+    <string name="x39_seguridad">Security</string>
+    <string name="x39_ajustes">Settings</string>
+
+    <!-- Identidad -->
+    <string name="x39_identidad_aviso">This key lives only on this phone. If it is lost or deleted, the identity is lost: receipts already issued stay valid if you exported the public key, but new evidence will carry a different identity. There is no cloud copy, on purpose.</string>
+    <string name="x39_tu_identidad">Your identity</string>
+    <string name="x39_identidad_sin_cuenta">No account, no sign-up</string>
+    <string name="x39_identidad_intro">Your identity is an ML-DSA-87 signing key created now, on this phone, and it signs every evidence item. There is no server and no sign-up: the key is the identity, nothing else.</string>
+    <string name="x39_crear_identidad">Create identity</string>
+    <string name="x39_creando_clave">Creating the key…</string>
+    <string name="x39_error_crear_identidad">Could not create the identity: %1$s</string>
+    <string name="x39_identidad_huella_titulo">Your key fingerprint</string>
+    <string name="x39_identidad_huella_nota">SHA-256 of the public key. Whoever receives a receipt compares the fingerprint in it with this one.</string>
+    <string name="x39_identidad_clave_publica">Public key</string>
+    <string name="x39_identidad_qr_desc">QR code with the public key</string>
+    <string name="x39_identidad_clave_info">ML-DSA-87 · %1$s bytes. The QR holds the whole key (version 40, 177 × 177 modules): hold the camera close when you scan it.</string>
+    <string name="x39_exportar_clave_bin">Export public key (.bin)</string>
+    <string name="x39_comprobar_tamanos_titulo">Check sizes</string>
+    <string name="x39_comprobar_tamanos_texto">ML-DSA-87 means %1$s bytes of public key and %2$s of signature. They are measured here, on this phone, with a test signature.</string>
+    <string name="x39_comprobar_en_este_movil">Check on this phone</string>
+    <string name="x39_donde_vive">Where it lives</string>
+    <string name="x39_donde_vive_texto">The key seed is encrypted with an Android Keystore key (%1$s). Android cannot sign with ML-DSA inside the Keystore yet, so the signature is computed in the app, with the seed decrypted only in memory and wiped afterwards.</string>
+    <string name="x39_nivel_strongbox">StrongBox</string>
+    <string name="x39_nivel_tee">Trusted environment (TEE)</string>
+    <string name="x39_nivel_hardware_seguro">Secure hardware</string>
+    <string name="x39_nivel_software">Software</string>
+    <string name="x39_nivel_desconocido">Unknown</string>
+    <string name="x39_firmando_midiendo">Signing and measuring…</string>
+    <string name="x39_tamanos_clave_ok">Public key: %1$s bytes ✓</string>
+    <string name="x39_tamanos_clave_mal">Public key: %1$s bytes ✗ (expected %2$s)</string>
+    <string name="x39_tamanos_firma_ok">Test signature: %1$s bytes ✓</string>
+    <string name="x39_tamanos_firma_mal">Test signature: %1$s bytes ✗ (expected %2$s)</string>
+    <string name="x39_tamanos_verifica">The test signature verifies with the key ✓</string>
+    <string name="x39_tamanos_es_mldsa">Measured on this phone: it is ML-DSA-87.</string>
+    <string name="x39_tamanos_no_mldsa">These sizes are not ML-DSA-87.</string>
+    <string name="x39_tamanos_error">✗ The test signature could not be made or does not verify: %1$s</string>
+
+    <!-- Evidencias (lista) -->
+    <string name="x39_evidencias_subtitulo">What you save never leaves this phone. Only its fingerprint travels.</string>
+    <string name="x39_error_leer_almacen">Could not read the store: %1$s</string>
+    <string name="x39_evidencias_vacio_titulo">No evidence yet</string>
+    <string name="x39_evidencias_vacio_texto">Take a photo from here or choose any file on the phone (PDF, video, audio, anything). It is saved encrypted on this phone, signed with your key, and its fingerprint is anchored in Bitcoin without you doing anything else.</string>
+    <string name="x39_ficha_desc_foto">Photo from %1$s</string>
+    <string name="x39_ficha_desc_archivo">File from %1$s</string>
+    <string name="x39_pildora_anclada">"●  Anchored · block %1$d"</string>
+    <string name="x39_pildora_calendarios">"◐  Sent to the calendars"</string>
+    <string name="x39_pildora_espera_tor">"○  Signed · waiting for Tor"</string>
+    <string name="x39_pildora_espera_red">"○  Signed · waiting for network"</string>
+
+    <!-- Sellar archivos y grabaciones -->
+    <string name="x39_sin_espacio_archivo">There is no room on the phone to save an encrypted copy of this file (%1$s).</string>
+    <string name="x39_calculando_huella">Computing the fingerprint and encrypting…</string>
+    <string name="x39_calculando_huella_progreso">Computing the fingerprint and encrypting…\n%1$s</string>
+    <string name="x39_progreso_de_total_pct">%1$s of %2$s (%3$d %%)</string>
+    <string name="x39_progreso_de_total">%1$s of %2$s</string>
+    <string name="x39_motivo_sin_acceso_archivo">the system did not give access to the file</string>
+    <string name="x39_error_sellar_archivo">Could not seal the file: %1$s</string>
+    <string name="x39_archivo_ya_sellado">This file was already sealed: it has the same fingerprint as an evidence item in the list.</string>
+    <string name="x39_guardado_firmado_en">Saved and signed in %1$s</string>
+    <string name="x39_video_guardado_firmado">Video saved and signed in %1$s</string>
+    <string name="x39_audio_guardado_firmado">Audio saved and signed in %1$s</string>
+    <string name="x39_audio_tramo_guardado_firmado">Audio · segment %1$d saved and signed in %2$s</string>
+    <string name="x39_grabacion_ya_sellada">This recording was already sealed.</string>
+    <string name="x39_error_guardar_evidencia">Could not save the evidence: %1$s</string>
+    <string name="x39_firmada_en">Signed in %1$s</string>
+
+    <!-- Cámara -->
+    <string name="x39_camara">Camera</string>
+    <string name="x39_camara_ayuda">Saved encrypted and signed instantly</string>
+    <string name="x39_hacer_la_foto">Take the photo</string>
+    <string name="x39_parar">Stop</string>
+    <string name="x39_camara_grabando">Recording · encrypted and signed when you stop</string>
+    <string name="x39_error_camara">Could not use the camera: %1$s</string>
+    <string name="x39_video_corto">Video too short: keep recording for at least one second</string>
+    <string name="x39_cam_sin_trasera">The rear camera was not found</string>
+    <string name="x39_cam_sin_tamanos">The camera gives no preview sizes</string>
+    <string name="x39_cam_sin_tamanos_disponibles">No preview sizes available</string>
+    <string name="x39_cam_sin_permiso">Camera permission not granted</string>
+    <string name="x39_cam_error">Camera error: %1$d</string>
+    <string name="x39_cam_no_abrir">Could not open the camera: %1$s</string>
+    <string name="x39_cam_no_iniciar_preview">Could not start the preview: %1$s</string>
+    <string name="x39_cam_no_configurar_preview">Could not set up the preview</string>
+    <string name="x39_cam_error_preview">Error starting preview: %1$s</string>
+    <string name="x39_cam_no_foto">Could not take the photo: %1$s</string>
+    <string name="x39_cam_no_iniciar_video">Could not start the video: %1$s</string>
+    <string name="x39_cam_no_configurar_grabacion">Could not set up the recording</string>
+    <string name="x39_cam_error_preparar_video">Error preparing video: %1$s</string>
+    <string name="x39_cam_grabacion_invalida">The recording is not valid: %1$s</string>
+
+    <!-- Audio -->
+    <string name="x39_audio_ayuda">It records in 5-minute segments; each segment is encrypted, signed and anchored when it closes. The microphone is requested when you tap «Record».</string>
+    <string name="x39_grabar">Record</string>
+    <string name="x39_audio_error_tramo_siguiente">The recording stopped when opening the next segment: %1$s. Everything before it is sealed.</string>
+    <string name="x39_audio_sin_espacio">%1$s free. You need at least 100 MB to record with room to spare.</string>
+    <string name="x39_audio_grabando">Recording · a segment is sealed every 5 minutes · the last one is sealed when you stop</string>
+    <string name="x39_error_grabar">Could not record: %1$s</string>
+    <plurals name="x39_audio_tramo_sellados">
+        <item quantity="one">Segment %1$d · %2$d sealed</item>
+        <item quantity="other">Segment %1$d · %2$d sealed</item>
+    </plurals>
+    <string name="x39_error_sellar_tramo">Could not seal segment %1$d: %2$s</string>
+    <string name="x39_tramo_sellado">Segment %1$d (%2$s) sealed</string>
+    <string name="x39_grabacion_corta">The recording is too short.</string>
+    <string name="x39_audio_tramo_titulo">Audio · segment %1$d</string>
+    <string name="x39_grabacion_cortada_llamada">Recording stopped by a call or another app: the segment is sealed</string>
+
+    <!-- Permisos -->
+    <string name="x39_ya_puedes_grabar">You can record now: tap «Record»</string>
+    <string name="x39_sin_permiso_microfono_audio">Without microphone permission you cannot record audio. You can grant it in the Android settings.</string>
+    <string name="x39_sin_microfono_video">No microphone: the video will be recorded without sound</string>
+    <string name="x39_sin_permiso_camara">Without camera permission you cannot take photos or videos. You can grant it in the Android settings. Files can still be sealed.</string>
+
+    <!-- Ficha de una evidencia -->
+    <string name="x39_evidencia_titulo">Evidence item</string>
+    <string name="x39_ficha_huella">SHA-256 fingerprint</string>
+    <string name="x39_ficha_hora">Device time when sealed (declared, not verifiable)</string>
+    <string name="x39_ficha_firmada_con_clave">Signed with the key</string>
+    <string name="x39_ficha_firmada_con_clave_bytes">Signed with the key · public key %1$s bytes</string>
+    <string name="x39_ficha_firma">Signature</string>
+    <string name="x39_ficha_firma_valor">ML-DSA-87 · %1$s bytes</string>
+    <string name="x39_ancla_bitcoin_foto">This photo existed with this exact content at least since Bitcoin block %1$d, and it has not changed since.</string>
+    <string name="x39_ancla_bitcoin_video">This video existed with this exact content at least since Bitcoin block %1$d, and it has not changed since.</string>
+    <string name="x39_ancla_bitcoin_audio">This audio existed with this exact content at least since Bitcoin block %1$d, and it has not changed since.</string>
+    <string name="x39_ancla_bitcoin_archivo">This file existed with this exact content at least since Bitcoin block %1$d, and it has not changed since.</string>
+    <string name="x39_ancla_calendarios">The fingerprint is in the OpenTimestamps calendars. Bitcoin confirms it in one or two hours.</string>
+    <string name="x39_ancla_espera_tor">Waiting for Tor (Orbot) to send the fingerprint (32 bytes) to the calendars. Nothing goes out without Orbot running.</string>
+    <string name="x39_ancla_espera_red">Waiting for a network to send the fingerprint (32 bytes) to the calendars.</string>
+    <string name="x39_ficha_ancla">Bitcoin anchor</string>
+    <string name="x39_verificar_ahora">Verify now</string>
+    <string name="x39_compartir_recibo">Share receipt</string>
+    <string name="x39_compartir_capsula">Share capsule</string>
+    <string name="x39_exportar_foto">Export photo</string>
+    <string name="x39_exportar_archivo">Export file</string>
+    <string name="x39_ficha_nota_foto">The receipt carries the fingerprint, the signature and the .ots proof. It does not carry the photo. It can be verified with public tools: OpenTimestamps.</string>
+    <string name="x39_ficha_nota_archivo">The receipt carries the fingerprint, the signature and the .ots proof. It does not carry the file. It can be verified with public tools: OpenTimestamps.</string>
+
+    <!-- Verificación -->
+    <string name="x39_verificando">Recomputing the fingerprint of what is stored…</string>
+    <string name="x39_verif_huella_ok_foto">✓ The fingerprint matches: the stored photo has not changed since it was signed.</string>
+    <string name="x39_verif_huella_ok_archivo">✓ The fingerprint matches: the stored file has not changed since it was signed.</string>
+    <string name="x39_verif_huella_mal_foto">✗ The fingerprint does not match: the stored photo has changed since it was signed.</string>
+    <string name="x39_verif_huella_mal_archivo">✗ The fingerprint does not match: the stored file has changed since it was signed.</string>
+    <string name="x39_verif_huella_danada_foto">✗ The fingerprint does not match: the stored photo has changed or been damaged since it was signed.</string>
+    <string name="x39_verif_huella_danada_archivo">✗ The fingerprint does not match: the stored file has changed or been damaged since it was signed.</string>
+    <string name="x39_verif_no_leer_foto">✗ Could not read the stored photo: %1$s</string>
+    <string name="x39_verif_no_leer_archivo">✗ Could not read the stored file: %1$s</string>
+    <string name="x39_verif_firma_ok">✓ Valid ML-DSA-87 signature, made with this phone\'s key.</string>
+    <string name="x39_verif_firma_otra_clave">✗ The signature is not from this phone\'s current key.</string>
+    <string name="x39_verif_firma_invalida">✗ The signature is not valid.</string>
+    <string name="x39_verif_sin_ots">Anchor: no .ots proof yet (the fingerprint has not been sent).</string>
+    <plurals name="x39_verif_ots_pendiente">
+        <item quantity="one">Anchor: valid .ots proof, pending in %1$d calendar.</item>
+        <item quantity="other">Anchor: valid .ots proof, pending in %1$d calendars.</item>
+    </plurals>
+    <string name="x39_verif_ots_bloque">✓ Anchor: .ots proof with Bitcoin block %1$s. Check it outside the app with «ots verify».</string>
+    <string name="x39_verif_ots_invalida">✗ The .ots proof is not valid: %1$s</string>
+    <string name="x39_verificacion">Verification</string>
+
+    <!-- Recibo, cápsula y exportar -->
+    <string name="x39_compartir_recibo_sin_foto">Share receipt (without the photo)</string>
+    <string name="x39_compartir_recibo_sin_archivo">Share receipt (without the file)</string>
+    <string name="x39_error_preparar_recibo">Could not prepare the receipt: %1$s</string>
+    <string name="x39_capsula_titulo">Share the capsule</string>
+    <string name="x39_capsula_confirmar_foto">A single file with the ORIGINAL photo, untouched, plus the receipt and the .ots proof.\n\nIt carries all its data: if the photo has location, time or phone model, they go inside. They are part of the proof.\n\nWhoever receives it can check it without this app, with the instructions inside.</string>
+    <string name="x39_capsula_confirmar_archivo">A single file with the ORIGINAL file, untouched, plus the receipt and the .ots proof.\n\nIt carries all its data: if the file has location, time or phone model, they go inside. They are part of the proof.\n\nWhoever receives it can check it without this app, with the instructions inside.</string>
+    <string name="x39_preparar_capsula">Prepare capsule</string>
+    <string name="x39_preparando_capsula">Preparing the capsule…</string>
+    <string name="x39_motivo_danado_no_entrega">what is stored has changed or is damaged; it is not handed over</string>
+    <string name="x39_motivo_original_no_cuadra">the original does not match the receipt fingerprint; the capsule is not handed over</string>
+    <string name="x39_error_preparar_capsula">Could not prepare the capsule: %1$s</string>
+    <string name="x39_compartir_capsula_id">Share capsule %1$s</string>
+    <string name="x39_exportar_titulo_foto">Export the photo</string>
+    <string name="x39_exportar_titulo_video">Export the video</string>
+    <string name="x39_exportar_titulo_audio">Export the audio</string>
+    <string name="x39_exportar_titulo_archivo">Export the file</string>
+    <string name="x39_exportar_mensaje_foto">The photo is decrypted and handed to the app you choose. Outside the vault, this file may sync to your phone\'s cloud. The receipt stays valid: the fingerprint is the same.</string>
+    <string name="x39_exportar_mensaje_video">The video is decrypted and handed to the app you choose. Outside the vault, this file may sync to your phone\'s cloud. The receipt stays valid: the fingerprint is the same.</string>
+    <string name="x39_exportar_mensaje_audio">The audio is decrypted and handed to the app you choose. Outside the vault, this file may sync to your phone\'s cloud. The receipt stays valid: the fingerprint is the same.</string>
+    <string name="x39_exportar_mensaje_archivo">The file is decrypted and handed to the app you choose. Outside the vault, this file may sync to your phone\'s cloud. The receipt stays valid: the fingerprint is the same.</string>
+    <string name="x39_elegir_destino">Choose destination</string>
+    <string name="x39_descifrando">Decrypting…</string>
+    <string name="x39_motivo_danado_no_exporta">what is stored has changed or is damaged; it is not exported</string>
+    <string name="x39_error_exportar">Could not export: %1$s</string>
+    <string name="x39_exportar_nombre">Export %1$s</string>
+    <string name="x39_exportar_clave_publica">Export public key</string>
+    <string name="x39_borrar_evidencia_titulo">Delete evidence item</string>
+    <string name="x39_borrar_evidencia_foto">The photo and its record are deleted from this phone. A receipt you already shared stays valid.</string>
+    <string name="x39_borrar_evidencia_archivo">The file and its record are deleted from this phone. A receipt you already shared stays valid.</string>
+    <string name="x39_motivo_sin_identidad">the identity must be created first</string>
+    <string name="x39_motivo_no_guardar_evidencia">the evidence could not be saved</string>
+    <string name="x39_motivo_no_guardar_fichero">could not save %1$s</string>
+
+    <!-- Orbot -->
+    <string name="x39_orbot_no_instalado_titulo">Orbot is not installed</string>
+    <string name="x39_orbot_no_instalado_texto">Anchoring over Tor needs Orbot (Guardian Project). Install it from F-Droid or from the Guardian Project website. Until then, with the switch on, fingerprints wait and do not go out over the direct network.</string>
+    <string name="x39_guardian_project">Guardian Project</string>
+    <string name="x39_f_droid">F-Droid</string>
+    <string name="x39_sin_navegador">There is no browser. The address is %1$s</string>
+
+    <!-- Contactos -->
+    <string name="x39_mi_identidad">My identity</string>
+    <string name="x39_contactos_mi_huella_nota">This is your fingerprint. Share it with whoever you want to talk to; they should check it through another channel (in person, etc.).</string>
+    <string name="x39_contactos_qr_desc">QR code of your identity</string>
+    <string name="x39_copiar_mi_huella">Copy my fingerprint</string>
+    <string name="x39_copiar_identidad_mensajes">Copy my identity for messages</string>
+    <string name="x39_contactos_identidad_nota">The identity for messages (X39ID1:…) holds your encryption key and your signing key. Without it nobody can write to you; the fingerprint alone is not enough.</string>
+    <string name="x39_error_leer_identidad">Could not read the identity.</string>
+    <string name="x39_sin_identidad">You do not have an identity yet. Create it first.</string>
+    <string name="x39_anadir_contacto">Add contact</string>
+    <string name="x39_hint_nombre_contacto">Name (as you will see it)</string>
+    <string name="x39_hint_identidad_contacto">Their identity for messages (X39ID1:…) or their fingerprint (64 characters)</string>
+    <string name="x39_guardar_contacto">Save contact</string>
+    <string name="x39_contacto_sin_nombre">Give the contact a name.</string>
+    <string name="x39_contacto_guardado_mensajes">Contact saved. You can now write to them from Messages.</string>
+    <string name="x39_identidad_no_valida">That identity is not valid: %1$s</string>
+    <string name="x39_huella_64">The fingerprint must have 64 characters (0-9, a-f).</string>
+    <string name="x39_contacto_guardado">Contact saved.</string>
+    <string name="x39_tus_contactos">Your contacts</string>
+    <string name="x39_sin_contactos">You have no contacts yet. Add one with their fingerprint.</string>
+    <string name="x39_crea_identidad_primero">Create your identity first.</string>
+    <string name="x39_identidad_copiada">Copied. Send it to your contact; they should check your fingerprint through another channel.</string>
+    <string name="x39_error_copiar">Could not copy: %1$s</string>
+    <string name="x39_su_huella">Their fingerprint</string>
+    <string name="x39_su_huella_nota">Check it with this person through another channel (in person, etc.) before you trust it.</string>
+    <string name="x39_contacto_sin_identidad_mensajes">To write to them you need their identity for messages (the text that starts with X39ID1:). Ask them for it and add them again with it in «Add contact».</string>
+    <string name="x39_escribir_a">Write to %1$s</string>
+    <string name="x39_borrar_contacto">Delete contact</string>
+    <string name="x39_mandar_mensaje">Send message</string>
+    <string name="x39_ver_ficha">View details</string>
+
+    <!-- Seguridad -->
+    <string name="x39_seguridad_subtitulo">What the app claims about itself, checked on this phone.</string>
+    <string name="x39_permisos_titulo">Manifest permissions, as they are</string>
+    <string name="x39_error_leer_permisos">Could not read them: %1$s</string>
+    <string name="x39_permisos_internet">Internet: yes, only to send fingerprints (32 bytes) to the OpenTimestamps calendars and receive proofs (directly or, if you turn it on, only over Tor). Never photos, videos or files. Microphone: only while you record a video or audio; if you deny it, video is recorded without sound and audio cannot be recorded.</string>
+    <string name="x39_estado_capturas">Screenshots</string>
+    <string name="x39_estado_bloqueadas">Blocked</string>
+    <string name="x39_estado_galeria">Evidence in the gallery</string>
+    <string name="x39_estado_nunca">Never</string>
+    <string name="x39_estado_copias">Cloud backups</string>
+    <string name="x39_estado_activadas">On</string>
+    <string name="x39_estado_desactivadas">Off</string>
+    <string name="x39_estado_ubicacion">Location in photos</string>
+    <string name="x39_estado_no">No</string>
+    <string name="x39_modo_aislado">Isolated mode</string>
+    <string name="x39_estado_aislado_activo">On: nothing leaves the phone</string>
+    <string name="x39_estado_apagado">Off</string>
+    <string name="x39_anclar_solo_tor">Anchor only over Tor</string>
+    <string name="x39_tor_explicacion">Fingerprints go out only through Tor (Orbot). It hides your IP address from the calendars. Your carrier can see that you use Tor; in some countries that draws attention. If Orbot is not running, fingerprints wait.</string>
+    <string name="x39_orbot_no_instalado_estado">Orbot is not installed.</string>
+    <string name="x39_tor_estado_conectado_listo">Orbot installed · status connected · proxy 127.0.0.1:8118 ready</string>
+    <string name="x39_tor_estado_conectado_no_disponible">Orbot installed · status connected · proxy 127.0.0.1:8118 not available</string>
+    <string name="x39_tor_estado_arrancando_listo">Orbot installed · status starting · proxy 127.0.0.1:8118 ready</string>
+    <string name="x39_tor_estado_arrancando_no_disponible">Orbot installed · status starting · proxy 127.0.0.1:8118 not available</string>
+    <string name="x39_tor_estado_apagado_listo">Orbot installed · status off · proxy 127.0.0.1:8118 ready</string>
+    <string name="x39_tor_estado_apagado_no_disponible">Orbot installed · status off · proxy 127.0.0.1:8118 not available</string>
+    <string name="x39_tor_estado_desconocido_listo">Orbot installed · status unknown (open Orbot so it reports) · proxy 127.0.0.1:8118 ready</string>
+    <string name="x39_tor_estado_desconocido_no_disponible">Orbot installed · status unknown (open Orbot so it reports) · proxy 127.0.0.1:8118 not available</string>
+    <string name="x39_instalar_orbot_fdroid">Install Orbot from F-Droid</string>
+    <string name="x39_orbot_guardian">Or from Guardian Project</string>
+    <string name="x39_pedir_arranque_orbot">Ask Orbot to start</string>
+    <string name="x39_pedido_orbot">Asked Orbot; open Orbot if it does not connect by itself</string>
+    <string name="x39_seguridad_clave_medida">ML-DSA-87 public key: %1$s bytes (measured now)</string>
+    <string name="x39_ver_identidad">View identity, QR and sizes</string>
+    <string name="x39_registro_red">Network log</string>
+    <string name="x39_red_sin_conexiones">There have been no connections yet.</string>
+    <string name="x39_red_via">%1$s via %2$s</string>
+    <string name="x39_red_sin_respuesta">no response</string>
+
+    <!-- Ajustes -->
+    <string name="x39_ajuste_auto">Anchor automatically</string>
+    <string name="x39_ajuste_auto_desc">Sends the fingerprint to the calendars as soon as there is a network.</string>
+    <string name="x39_ajuste_wifi">Wi-Fi only</string>
+    <string name="x39_ajuste_wifi_desc">Does not use mobile data to anchor.</string>
+    <string name="x39_ajuste_aislado_desc">Nothing leaves the phone until you turn it off: no fingerprints, no messages.</string>
+    <string name="x39_ajuste_fondo">Receive with the app closed</string>
+    <string name="x39_ajuste_fondo_desc">Keeps the chat line open. It leaves a permanent notification that shows you have x39 Evidencia: if that puts you at risk, turn it off and you will only receive with the app open.</string>
+
+    <!-- Mensajes -->
+    <string name="x39_adjuntar_titulo">Attach (sealed before sending)</string>
+    <string name="x39_evidencia_ya_guardada">An evidence item already saved</string>
+    <string name="x39_error_leer_evidencias">Could not read the evidence: %1$s</string>
+    <string name="x39_sin_evidencias_guardadas">You have no saved evidence yet.</string>
+    <string name="x39_que_evidencia_mandas">Which evidence item do you send to %1$s?</string>
+    <string name="x39_error_preparar">Could not prepare: %1$s</string>
+    <string name="x39_compartir_capsula_de">Share capsule from %1$s</string>
+    <string name="x39_crea_identidad_en_contactos">Create your identity first (in Contacts).</string>
+    <string name="x39_chat_en_linea">"●  Online"</string>
+    <string name="x39_chat_conectando">"○  Connecting to x39matrix.org…"</string>
+    <string name="x39_sin_mensajes_todavia">No messages yet</string>
+    <string name="x39_chat_ultimo_mio">You: %1$s</string>
+    <string name="x39_chat_evidencia_nombre">Evidence: %1$s</string>
+    <string name="x39_chat_ultimo_mio_evidencia">You: Evidence: %1$s</string>
+    <string name="x39_sin_conversaciones">You have no conversations yet. Find the person in Contacts and tap «Send message». To write to them, they must be saved with their identity for messages (the text that starts with X39ID1:).</string>
+    <string name="x39_chat_transporte_nota">The chat is only transport: what proves something is the capsule, which checks itself outside the app. Nothing here expires or deletes itself.</string>
+    <string name="x39_chat_vacio">What you write is sealed to %1$s\'s key.</string>
+    <string name="x39_chat_trozos">%1$s chunks</string>
+    <string name="x39_chat_trozos_tam">%1$s · %2$s chunks</string>
+    <string name="x39_chat_capsula_mia">capsule: untouched original + receipt + .ots</string>
+    <string name="x39_chat_capsula_mia_tam">%1$s · capsule: untouched original + receipt + .ots</string>
+    <string name="x39_pie_pendiente">%1$s · ⏳ pending, it will be sent when online</string>
+    <string name="x39_pie_esperando_ancla">%1$s · ⏳ waiting for the Bitcoin proof (.ots) before sending</string>
+    <string name="x39_pie_demasiado_grande">%1$s · ✗ over 25 MB: it cannot go through the chat; use «Share capsule» on the evidence item</string>
+    <string name="x39_pie_enviado">%1$s · ✓ sent</string>
+    <string name="x39_pie_entregado">%1$s · ✓✓ delivered</string>
+    <string name="x39_pie_evidencia_no_esta">%1$s · the evidence item is gone</string>
+    <string name="x39_pie_recibiendo">%1$s · receiving…</string>
+    <string name="x39_adjuntar">Attach</string>
+    <string name="x39_hint_mensaje">Message</string>
+    <string name="x39_enviar">Send</string>
+    <string name="x39_comp_incompleta">✗ The capsule is incomplete: it cannot be checked.</string>
+    <string name="x39_comp_original_ok">✓ The original is the one that was sealed</string>
+    <string name="x39_comp_original_mal">✗ The original does NOT match the receipt fingerprint</string>
+    <string name="x39_comp_firma_ok">✓ Valid ML-DSA-87 signature</string>
+    <string name="x39_comp_firma_mal">✗ The signature is NOT valid</string>
+    <string name="x39_comp_remitente_ok">✓ Signed by the person who sent it to you</string>
+    <string name="x39_comp_otra_clave">⚠ Signed by another key: %1$s…</string>
+    <string name="x39_comp_sin_ots">○ No .ots proof: no Bitcoin anchor</string>
+    <string name="x39_comp_ots_pendiente">○ Bitcoin anchor pending (completed with «ots upgrade»)</string>
+    <string name="x39_comp_ots_bloque">✓ Anchored in Bitcoin block %1$s</string>
+    <string name="x39_comp_error_leer">✗ Could not read the capsule: %1$s</string>
+
+    <!-- Notificaciones -->
+    <string name="x39_notif_titulo">x39 Evidencia</string>
+    <string name="x39_notif_en_linea">Online to receive messages</string>
+    <string name="x39_notif_mensaje_nuevo">New message from %1$s</string>
+    <string name="x39_un_contacto">a contact</string>
+    <string name="x39_canal_linea">Chat line</string>
+    <string name="x39_idioma">Language</string>
+    <string name="x39_idioma_sistema">System</string>
+</resources>

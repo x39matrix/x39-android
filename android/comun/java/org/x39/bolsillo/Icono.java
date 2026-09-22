@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 
 /** Iconos de trazo dibujados sobre una rejilla de 24 unidades, coherentes con el diseño. */
 final class Icono extends Drawable {
-    enum Tipo { INICIO, CAMARA, AJUSTES, ARCHIVO, VIDEO, AUDIO, CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE }
+    enum Tipo { INICIO, CAMARA, AJUSTES, ARCHIVO, VIDEO, AUDIO, CHAT, CONTACTOS, ACTAS, ESCUDO, ESCUDO_OK, CANDADO, ATRAS, MAS, ENVIAR, PEGAR, COMPARTIR, COPIAR, AVISO, CHECK, LLAVE, CHEVRON, ENLACE, LLAMAR }
 
     private final Tipo tipo;
     private final Paint pincel = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -33,6 +33,25 @@ final class Icono extends Drawable {
         c.scale(b.width() / 24f, b.height() / 24f);
         Path p = new Path();
         switch (tipo) {
+            case LLAMAR:
+                // Auricular de telefono (llamada) - silueta clasica, en trazo.
+                p.moveTo(20, 15.5f);
+                p.rCubicTo(-1.25f, 0f, -2.45f, -0.2f, -3.57f, -0.57f);
+                p.rCubicTo(-0.35f, -0.11f, -0.74f, -0.03f, -1.02f, 0.24f);
+                p.rLineTo(-2.2f, 2.2f);
+                p.rCubicTo(-2.83f, -1.44f, -5.15f, -3.75f, -6.59f, -6.59f);
+                p.rLineTo(2.2f, -2.21f);
+                p.rCubicTo(0.28f, -0.26f, 0.36f, -0.65f, 0.25f, -1f);
+                p.cubicTo(8.7f, 6.45f, 8.5f, 5.25f, 8.5f, 4f);
+                p.rCubicTo(0f, -0.55f, -0.45f, -1f, -1f, -1f);
+                p.lineTo(4f, 3f);
+                p.rCubicTo(-0.55f, 0f, -1f, 0.45f, -1f, 1f);
+                p.rCubicTo(0f, 9.39f, 7.61f, 17f, 17f, 17f);
+                p.rCubicTo(0.55f, 0f, 1f, -0.45f, 1f, -1f);
+                p.rLineTo(0f, -3.5f);
+                p.rCubicTo(0f, -0.55f, -0.45f, -1f, -1f, -1f);
+                p.close();
+                break;
             case CAMARA:
                 p.addRoundRect(new RectF(3, 7, 21, 20), 3, 3, Path.Direction.CW);
                 p.moveTo(8.5f, 7); p.lineTo(10, 4.5f); p.lineTo(14, 4.5f); p.lineTo(15.5f, 7);

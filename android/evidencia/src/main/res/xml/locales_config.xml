@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Idiomas de x39 Evidencia (Ajustes de Android → idioma de la app). Español es el de por defecto (values/). -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="es" />
+    <locale android:name="en" />
+    <locale android:name="zh-CN" />
+    <locale android:name="ja" />
+    <locale android:name="ar" />
+</locale-config>

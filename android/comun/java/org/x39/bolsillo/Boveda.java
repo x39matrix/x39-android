@@ -112,23 +112,37 @@ final class Boveda {
         return cipher.doFinal(datos, 12, datos.length - 12);
     }
 
+    /** Dónde vive la clave de envoltura. Sin texto: cada app pone el suyo (Evidencia, desde sus strings.xml). */
+    enum Nivel { STRONGBOX, TEE, HARDWARE_SEGURO, SOFTWARE, DESCONOCIDO }
+
     /** Dónde vive realmente la clave de envoltura, según el propio Keystore. */
-    String nivelHardware() {
+    Nivel nivel() {
         try {
             SecretKey k = claveEnvoltura();
             SecretKeyFactory f = SecretKeyFactory.getInstance(k.getAlgorithm(), "AndroidKeyStore");
             KeyInfo info = (KeyInfo) f.getKeySpec(k, KeyInfo.class);
             if (Build.VERSION.SDK_INT >= 31) {
                 int nivel = info.getSecurityLevel();
-                if (nivel == KeyProperties.SECURITY_LEVEL_STRONGBOX) return "StrongBox";
-                if (nivel == KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT) return "Entorno seguro (TEE)";
-                return "Software";
+                if (nivel == KeyProperties.SECURITY_LEVEL_STRONGBOX) return Nivel.STRONGBOX;
+                if (nivel == KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT) return Nivel.TEE;
+                return Nivel.SOFTWARE;
             }
             @SuppressWarnings("deprecation")
             boolean hw = info.isInsideSecureHardware();
-            return hw ? "Hardware seguro" : "Software";
+            return hw ? Nivel.HARDWARE_SEGURO : Nivel.SOFTWARE;
         } catch (Exception e) {
-            return "Desconocido";
+            return Nivel.DESCONOCIDO;
+        }
+    }
+
+    /** El nivel en español, como lo muestra bolsillo (mismo texto de siempre). Evidencia no lo usa. */
+    String nivelHardware() {
+        switch (nivel()) {
+            case STRONGBOX: return "StrongBox";
+            case TEE: return "Entorno seguro (TEE)";
+            case HARDWARE_SEGURO: return "Hardware seguro";
+            case SOFTWARE: return "Software";
+            default: return "Desconocido";
         }
     }
 
