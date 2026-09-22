@@ -72,4 +72,7 @@ android {
 // OkHttp (Square, código abierto): el MISMO transporte WebSocket que usa x39.
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    // Lector de QR de identidad (decisión del 2026-09-22): ZXing core, Java puro, Apache 2.0, sin dependencias,
+    // sin red y sin permisos. Solo el decodificador; la cámara es Camera2 del sistema, sin AndroidX.
+    implementation 'com.google.zxing:core:3.5.3'
 }

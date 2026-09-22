@@ -68,6 +68,7 @@ public class EvidenciaActivity extends Activity {
     private static final int REQ_ARCHIVO = 3;
     private static final int REQ_MICROFONO = 4;
     private static final int REQ_MICROFONO_AUDIO = 5;
+    private static final int REQ_ESCANER = 6;
     /** Un vídeo de evidencia como máximo dura esto; a 8 Mbit/s son unos 600 MB. */
     private static final long MAX_VIDEO_MS = 10 * 60_000L;
     /** Una grabación de audio como máximo: a 128 kbit/s son unos 55 MB. */
@@ -1532,6 +1533,10 @@ public class EvidenciaActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_ESCANER) {
+            if (resultCode == RESULT_OK && data != null) recibirEscaneo(data);
+            return;
+        }
         if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
         if (requestCode == REQ_ARCHIVO) {
             sellarArchivo(data.getData());
@@ -1656,6 +1661,8 @@ public class EvidenciaActivity extends Activity {
             qr.setContentDescription(getString(R.string.x39_contactos_qr_desc));
             mia.addView(qr, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
             dibujarQr(qr, pk);
+            mia.addView(Ui.boton(this, getString(R.string.x39_qr_por_partes), true, v -> qrPorPartes()),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
             mia.addView(Ui.boton(this, getString(R.string.x39_copiar_mi_huella), false, v -> copiarHuella(fp)),
                     Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
             mia.addView(Ui.boton(this, getString(R.string.x39_copiar_identidad_mensajes), false, v -> copiarIdentidadMensajes()),
@@ -1670,6 +1677,8 @@ public class EvidenciaActivity extends Activity {
         }
 
         LinearLayout add = tarjeta(col, getString(R.string.x39_anadir_contacto));
+        add.addView(Ui.boton(this, getString(R.string.x39_escanear_qr_otra), true, v -> escanear()),
+                Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 6));
         final android.widget.EditText nombre = Ui.campo(this, getString(R.string.x39_hint_nombre_contacto), 1, false);
         final android.widget.EditText clave = Ui.campo(this, getString(R.string.x39_hint_identidad_contacto), 3, true);
         add.addView(nombre, Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 6, 0, 0));
@@ -1681,9 +1690,10 @@ public class EvidenciaActivity extends Activity {
             if (bruto.startsWith("X39ID1:")) {
                 try {
                     Object[] id = ChatEvidencia.leerIdentidad(bruto);
+                    if (esPropia((byte[]) id[0], (byte[]) id[1])) { aviso(getString(R.string.x39_identidad_propia)); return; }
                     guardarContacto(n, (String) id[2], (byte[]) id[0], (byte[]) id[1]);
-                    aviso(getString(R.string.x39_contacto_guardado_mensajes));
-                    mostrarPestana(Pestana.CONTACTOS);
+                    aviso(getString(R.string.x39_contacto_guardado_sin_verificar));
+                    compararHuellas((String) id[2]);
                 } catch (Exception e) {
                     aviso(getString(R.string.x39_identidad_no_valida, motivo(e)));
                 }
@@ -1709,6 +1719,7 @@ public class EvidenciaActivity extends Activity {
                 LinearLayout txt = Ui.columna(this);
                 txt.addView(Ui.texto(this, c.optString("nombre", getString(R.string.x39_sin_nombre)), 15, Ui.TEXTO, true));
                 txt.addView(Ui.mono(this, getString(R.string.x39_huella_corta, h.length() >= 12 ? h.substring(0, 12) : h), 12, Ui.SUAVE));
+                if (!c.optString("kem").isEmpty()) txt.addView(estadoVerificacion(c.optBoolean("verificado", false)));
                 final org.json.JSONObject cf = c;
                 fila.addView(txt, Ui.peso(1));
                 fila.addView(Ui.icono(this, Icono.Tipo.CHEVRON, Ui.SUAVE, 18));
@@ -1761,10 +1772,13 @@ public class EvidenciaActivity extends Activity {
                 if (x != null && huella.equals(x.optString("huella"))) c = x;
             }
             if (c == null) { c = new org.json.JSONObject(); cs.put(c); }
+            String kemB = Base64.encodeToString(kem, Base64.NO_WRAP), sigB = Base64.encodeToString(sig, Base64.NO_WRAP);
+            // «Verificado» solo se conserva si las claves son las mismas que se compararon de viva voz.
+            if (!kemB.equals(c.optString("kem")) || !sigB.equals(c.optString("sig"))) c.remove("verificado");
             c.put("nombre", nombre);
             c.put("huella", huella);
-            c.put("kem", Base64.encodeToString(kem, Base64.NO_WRAP));
-            c.put("sig", Base64.encodeToString(sig, Base64.NO_WRAP));
+            c.put("kem", kemB);
+            c.put("sig", sigB);
             guardarContactos(cs);
         } catch (Exception e) {
             aviso(getString(R.string.x39_error_guardar, motivo(e)));
@@ -1811,6 +1825,244 @@ public class EvidenciaActivity extends Activity {
         guardarContactos(n);
     }
 
+    // ------------------------------------------------------------------ QR y verificación de huellas
+
+    private void escanear() {
+        startActivityForResult(new Intent(this, EscanerQrActivity.class), REQ_ESCANER);
+    }
+
+    /** true si las claves leídas son las de este mismo móvil: nadie se añade a sí mismo. */
+    private boolean esPropia(byte[] kem, byte[] sig) {
+        try {
+            Object[] mia = ChatEvidencia.leerIdentidad(ChatEvidencia.de(this).miIdentidadTexto());
+            return Arrays.equals((byte[]) mia[0], kem) || Arrays.equals((byte[]) mia[1], sig);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void recibirEscaneo(Intent data) {
+        if (data.getStringExtra(EscanerQrActivity.RESULTADO_ERROR) != null) {
+            new AlertDialog.Builder(this).setTitle(R.string.x39_qr_mezcla_titulo).setMessage(R.string.x39_qr_mezcla_texto)
+                    .setPositiveButton(R.string.x39_entendido, null).show();
+            return;
+        }
+        String texto = data.getStringExtra(EscanerQrActivity.RESULTADO_TEXTO);
+        if (texto == null) return;
+        final Object[] id;
+        try {
+            id = ChatEvidencia.leerIdentidad(texto);
+        } catch (Exception e) {
+            aviso(getString(R.string.x39_identidad_no_valida, motivo(e)));
+            return;
+        }
+        if (esPropia((byte[]) id[0], (byte[]) id[1])) { aviso(getString(R.string.x39_qr_propio)); return; }
+        final android.widget.EditText campo = Ui.campo(this, getString(R.string.x39_hint_nombre_contacto), 1, false);
+        FrameLayout marco = new FrameLayout(this);
+        marco.setPadding(dp(20), dp(8), dp(20), 0);
+        marco.addView(campo);
+        final String h = (String) id[2];
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.x39_identidad_leida, h.substring(0, 12)))
+                .setView(marco)
+                .setPositiveButton(R.string.x39_guardar_contacto, (d, w) -> {
+                    String n = campo.getText().toString().trim();
+                    if (n.isEmpty()) { aviso(getString(R.string.x39_contacto_sin_nombre)); return; }
+                    // Se guarda NO verificado y se pasa siempre a comparar las huellas de viva voz.
+                    guardarContacto(n, h, (byte[]) id[0], (byte[]) id[1]);
+                    aviso(getString(R.string.x39_contacto_guardado_sin_verificar));
+                    compararHuellas(h);
+                })
+                .setNegativeButton(R.string.x39_cancelar, null)
+                .show();
+    }
+
+    private org.json.JSONObject contactoPorHuella(String huella) {
+        org.json.JSONArray cs = cargarContactos();
+        for (int i = 0; i < cs.length(); i++) {
+            org.json.JSONObject c = cs.optJSONObject(i);
+            if (c != null && huella.equals(c.optString("huella"))) return c;
+        }
+        return null;
+    }
+
+    private void marcarVerificado(String huella, boolean si) {
+        try {
+            org.json.JSONArray cs = cargarContactos();
+            for (int i = 0; i < cs.length(); i++) {
+                org.json.JSONObject c = cs.optJSONObject(i);
+                if (c != null && huella.equals(c.optString("huella"))) {
+                    if (si) c.put("verificado", true); else c.remove("verificado");
+                }
+            }
+            guardarContactos(cs);
+        } catch (Exception e) {
+            aviso(getString(R.string.x39_error_guardar, motivo(e)));
+        }
+    }
+
+    /** «✓ verificado» discreto, o «⚠ SIN VERIFICAR» bien visible. */
+    private View estadoVerificacion(boolean verificado) {
+        TextView t = Ui.texto(this, getString(verificado ? R.string.x39_contacto_verificado : R.string.x39_contacto_sin_verificar),
+                verificado ? 12 : 13, verificado ? Ui.SUAVE : 0xFF000000, !verificado);
+        if (!verificado) {
+            t.setBackground(Ui.redondeado(this, 0xFFE3A83A, 8));
+            t.setPadding(dp(8), dp(2), dp(8), dp(2));
+        }
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = dp(4);
+        t.setLayoutParams(lp);
+        return t;
+    }
+
+    /**
+     * Las DOS huellas (la mía y la suya, sobre las dos claves) para leerlas en voz alta. Solo al confirmar que
+     * coinciden pasa a verificado. «No coinciden»: aviso serio y se borra el contacto. «Ahora no»: queda sin verificar.
+     */
+    private void compararHuellas(String huella) {
+        abrirSecundaria(() -> mostrar(pantallaComparar(huella), true));
+    }
+
+    private View pantallaComparar(String huella) {
+        org.json.JSONObject c = contactoPorHuella(huella);
+        LinearLayout raizCol = Ui.columna(this);
+        raizCol.addView(barraSuperior(getString(R.string.x39_huellas_titulo), () -> mostrarPestana(Pestana.CONTACTOS), 0));
+        ScrollView sv = new ScrollView(this);
+        LinearLayout col = Ui.columna(this);
+        col.setPadding(dp(16), 0, dp(16), dp(24));
+        if (c == null || c.optString("kem").isEmpty()) {
+            col.addView(Ui.texto(this, getString(R.string.x39_contacto_sin_identidad_mensajes), 13, Ui.SUAVE, false));
+        } else {
+            final String nombre = c.optString("nombre", getString(R.string.x39_sin_nombre));
+            String suya = null, mia = null;
+            try {
+                suya = X39Core.identityFingerprint(Base64.decode(c.optString("kem"), Base64.NO_WRAP), Base64.decode(c.optString("sig"), Base64.NO_WRAP));
+                Object[] yo = ChatEvidencia.leerIdentidad(ChatEvidencia.de(this).miIdentidadTexto());
+                mia = X39Core.identityFingerprint((byte[]) yo[0], (byte[]) yo[1]);
+            } catch (Exception e) {
+                col.addView(Ui.texto(this, getString(R.string.x39_error_leer_identidad), 13, Ui.AVISO, false));
+            }
+            if (suya != null && mia != null) {
+                col.addView(Ui.texto(this, getString(R.string.x39_huellas_texto), 13, Ui.SUAVE, false));
+                LinearLayout t1 = tarjeta(col, getString(R.string.x39_huellas_la_tuya));
+                t1.addView(Ui.mono(this, cuatroPorLinea(mia), 17, Ui.TEXTO));
+                LinearLayout t2 = tarjeta(col, getString(R.string.x39_huellas_la_de, nombre.toUpperCase(Locale.getDefault())));
+                t2.addView(Ui.mono(this, cuatroPorLinea(suya), 17, Ui.TEXTO));
+                col.addView(Ui.boton(this, getString(R.string.x39_huellas_coinciden), true, v -> {
+                    marcarVerificado(huella, true);
+                    aviso(getString(R.string.x39_huellas_verificado, nombre));
+                    mostrarPestana(Pestana.CONTACTOS);
+                }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 16, 0, 0));
+                col.addView(Ui.boton(this, getString(R.string.x39_huellas_no_coinciden), false, v ->
+                        new AlertDialog.Builder(this)
+                                .setTitle(R.string.x39_huellas_no_coinciden_titulo)
+                                .setMessage(getString(R.string.x39_huellas_no_coinciden_texto, nombre))
+                                .setCancelable(false)
+                                .setPositiveButton(R.string.x39_borrar_contacto, (d, w) -> {
+                                    borrarContactoPorHuella(huella);
+                                    aviso(getString(R.string.x39_contacto_borrado));
+                                    mostrarPestana(Pestana.CONTACTOS);
+                                })
+                                .setNegativeButton(R.string.x39_cancelar, null)
+                                .show()), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 8, 0, 0));
+                col.addView(Ui.boton(this, getString(R.string.x39_ahora_no), false, v -> {
+                    org.json.JSONObject ahora = contactoPorHuella(huella);
+                    if (ahora != null && !ahora.optBoolean("verificado", false)) aviso(getString(R.string.x39_contacto_guardado_sin_verificar));
+                    mostrarPestana(Pestana.CONTACTOS);
+                }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 8, 0, 0));
+            }
+        }
+        sv.addView(col);
+        raizCol.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        return raizCol;
+    }
+
+    /** "12345 67890 …" (12 grupos) en tres líneas de cuatro grupos, para leerla sin perderse. */
+    private static String cuatroPorLinea(String h) {
+        String[] g = h.trim().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < g.length; i++) {
+            sb.append(g[i]);
+            if (i < g.length - 1) sb.append(i % 4 == 3 ? "\n" : "  ");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Identidad COMPLETA (X39ID1, las dos claves) en 12 QR pequeños que se alternan cada 1,2 s a pantalla completa,
+     * con el brillo al máximo y la pantalla encendida. Sin servidor. Tocar para cerrar.
+     */
+    private void qrPorPartes() {
+        final java.util.List<String> partes;
+        try {
+            partes = QrPartes.trocear(ChatEvidencia.de(this).miIdentidadTexto(), QrPartes.PARTES);
+        } catch (Exception e) {
+            aviso(getString(R.string.x39_crea_identidad_primero));
+            return;
+        }
+        final android.app.Dialog dialogo = new android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        final ImageView img = new ImageView(this);
+        img.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        img.setBackgroundColor(0xFFFFFFFF);
+        img.setPadding(dp(12), dp(12), dp(12), dp(12));
+        img.setContentDescription(getString(R.string.x39_qr_por_partes));
+        final TextView cuenta = new TextView(this);
+        cuenta.setTextColor(0xFF000000);
+        cuenta.setTextSize(14);
+        cuenta.setGravity(android.view.Gravity.CENTER);
+        cuenta.setBackgroundColor(0xFFFFFFFF);
+        cuenta.setPadding(0, dp(8), 0, dp(16));
+        LinearLayout raiz = new LinearLayout(this);
+        raiz.setOrientation(LinearLayout.VERTICAL);
+        raiz.setBackgroundColor(0xFFFFFFFF);
+        raiz.addView(img, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        raiz.addView(cuenta);
+        raiz.setOnClickListener(v -> dialogo.dismiss());
+        img.setOnClickListener(v -> dialogo.dismiss());
+        dialogo.setContentView(raiz);
+        if (dialogo.getWindow() != null) {
+            dialogo.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            WindowManager.LayoutParams a = dialogo.getWindow().getAttributes();
+            a.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL;
+            dialogo.getWindow().setAttributes(a);
+        }
+        final android.graphics.drawable.BitmapDrawable[] mapas = new android.graphics.drawable.BitmapDrawable[partes.size()];
+        final android.os.Handler bucle = new android.os.Handler(getMainLooper());
+        final int[] i = {0};
+        final Runnable paso = new Runnable() {
+            @Override public void run() {
+                if (!dialogo.isShowing()) return;
+                if (mapas[i[0]] == null) {
+                    mapas[i[0]] = new android.graphics.drawable.BitmapDrawable(getResources(),
+                            bitmapQr(partes.get(i[0]).getBytes(StandardCharsets.ISO_8859_1)));
+                    mapas[i[0]].setFilterBitmap(false);
+                }
+                img.setImageDrawable(mapas[i[0]]);
+                cuenta.setText(getString(R.string.x39_qr_parte_de, i[0] + 1, partes.size()));
+                i[0] = (i[0] + 1) % partes.size();
+                bucle.postDelayed(this, 1200);
+            }
+        };
+        dialogo.setOnDismissListener(d -> bucle.removeCallbacks(paso));
+        dialogo.show();
+        paso.run();
+    }
+
+    /** Bitmap nítido de un QR: margen de 4 módulos, escala entera hasta ~1080 px, sin suavizado. */
+    private static Bitmap bitmapQr(byte[] datos) {
+        byte[] m = X39Core.qrMatrix(datos);
+        int ancho = ((m[0] & 0xff) << 8) | (m[1] & 0xff);
+        int margen = 4, lado = ancho + 2 * margen;
+        int[] px = new int[lado * lado];
+        Arrays.fill(px, 0xFFFFFFFF);
+        for (int y = 0; y < ancho; y++) for (int x = 0; x < ancho; x++) {
+            if (m[2 + y * ancho + x] != 0) px[(y + margen) * lado + x + margen] = 0xFF000000;
+        }
+        Bitmap base = Bitmap.createBitmap(px, lado, lado, Bitmap.Config.ARGB_8888);
+        int escala = Math.max(1, 1080 / lado);
+        return Bitmap.createScaledBitmap(base, lado * escala, lado * escala, false);
+    }
+
     private View pantallaFichaContacto(final org.json.JSONObject c) {
         final String nombre = c.optString("nombre", getString(R.string.x39_sin_nombre));
         final String huella = c.optString("huella", "");
@@ -1828,6 +2080,13 @@ public class EvidenciaActivity extends Activity {
                 Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 8, 0, 0));
         th.addView(Ui.boton(this, getString(R.string.x39_copiar_huella), false, v -> copiarHuella(huella)),
                 Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
+
+        if (!c.optString("kem").isEmpty()) {
+            LinearLayout tv = tarjeta(col, getString(R.string.x39_huellas_titulo));
+            tv.addView(estadoVerificacion(c.optBoolean("verificado", false)));
+            tv.addView(Ui.boton(this, getString(R.string.x39_comparar_huellas), !c.optBoolean("verificado", false), v -> compararHuellas(huella)),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0));
+        }
 
         LinearLayout tm = tarjeta(col, getString(R.string.x39_mensajes));
         if (c.optString("kem").isEmpty()) {

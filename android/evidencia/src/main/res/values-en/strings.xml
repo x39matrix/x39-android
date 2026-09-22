@@ -362,4 +362,32 @@
     <string name="x39_canal_linea">Chat line</string>
     <string name="x39_idioma">Language</string>
     <string name="x39_idioma_sistema">System</string>
+    <!-- QR de identidad y verificación de huellas (mismos textos que x39 Llamadas) -->
+    <string name="x39_contacto_borrado">Contact deleted</string>
+    <string name="x39_contacto_guardado_sin_verificar">Contact saved as NOT verified. Compare fingerprints to verify it.</string>
+    <string name="x39_contacto_sin_verificar">⚠ NOT VERIFIED</string>
+    <string name="x39_contacto_verificado">✓ verified</string>
+    <string name="x39_escaner_alejate">Move back a little: this camera cannot focus closer than %1$d cm.</string>
+    <string name="x39_escaner_apunta">Point at the other person\'s identity QR</string>
+    <string name="x39_escaner_mas_luz">More light needed: turn up the other screen\'s brightness or find more light.</string>
+    <string name="x39_escaner_partes">Parts read: %1$d of %2$d. Keep pointing.</string>
+    <string name="x39_huellas_coinciden">They match: mark as verified</string>
+    <string name="x39_huellas_la_de">THEIRS: %1$s</string>
+    <string name="x39_huellas_la_tuya">YOURS</string>
+    <string name="x39_huellas_no_coinciden">They do not match</string>
+    <string name="x39_huellas_no_coinciden_texto">You may have read someone else\'s identity, or someone may be in the middle trying to impersonate %1$s. For safety, this contact is deleted. Start again, in person if you can.</string>
+    <string name="x39_huellas_no_coinciden_titulo">The fingerprints do NOT match</string>
+    <string name="x39_huellas_texto">Read them out loud, on the phone or in person. They must be the SAME on both devices. If they do not match, someone is in the middle: do not mark it.</string>
+    <string name="x39_huellas_titulo">Check the fingerprints together</string>
+    <string name="x39_huellas_verificado">%1$s is now verified</string>
+    <string name="x39_identidad_leida">Identity scanned · fingerprint %1$s</string>
+    <string name="x39_identidad_propia">That identity is your own. Nothing was saved.</string>
+    <string name="x39_qr_mezcla_texto">QR codes from two different identities were read, or the parts do not form one complete identity. It may be another screen in view, or someone trying to slip you a different identity. Nothing was saved. Start again with only one screen in front of the camera.</string>
+    <string name="x39_qr_mezcla_titulo">Scan stopped</string>
+    <string name="x39_qr_parte_de">Part %1$d of %2$d · tap to close</string>
+    <string name="x39_qr_por_partes">QR in parts (easier to scan)</string>
+    <string name="x39_qr_propio">That QR is your own identity. Nothing was saved.</string>
+    <string name="x39_comparar_huellas">Compare fingerprints</string>
+    <string name="x39_escanear_qr_otra">Scan another person\'s QR</string>
+    <string name="x39_escaner_sin_camara">The camera cannot be used. Grant the permission in the phone settings and try again.</string>
 </resources>

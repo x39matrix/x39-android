@@ -360,4 +360,32 @@
     <string name="x39_canal_linea">チャット回線</string>
     <string name="x39_idioma">言語</string>
     <string name="x39_idioma_sistema">システム</string>
+    <!-- QR de identidad y verificación de huellas (mismos textos que x39 Llamadas) -->
+    <string name="x39_contacto_borrado">連絡先を削除しました</string>
+    <string name="x39_contacto_guardado_sin_verificar">未確認の連絡先として保存しました。フィンガープリントを照合して確認してください。</string>
+    <string name="x39_contacto_sin_verificar">⚠ 未確認</string>
+    <string name="x39_contacto_verificado">✓ 確認済み</string>
+    <string name="x39_escaner_alejate">少し離してください：このカメラは %1$d cm より近いとピントが合いません。</string>
+    <string name="x39_escaner_apunta">相手のIDのQRにカメラを向けてください</string>
+    <string name="x39_escaner_mas_luz">もっと明るさが必要です：相手の画面の明るさを上げるか、明るい場所に移動してください。</string>
+    <string name="x39_escaner_partes">読み取り済み：%2$d 枚中 %1$d 枚。そのまま向けてください。</string>
+    <string name="x39_huellas_coinciden">一致しました：確認済みにする</string>
+    <string name="x39_huellas_la_de">%1$sのフィンガープリント</string>
+    <string name="x39_huellas_la_tuya">あなたのフィンガープリント</string>
+    <string name="x39_huellas_no_coinciden">一致しない</string>
+    <string name="x39_huellas_no_coinciden_texto">別の人のIDを読み取ったか、誰かが間に入って %1$s になりすまそうとしている可能性があります。安全のため、この連絡先を削除します。できれば対面で、やり直してください。</string>
+    <string name="x39_huellas_no_coinciden_titulo">フィンガープリントが一致しません</string>
+    <string name="x39_huellas_texto">電話か対面で、声に出して読み合ってください。両方の端末で同じでなければなりません。一致しない場合は誰かが間に入っています。確認済みにしないでください。</string>
+    <string name="x39_huellas_titulo">フィンガープリントを照合</string>
+    <string name="x39_huellas_verificado">%1$sを確認済みにしました</string>
+    <string name="x39_identidad_leida">IDを読み取りました · フィンガープリント %1$s</string>
+    <string name="x39_identidad_propia">このIDはあなた自身のものです。何も保存していません。</string>
+    <string name="x39_qr_mezcla_texto">2つの異なるIDのQRを読み取ったか、分割されたQRが1つの完全なIDになりません。別の画面が映っているか、誰かが別のIDを紛れ込ませようとしている可能性があります。何も保存していません。カメラの前に画面を1つだけ置いて、やり直してください。</string>
+    <string name="x39_qr_mezcla_titulo">スキャンを停止しました</string>
+    <string name="x39_qr_parte_de">%2$d 枚中 %1$d 枚目・タップで閉じる</string>
+    <string name="x39_qr_por_partes">分割QR（読み取りやすい）</string>
+    <string name="x39_qr_propio">このQRはあなた自身のIDです。何も保存していません。</string>
+    <string name="x39_comparar_huellas">フィンガープリントを照合</string>
+    <string name="x39_escanear_qr_otra">相手のQRをスキャン</string>
+    <string name="x39_escaner_sin_camara">カメラを使用できません。端末の設定で権限を許可してから、もう一度お試しください。</string>
 </resources>

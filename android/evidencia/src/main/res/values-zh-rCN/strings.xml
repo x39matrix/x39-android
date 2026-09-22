@@ -360,4 +360,32 @@
     <string name="x39_canal_linea">聊天线路</string>
     <string name="x39_idioma">语言</string>
     <string name="x39_idioma_sistema">跟随系统</string>
+    <!-- QR de identidad y verificación de huellas (mismos textos que x39 Llamadas) -->
+    <string name="x39_contacto_borrado">联系人已删除</string>
+    <string name="x39_contacto_guardado_sin_verificar">联系人已保存为未验证。请核对指纹以完成验证。</string>
+    <string name="x39_contacto_sin_verificar">⚠ 未验证</string>
+    <string name="x39_contacto_verificado">✓ 已验证</string>
+    <string name="x39_escaner_alejate">请稍微拿远一点：这个摄像头在 %1$d 厘米以内无法对焦。</string>
+    <string name="x39_escaner_apunta">对准对方的身份二维码</string>
+    <string name="x39_escaner_mas_luz">光线不足：请调高另一块屏幕的亮度，或换到更亮的地方。</string>
+    <string name="x39_escaner_partes">已读取 %1$d / %2$d 段。请继续对准。</string>
+    <string name="x39_huellas_coinciden">一致：标记为已验证</string>
+    <string name="x39_huellas_la_de">%1$s 的</string>
+    <string name="x39_huellas_la_tuya">你的</string>
+    <string name="x39_huellas_no_coinciden">不一致</string>
+    <string name="x39_huellas_no_coinciden_texto">你可能读取了其他人的身份，也可能有人在中间试图冒充 %1$s。为安全起见，此联系人将被删除。请重新开始，最好当面进行。</string>
+    <string name="x39_huellas_no_coinciden_titulo">指纹不一致</string>
+    <string name="x39_huellas_texto">通过电话或当面大声读出来。两台设备上显示的必须完全相同。如果不一致，说明有人插在中间：不要标记。</string>
+    <string name="x39_huellas_titulo">核对指纹</string>
+    <string name="x39_huellas_verificado">%1$s 已验证</string>
+    <string name="x39_identidad_leida">已读取身份 · 指纹 %1$s</string>
+    <string name="x39_identidad_propia">这是你自己的身份。未保存任何内容。</string>
+    <string name="x39_qr_mezcla_texto">读取到了两个不同身份的二维码，或者这些分段无法组成一个完整的身份。可能是镜头前有另一块屏幕，也可能是有人想让你添加另一个身份。未保存任何内容。请在镜头前只放一块屏幕，重新开始。</string>
+    <string name="x39_qr_mezcla_titulo">扫描已停止</string>
+    <string name="x39_qr_parte_de">第 %1$d 段，共 %2$d 段 · 点按关闭</string>
+    <string name="x39_qr_por_partes">分段二维码（更容易扫描）</string>
+    <string name="x39_qr_propio">这个二维码是你自己的身份。未保存任何内容。</string>
+    <string name="x39_comparar_huellas">核对指纹</string>
+    <string name="x39_escanear_qr_otra">扫描对方的二维码</string>
+    <string name="x39_escaner_sin_camara">无法使用摄像头。请在手机设置中授予权限，然后重试。</string>
 </resources>

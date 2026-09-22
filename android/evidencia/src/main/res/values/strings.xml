@@ -364,4 +364,32 @@
     <string name="x39_canal_linea">Línea del chat</string>
     <string name="x39_idioma">Idioma</string>
     <string name="x39_idioma_sistema">Sistema</string>
+    <!-- QR de identidad y verificación de huellas (mismos textos que x39 Llamadas) -->
+    <string name="x39_contacto_borrado">Contacto borrado</string>
+    <string name="x39_contacto_guardado_sin_verificar">Contacto guardado como NO verificado. Comparad las huellas para verificarlo.</string>
+    <string name="x39_contacto_sin_verificar">⚠ SIN VERIFICAR</string>
+    <string name="x39_contacto_verificado">✓ verificado</string>
+    <string name="x39_escaner_alejate">Aléjate un poco: a menos de %1$d cm esta cámara no enfoca.</string>
+    <string name="x39_escaner_apunta">Apunta al QR de identidad de la otra persona</string>
+    <string name="x39_escaner_mas_luz">Hace falta más luz: sube el brillo de la otra pantalla o busca más luz.</string>
+    <string name="x39_escaner_partes">Partes leídas: %1$d de %2$d. Sigue apuntando.</string>
+    <string name="x39_huellas_coinciden">Coinciden: marcar como verificado</string>
+    <string name="x39_huellas_la_de">LA DE %1$s</string>
+    <string name="x39_huellas_la_tuya">LA TUYA</string>
+    <string name="x39_huellas_no_coinciden">No coinciden</string>
+    <string name="x39_huellas_no_coinciden_texto">Puede que hayas leído la identidad de otra persona o que alguien esté en medio intentando suplantar a %1$s. Por seguridad se borra este contacto. Vuelve a empezar, mejor en persona.</string>
+    <string name="x39_huellas_no_coinciden_titulo">Las huellas NO coinciden</string>
+    <string name="x39_huellas_texto">Leedlas en voz alta, por teléfono o en persona. Tienen que salir IGUALES en los dos aparatos. Si no coinciden, alguien está en medio: no lo marques.</string>
+    <string name="x39_huellas_titulo">Comprobad las huellas</string>
+    <string name="x39_huellas_verificado">%1$s queda verificado</string>
+    <string name="x39_identidad_leida">Identidad leída · huella %1$s</string>
+    <string name="x39_identidad_propia">Esa identidad es la tuya. No se ha guardado nada.</string>
+    <string name="x39_qr_mezcla_texto">Se han leído QR de dos identidades distintas, o las partes no forman una identidad íntegra. Puede ser otra pantalla a la vista o alguien intentando colarte otra identidad. No se ha guardado nada. Vuelve a empezar con una sola pantalla delante.</string>
+    <string name="x39_qr_mezcla_titulo">Escaneo detenido</string>
+    <string name="x39_qr_parte_de">Parte %1$d de %2$d · toca para cerrar</string>
+    <string name="x39_qr_por_partes">QR por partes (más fácil de leer)</string>
+    <string name="x39_qr_propio">Ese QR es tu propia identidad. No se ha guardado nada.</string>
+    <string name="x39_comparar_huellas">Comparar huellas</string>
+    <string name="x39_escanear_qr_otra">Escanear el QR de otra persona</string>
+    <string name="x39_escaner_sin_camara">No se puede usar la cámara. Da el permiso en los ajustes del móvil y vuelve a intentarlo.</string>
 </resources>

@@ -370,4 +370,32 @@
     <string name="x39_canal_linea">خط الدردشة</string>
     <string name="x39_idioma">اللغة</string>
     <string name="x39_idioma_sistema">النظام</string>
+    <!-- QR de identidad y verificación de huellas (mismos textos que x39 Llamadas) -->
+    <string name="x39_contacto_borrado">حُذفت جهة الاتصال</string>
+    <string name="x39_contacto_guardado_sin_verificar">حُفظت جهة الاتصال على أنها غير موثّقة. قارنا البصمات لتوثيقها.</string>
+    <string name="x39_contacto_sin_verificar">⚠ غير موثّق</string>
+    <string name="x39_contacto_verificado">✓ موثّق</string>
+    <string name="x39_escaner_alejate">ابتعد قليلًا: هذه الكاميرا لا تستطيع التركيز على مسافة أقل من %1$d سم.</string>
+    <string name="x39_escaner_apunta">وجّه الكاميرا إلى رمز QR لهوية الطرف الآخر</string>
+    <string name="x39_escaner_mas_luz">تحتاج إلى إضاءة أكثر: ارفع سطوع الشاشة الأخرى أو ابحث عن مكان أكثر إضاءة.</string>
+    <string name="x39_escaner_partes">الأجزاء المقروءة: %1$d من %2$d. واصل التوجيه.</string>
+    <string name="x39_huellas_coinciden">متطابقتان: تحديد كموثّق</string>
+    <string name="x39_huellas_la_de">بصمة %1$s</string>
+    <string name="x39_huellas_la_tuya">بصمتك</string>
+    <string name="x39_huellas_no_coinciden">غير متطابقتين</string>
+    <string name="x39_huellas_no_coinciden_texto">ربما قرأت هوية شخص آخر، أو أن أحدًا في المنتصف يحاول انتحال شخصية %1$s. حفاظًا على الأمان، ستُحذف جهة الاتصال هذه. ابدأ من جديد، ويُفضّل أن يكون ذلك وجهًا لوجه.</string>
+    <string name="x39_huellas_no_coinciden_titulo">البصمتان غير متطابقتين</string>
+    <string name="x39_huellas_texto">اقرآها بصوت عالٍ، عبر الهاتف أو وجهًا لوجه. يجب أن تظهر متطابقة على الجهازين. إن لم تتطابق، فهناك من يتدخل في المنتصف: لا تحدّدها كموثّقة.</string>
+    <string name="x39_huellas_titulo">تحقّقا من البصمات معًا</string>
+    <string name="x39_huellas_verificado">أصبح %1$s موثّقًا</string>
+    <string name="x39_identidad_leida">قُرئت الهوية · البصمة %1$s</string>
+    <string name="x39_identidad_propia">هذه الهوية هي هويتك أنت. لم يُحفظ أي شيء.</string>
+    <string name="x39_qr_mezcla_texto">قُرئت رموز QR من هويتين مختلفتين، أو أن الأجزاء لا تكوّن هوية كاملة. قد تكون هناك شاشة أخرى أمام الكاميرا، أو أن أحدًا يحاول تمرير هوية أخرى إليك. لم يُحفظ أي شيء. ابدأ من جديد مع شاشة واحدة فقط أمام الكاميرا.</string>
+    <string name="x39_qr_mezcla_titulo">توقّف المسح</string>
+    <string name="x39_qr_parte_de">الجزء %1$d من %2$d · المس للإغلاق</string>
+    <string name="x39_qr_por_partes">رمز QR على أجزاء (أسهل في المسح)</string>
+    <string name="x39_qr_propio">رمز QR هذا هو هويتك أنت. لم يُحفظ أي شيء.</string>
+    <string name="x39_comparar_huellas">مقارنة البصمات</string>
+    <string name="x39_escanear_qr_otra">امسح رمز QR الخاص بشخص آخر</string>
+    <string name="x39_escaner_sin_camara">لا يمكن استخدام الكاميرا. امنح الإذن من إعدادات الهاتف ثم حاول مرة أخرى.</string>
 </resources>

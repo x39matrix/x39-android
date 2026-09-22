@@ -39,6 +39,11 @@
         android:theme="@style/Tema.Evidencia">
 
         <!-- Las clases viven en el paquete org.x39.bolsillo para reutilizar el puente al motor y la paleta. -->
+        <!-- Lector de QR de identidad: Camera2 (sin AndroidX) + ZXing core. No exportada. -->
+        <activity
+            android:name="org.x39.bolsillo.EscanerQrActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name="org.x39.bolsillo.EvidenciaActivity"
             android:exported="true"
