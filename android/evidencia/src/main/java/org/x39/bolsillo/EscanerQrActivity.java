@@ -87,6 +87,10 @@ public final class EscanerQrActivity extends Activity {
     private Rect sensor;
     /** Cuántas regiones de enfoque y exposición admite esta cámara (0 = ninguna: no se mandan). */
     private int regionesAf = 0, regionesAe = 0;
+    /** 90 o 270 en casi todos los móviles (sensor apaisado); 0 o 180 en algunas tablets. */
+    private int orientacionSensor = 90;
+    /** Modos de enfoque que anuncia esta cámara (vacío = foco fijo). */
+    private int[] modosAf = new int[0];
 
     private final ExecutorService analisis = Executors.newSingleThreadExecutor();
     private final AtomicBoolean ocupado = new AtomicBoolean(false);
@@ -207,12 +211,17 @@ public final class EscanerQrActivity extends Activity {
 
     /** El tamaño YUV más cercano a 1920×1080 que tenga la cámara (por defecto se leería a baja resolución). */
     private static Size elegirTamano(StreamConfigurationMap mapa) {
-        Size mejor = new Size(1280, 720);
-        long objetivo = 1920L * 1080L, dif = Long.MAX_VALUE;
-        for (Size s : mapa.getOutputSizes(ImageFormat.YUV_420_888)) {
-            if (s.getWidth() * 9 != s.getHeight() * 16 && s.getWidth() * 3 != s.getHeight() * 4) continue;
-            long d = Math.abs((long) s.getWidth() * s.getHeight() - objetivo);
-            if (d < dif) { dif = d; mejor = s; }
+        // Siempre uno de los que ESTA cámara anuncia (otro haría fallar la sesión). Se prefieren 16:9 y 4:3 y lo
+        // más cercano a 1920×1080 sin pasarse de 1920 de ancho (en cámaras LEGACY es lo que se garantiza con previa).
+        Size[] tams = mapa == null ? null : mapa.getOutputSizes(ImageFormat.YUV_420_888);
+        if (tams == null || tams.length == 0) return new Size(640, 480);
+        Size mejor = null;
+        long objetivo = 1920L * 1080L, mejorPunt = Long.MAX_VALUE;
+        for (Size s : tams) {
+            long area = (long) s.getWidth() * s.getHeight();
+            boolean habitual = s.getWidth() * 9 == s.getHeight() * 16 || s.getWidth() * 3 == s.getHeight() * 4;
+            long punt = Math.abs(area - objetivo) + (habitual ? 0 : objetivo) + (s.getWidth() > 1920 ? 2 * objetivo : 0);
+            if (punt < mejorPunt) { mejorPunt = punt; mejor = s; }
         }
         return mejor;
     }
@@ -228,9 +237,13 @@ public final class EscanerQrActivity extends Activity {
             sensor = car.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
             Integer raf = car.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF), rae = car.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AE);
             regionesAf = raf == null ? 0 : raf; regionesAe = rae == null ? 0 : rae;
+            Integer ori = car.get(CameraCharacteristics.SENSOR_ORIENTATION);
+            orientacionSensor = ori == null ? 90 : ori;
+            int[] af = car.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+            modosAf = af == null ? new int[0] : af;
             Float fm = car.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
             focoMinimo = fm == null ? 0f : fm;
-            Log.i(TAG, "cámara " + id + ", análisis a " + tam.getWidth() + "×" + tam.getHeight() + ", enfoque mínimo " +
+            Log.i(TAG, "cámara " + id + ", análisis a " + tam.getWidth() + "×" + tam.getHeight() + ", sensor a " + orientacionSensor + "°, enfoque mínimo " +
                     (focoMinimo > 0f ? Math.round(100f / focoMinimo) + " cm" : "foco fijo"));
             ajustarVista();
             lectorImg = ImageReader.newInstance(tam.getWidth(), tam.getHeight(), ImageFormat.YUV_420_888, 2);
@@ -259,7 +272,9 @@ public final class EscanerQrActivity extends Activity {
         runOnUiThread(() -> {
             int w = vista.getWidth(), h = vista.getHeight();
             if (w == 0 || h == 0 || tam == null) return;
-            float iw = tam.getHeight(), ih = tam.getWidth();   // la imagen, ya en vertical
+            // La imagen en vertical: girada si el sensor está apaisado (90/270), tal cual si no (0/180).
+            boolean girada = orientacionSensor == 90 || orientacionSensor == 270;
+            float iw = girada ? tam.getHeight() : tam.getWidth(), ih = girada ? tam.getWidth() : tam.getHeight();
             float esc = Math.max(w / iw, h / ih);
             android.graphics.Matrix m = new android.graphics.Matrix();
             m.setScale(iw * esc / w, ih * esc / h, w / 2f, h / 2f);
@@ -275,7 +290,9 @@ public final class EscanerQrActivity extends Activity {
             peticion = camara.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             peticion.addTarget(previa);
             peticion.addTarget(lectorImg.getSurface());
-            peticion.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            // Solo un modo de enfoque que la cámara anuncie: continuo si lo hay, si no automático, si no nada (foco fijo).
+            if (tieneAf(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)) peticion.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            else if (tieneAf(CaptureRequest.CONTROL_AF_MODE_AUTO)) peticion.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
             // Tope de exposición: solo un rango que ESTA cámara admita (con mínimo ≥ 30 fps). Si no hay, sin tope.
             Range<Integer>[] rangos = car.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
             Range<Integer> tope = null;
@@ -329,8 +346,14 @@ public final class EscanerQrActivity extends Activity {
         if (regionesAe > 0) peticion.set(CaptureRequest.CONTROL_AE_REGIONS, reg);
     }
 
+    private boolean tieneAf(int modo) {
+        for (int m : modosAf) if (m == modo) return true;
+        return false;
+    }
+
     private void enfocar(float fx, float fy) {
-        if (sesion == null || peticion == null) return;
+        // Cámaras de foco fijo: no hay nada que disparar.
+        if (sesion == null || peticion == null || !(tieneAf(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE) || tieneAf(CaptureRequest.CONTROL_AF_MODE_AUTO))) return;
         try {
             aplicarRegion(fx, fy);
             peticion.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
