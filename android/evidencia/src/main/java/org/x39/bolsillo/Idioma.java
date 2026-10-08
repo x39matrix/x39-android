@@ -20,9 +20,9 @@ import org.x39matrix.evidencia.R;
 final class Idioma {
 
     /** "" = el del sistema. El resto, etiquetas BCP 47. Mismo orden que NOMBRES. */
-    static final String[] ETIQUETAS = {"", "es", "en", "zh-CN", "ja", "ar"};
+    static final String[] ETIQUETAS = {"", "es", "en", "uk", "ru", "zh-CN", "ja", "ar"};
     /** Cada idioma escrito en su propia lengua; el primero ("Sistema") se pone traducido desde strings.xml. */
-    static final String[] NOMBRES = {null, "Español", "English", "中文", "日本語", "العربية"};
+    static final String[] NOMBRES = {null, "Español", "English", "Українська", "Русский", "中文", "日本語", "العربية"};
 
     private static final String PREFS = "x39_idioma";
     private static final String CLAVE = "idioma";

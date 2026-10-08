@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- x39 · Evidencia: textos de la app. Ucraniano (uk), traducido desde values-en. -->
+<resources>
+    <!-- Aplicación -->
+    <string name="x39_app_nombre">x39</string>
+
+    <!-- Comunes -->
+    <string name="x39_volver">Назад</string>
+    <string name="x39_entendido">Зрозуміло</string>
+    <string name="x39_cancelar">Скасувати</string>
+    <string name="x39_continuar">Продовжити</string>
+    <string name="x39_borrar">Видалити</string>
+    <string name="x39_ahora_no">Не зараз</string>
+    <string name="x39_foto">Фото</string>
+    <string name="x39_archivo">Файл</string>
+    <string name="x39_video">Відео</string>
+    <string name="x39_audio">Аудіо</string>
+    <string name="x39_sin_nombre">(без назви)</string>
+    <string name="x39_huella_corta">хеш %1$s…</string>
+    <string name="x39_error_guardar">Не вдалося зберегти: %1$s</string>
+    <string name="x39_error_leer_clave">Не вдалося прочитати ключ: %1$s</string>
+    <string name="x39_copiar_huella">Копіювати відбиток</string>
+    <string name="x39_huella_copiada">Відбиток скопійовано</string>
+    <string name="x39_clip_huella">Відбиток ключа x39</string>
+    <string name="x39_clip_identidad">Ідентичність x39</string>
+    <string name="x39_version">x39 %1$s</string>
+
+    <!-- Navegación -->
+    <string name="x39_evidencias">Докази</string>
+    <string name="x39_hacer_una_foto">Зробити фото</string>
+    <string name="x39_grabar_audio">Записати аудіо</string>
+    <string name="x39_mensajes">Повідомлення</string>
+    <string name="x39_contactos">Контакти</string>
+    <string name="x39_elegir_un_archivo">Вибрати файл</string>
+    <string name="x39_seguridad">Безпека</string>
+    <string name="x39_ajustes">Налаштування</string>
+
+    <!-- Identidad -->
+    <string name="x39_identidad_aviso">Цей ключ існує лише на цьому телефоні. Якщо його втратити або видалити, ідентичність буде втрачено: уже видані квитанції залишаються дійсними, якщо ви експортували публічний ключ, але нові докази матимуть іншу ідентичність. Копії в хмарі немає — навмисно.</string>
+    <string name="x39_tu_identidad">Ваша ідентичність</string>
+    <string name="x39_identidad_sin_cuenta">Без облікового запису, без реєстрації</string>
+    <string name="x39_identidad_intro">Ваша ідентичність — це ключ підпису ML-DSA-87, створений зараз, на цьому телефоні; ним підписується кожен доказ. Немає ні сервера, ні реєстрації: ключ і є ідентичністю, більше нічого.</string>
+    <string name="x39_crear_identidad">Створити ідентичність</string>
+    <string name="x39_creando_clave">Створюємо ключ…</string>
+    <string name="x39_error_crear_identidad">Не вдалося створити ідентичність: %1$s</string>
+    <string name="x39_identidad_huella_titulo">Відбиток вашого ключа</string>
+    <string name="x39_identidad_huella_nota">SHA-256 публічного ключа. Той, хто отримує квитанцію, порівнює відбиток у ній із цим.</string>
+    <string name="x39_identidad_clave_publica">Публічний ключ</string>
+    <string name="x39_identidad_qr_desc">QR-код із публічним ключем</string>
+    <string name="x39_identidad_clave_info">ML-DSA-87 · %1$s байтів. QR містить увесь ключ (версія 40, 177 × 177 модулів): під час сканування тримайте камеру близько.</string>
+    <string name="x39_exportar_clave_bin">Експортувати публічний ключ (.bin)</string>
+    <string name="x39_comprobar_tamanos_titulo">Перевірити розміри</string>
+    <string name="x39_comprobar_tamanos_texto">ML-DSA-87 означає %1$s байтів публічного ключа і %2$s байтів підпису. Їх вимірюють тут, на цьому телефоні, за допомогою тестового підпису.</string>
+    <string name="x39_comprobar_en_este_movil">Перевірити на цьому телефоні</string>
+    <string name="x39_donde_vive">Де він зберігається</string>
+    <string name="x39_donde_vive_texto">Зерно ключа зашифроване ключем Android Keystore (%1$s). Android поки не вміє підписувати ML-DSA всередині Keystore, тому підпис обчислюється в застосунку: зерно розшифровується лише в пам’яті й одразу стирається.</string>
+    <string name="x39_nivel_strongbox">StrongBox</string>
+    <string name="x39_nivel_tee">Довірене середовище (TEE)</string>
+    <string name="x39_nivel_hardware_seguro">Захищене обладнання</string>
+    <string name="x39_nivel_software">Програмне забезпечення</string>
+    <string name="x39_nivel_desconocido">Невідомо</string>
+    <string name="x39_firmando_midiendo">Підписуємо й вимірюємо…</string>
+    <string name="x39_tamanos_clave_ok">Публічний ключ: %1$s байтів ✓</string>
+    <string name="x39_tamanos_clave_mal">Публічний ключ: %1$s байтів ✗ (очікувалося %2$s)</string>
+    <string name="x39_tamanos_firma_ok">Тестовий підпис: %1$s байтів ✓</string>
+    <string name="x39_tamanos_firma_mal">Тестовий підпис: %1$s байтів ✗ (очікувалося %2$s)</string>
+    <string name="x39_tamanos_verifica">Тестовий підпис перевіряється цим ключем ✓</string>
+    <string name="x39_tamanos_es_mldsa">Виміряно на цьому телефоні: це ML-DSA-87.</string>
+    <string name="x39_tamanos_no_mldsa">Ці розміри не відповідають ML-DSA-87.</string>
+    <string name="x39_tamanos_error">✗ Тестовий підпис не вдалося створити або він не перевіряється: %1$s</string>
+
+    <!-- Evidencias (lista) -->
+    <string name="x39_evidencias_subtitulo">Те, що ви зберігаєте, ніколи не залишає цей телефон. Передається лише його хеш.</string>
+    <string name="x39_error_leer_almacen">Не вдалося прочитати сховище: %1$s</string>
+    <string name="x39_evidencias_vacio_titulo">Доказів ще немає</string>
+    <string name="x39_evidencias_vacio_texto">Зробіть фото звідси або виберіть будь-який файл на телефоні (PDF, відео, аудіо, будь-що). Він зберігається зашифрованим на цьому телефоні, підписується вашим ключем, а його хеш закріплюється в Bitcoin — більше нічого робити не треба.</string>
+    <string name="x39_ficha_desc_foto">Фото від %1$s</string>
+    <string name="x39_ficha_desc_archivo">Файл від %1$s</string>
+    <string name="x39_pildora_anclada">"●  Закріплено · блок %1$d"</string>
+    <string name="x39_pildora_calendarios">"◐  Надіслано до календарів"</string>
+    <string name="x39_pildora_espera_tor">"○  Підписано · очікує Tor"</string>
+    <string name="x39_pildora_espera_red">"○  Підписано · очікує мережу"</string>
+
+    <!-- Sellar archivos y grabaciones -->
+    <string name="x39_sin_espacio_archivo">На телефоні немає місця, щоб зберегти зашифровану копію цього файлу (%1$s).</string>
+    <string name="x39_calculando_huella">Обчислюємо хеш і шифруємо…</string>
+    <string name="x39_calculando_huella_progreso">Обчислюємо хеш і шифруємо…\n%1$s</string>
+    <string name="x39_progreso_de_total_pct">%1$s з %2$s (%3$d %%)</string>
+    <string name="x39_progreso_de_total">%1$s з %2$s</string>
+    <string name="x39_motivo_sin_acceso_archivo">система не надала доступу до файлу</string>
+    <string name="x39_error_sellar_archivo">Не вдалося запечатати файл: %1$s</string>
+    <string name="x39_archivo_ya_sellado">Цей файл уже запечатано: він має такий самий хеш, як один із доказів у списку.</string>
+    <string name="x39_guardado_firmado_en">Збережено й підписано за %1$s</string>
+    <string name="x39_video_guardado_firmado">Відео збережено й підписано за %1$s</string>
+    <string name="x39_audio_guardado_firmado">Аудіо збережено й підписано за %1$s</string>
+    <string name="x39_audio_tramo_guardado_firmado">Аудіо · фрагмент %1$d збережено й підписано за %2$s</string>
+    <string name="x39_grabacion_ya_sellada">Цей запис уже запечатано.</string>
+    <string name="x39_error_guardar_evidencia">Не вдалося зберегти доказ: %1$s</string>
+    <string name="x39_firmada_en">Підписано за %1$s</string>
+
+    <!-- Cámara -->
+    <string name="x39_camara">Камера</string>
+    <string name="x39_camara_ayuda">Миттєво зберігається зашифрованим і підписаним</string>
+    <string name="x39_hacer_la_foto">Зробити фото</string>
+    <string name="x39_parar">Зупинити</string>
+    <string name="x39_camara_grabando">Запис · зашифрується й підпишеться, коли ви зупините</string>
+    <string name="x39_error_camara">Не вдалося використати камеру: %1$s</string>
+    <string name="x39_video_corto">Відео надто коротке: записуйте щонайменше одну секунду</string>
+    <string name="x39_cam_sin_trasera">Задню камеру не знайдено</string>
+    <string name="x39_cam_sin_tamanos">Камера не надає розмірів попереднього перегляду</string>
+    <string name="x39_cam_sin_tamanos_disponibles">Немає доступних розмірів попереднього перегляду</string>
+    <string name="x39_cam_sin_permiso">Дозвіл на камеру не надано</string>
+    <string name="x39_cam_error">Помилка камери: %1$d</string>
+    <string name="x39_cam_no_abrir">Не вдалося відкрити камеру: %1$s</string>
+    <string name="x39_cam_no_iniciar_preview">Не вдалося запустити попередній перегляд: %1$s</string>
+    <string name="x39_cam_no_configurar_preview">Не вдалося налаштувати попередній перегляд</string>
+    <string name="x39_cam_error_preview">Помилка запуску попереднього перегляду: %1$s</string>
+    <string name="x39_cam_no_foto">Не вдалося зробити фото: %1$s</string>
+    <string name="x39_cam_no_iniciar_video">Не вдалося почати відео: %1$s</string>
+    <string name="x39_cam_no_configurar_grabacion">Не вдалося налаштувати запис</string>
+    <string name="x39_cam_error_preparar_video">Помилка підготовки відео: %1$s</string>
+    <string name="x39_cam_grabacion_invalida">Запис недійсний: %1$s</string>
+
+    <!-- Audio -->
+    <string name="x39_audio_ayuda">Записує фрагментами по 5 хвилин; кожен фрагмент шифрується, підписується й закріплюється, коли закривається. Мікрофон запитується, коли ви натискаєте «Записати».</string>
+    <string name="x39_grabar">Записати</string>
+    <string name="x39_audio_error_tramo_siguiente">Запис зупинився під час відкриття наступного фрагмента: %1$s. Усе, що було до нього, запечатано.</string>
+    <string name="x39_audio_sin_espacio">Вільно %1$s. Щоб записувати із запасом, потрібно щонайменше 100 МБ.</string>
+    <string name="x39_audio_grabando">Запис · кожні 5 хвилин запечатується фрагмент · останній запечатується, коли ви зупините</string>
+    <string name="x39_error_grabar">Не вдалося записати: %1$s</string>
+    <plurals name="x39_audio_tramo_sellados">
+        <item quantity="one">Фрагмент %1$d · запечатано: %2$d</item>
+        <item quantity="few">Фрагмент %1$d · запечатано: %2$d</item>
+        <item quantity="many">Фрагмент %1$d · запечатано: %2$d</item>
+        <item quantity="other">Фрагмент %1$d · запечатано: %2$d</item>
+    </plurals>
+    <string name="x39_error_sellar_tramo">Не вдалося запечатати фрагмент %1$d: %2$s</string>
+    <string name="x39_tramo_sellado">Фрагмент %1$d (%2$s) запечатано</string>
+    <string name="x39_grabacion_corta">Запис надто короткий.</string>
+    <string name="x39_audio_tramo_titulo">Аудіо · фрагмент %1$d</string>
+    <string name="x39_grabacion_cortada_llamada">Запис перервано дзвінком або іншим застосунком: фрагмент запечатано</string>
+
+    <!-- Permisos -->
+    <string name="x39_ya_puedes_grabar">Тепер можна записувати: натисніть «Записати»</string>
+    <string name="x39_sin_permiso_microfono_audio">Без дозволу на мікрофон записати аудіо неможливо. Його можна надати в налаштуваннях Android.</string>
+    <string name="x39_sin_microfono_video">Немає мікрофона: відео буде записано без звуку</string>
+    <string name="x39_sin_permiso_camara">Без дозволу на камеру не можна робити фото чи відео. Його можна надати в налаштуваннях Android. Файли запечатувати все одно можна.</string>
+
+    <!-- Ficha de una evidencia -->
+    <string name="x39_evidencia_titulo">Доказ</string>
+    <string name="x39_ficha_huella">Хеш SHA-256</string>
+    <string name="x39_ficha_hora">Час пристрою під час запечатування (заявлений, не перевіряється)</string>
+    <string name="x39_ficha_firmada_con_clave">Підписано ключем</string>
+    <string name="x39_ficha_firmada_con_clave_bytes">Підписано ключем · публічний ключ %1$s байтів</string>
+    <string name="x39_ficha_firma">Підпис</string>
+    <string name="x39_ficha_firma_valor">ML-DSA-87 · %1$s байтів</string>
+    <string name="x39_ancla_bitcoin_foto">Це фото існувало саме з таким вмістом щонайменше з блоку Bitcoin %1$d і відтоді не змінювалося.</string>
+    <string name="x39_ancla_bitcoin_video">Це відео існувало саме з таким вмістом щонайменше з блоку Bitcoin %1$d і відтоді не змінювалося.</string>
+    <string name="x39_ancla_bitcoin_audio">Це аудіо існувало саме з таким вмістом щонайменше з блоку Bitcoin %1$d і відтоді не змінювалося.</string>
+    <string name="x39_ancla_bitcoin_archivo">Цей файл існував саме з таким вмістом щонайменше з блоку Bitcoin %1$d і відтоді не змінювався.</string>
+    <string name="x39_ancla_calendarios">Хеш уже в календарях OpenTimestamps. Bitcoin підтвердить його за одну-дві години.</string>
+    <string name="x39_ancla_espera_tor">Очікуємо, поки Tor (Orbot) надішле хеш (32 байти) до календарів. Без запущеного Orbot нічого не виходить.</string>
+    <string name="x39_ancla_espera_red">Очікуємо мережу, щоб надіслати хеш (32 байти) до календарів.</string>
+    <string name="x39_ficha_ancla">Якір у Bitcoin</string>
+    <string name="x39_verificar_ahora">Перевірити зараз</string>
+    <string name="x39_compartir_recibo">Поділитися квитанцією</string>
+    <string name="x39_compartir_capsula">Поділитися капсулою</string>
+    <string name="x39_exportar_foto">Експортувати фото</string>
+    <string name="x39_exportar_archivo">Експортувати файл</string>
+    <string name="x39_ficha_nota_foto">Квитанція містить хеш, підпис і доказ .ots. Самого фото в ній немає. Її можна перевірити відкритими інструментами: OpenTimestamps.</string>
+    <string name="x39_ficha_nota_archivo">Квитанція містить хеш, підпис і доказ .ots. Самого файлу в ній немає. Її можна перевірити відкритими інструментами: OpenTimestamps.</string>
+
+    <!-- Verificación -->
+    <string name="x39_verificando">Повторно обчислюємо хеш збереженого…</string>
+    <string name="x39_verif_huella_ok_foto">✓ Хеш збігається: збережене фото не змінювалося з моменту підпису.</string>
+    <string name="x39_verif_huella_ok_archivo">✓ Хеш збігається: збережений файл не змінювався з моменту підпису.</string>
+    <string name="x39_verif_huella_mal_foto">✗ Хеш не збігається: збережене фото змінилося з моменту підпису.</string>
+    <string name="x39_verif_huella_mal_archivo">✗ Хеш не збігається: збережений файл змінився з моменту підпису.</string>
+    <string name="x39_verif_huella_danada_foto">✗ Хеш не збігається: збережене фото змінилося або пошкоджене з моменту підпису.</string>
+    <string name="x39_verif_huella_danada_archivo">✗ Хеш не збігається: збережений файл змінився або пошкоджений з моменту підпису.</string>
+    <string name="x39_verif_no_leer_foto">✗ Не вдалося прочитати збережене фото: %1$s</string>
+    <string name="x39_verif_no_leer_archivo">✗ Не вдалося прочитати збережений файл: %1$s</string>
+    <string name="x39_verif_firma_ok">✓ Дійсний підпис ML-DSA-87, зроблений ключем цього телефона.</string>
+    <string name="x39_verif_firma_otra_clave">✗ Підпис зроблено не поточним ключем цього телефона.</string>
+    <string name="x39_verif_firma_invalida">✗ Підпис недійсний.</string>
+    <string name="x39_verif_sin_ots">Якір: доказу .ots ще немає (хеш ще не надіслано).</string>
+    <plurals name="x39_verif_ots_pendiente">
+        <item quantity="one">Якір: дійсний доказ .ots, очікує в %1$d календарі.</item>
+        <item quantity="few">Якір: дійсний доказ .ots, очікує в %1$d календарях.</item>
+        <item quantity="many">Якір: дійсний доказ .ots, очікує в %1$d календарях.</item>
+        <item quantity="other">Якір: дійсний доказ .ots, очікує в %1$d календарях.</item>
+    </plurals>
+    <string name="x39_verif_ots_bloque">✓ Якір: доказ .ots із блоком Bitcoin %1$s. Перевірте його поза застосунком командою «ots verify».</string>
+    <string name="x39_verif_ots_invalida">✗ Доказ .ots недійсний: %1$s</string>
+    <string name="x39_verificacion">Перевірка</string>
+
+    <!-- Recibo, cápsula y exportar -->
+    <string name="x39_compartir_recibo_sin_foto">Поділитися квитанцією (без фото)</string>
+    <string name="x39_compartir_recibo_sin_archivo">Поділитися квитанцією (без файлу)</string>
+    <string name="x39_error_preparar_recibo">Не вдалося підготувати квитанцію: %1$s</string>
+    <string name="x39_capsula_titulo">Поділитися капсулою</string>
+    <string name="x39_capsula_confirmar_foto">Один файл з ОРИГІНАЛЬНИМ фото без жодних змін, а також квитанція і доказ .ots.\n\nУ ньому всі його дані: якщо у фото є місцезнаходження, час чи модель телефона, вони теж усередині. Вони є частиною доказу.\n\nТой, хто його отримає, може перевірити його без цього застосунку, за інструкціями всередині.</string>
+    <string name="x39_capsula_confirmar_archivo">Один файл з ОРИГІНАЛЬНИМ файлом без жодних змін, а також квитанція і доказ .ots.\n\nУ ньому всі його дані: якщо у файлі є місцезнаходження, час чи модель телефона, вони теж усередині. Вони є частиною доказу.\n\nТой, хто його отримає, може перевірити його без цього застосунку, за інструкціями всередині.</string>
+    <string name="x39_preparar_capsula">Підготувати капсулу</string>
+    <string name="x39_preparando_capsula">Готуємо капсулу…</string>
+    <string name="x39_motivo_danado_no_entrega">збережене змінилося або пошкоджене; його не видаємо</string>
+    <string name="x39_motivo_original_no_cuadra">оригінал не збігається з хешем квитанції; капсулу не видаємо</string>
+    <string name="x39_error_preparar_capsula">Не вдалося підготувати капсулу: %1$s</string>
+    <string name="x39_compartir_capsula_id">Поділитися капсулою %1$s</string>
+    <string name="x39_exportar_titulo_foto">Експортувати фото</string>
+    <string name="x39_exportar_titulo_video">Експортувати відео</string>
+    <string name="x39_exportar_titulo_audio">Експортувати аудіо</string>
+    <string name="x39_exportar_titulo_archivo">Експортувати файл</string>
+    <string name="x39_exportar_mensaje_foto">Фото розшифровується й передається вибраному вами застосунку. Поза сховищем цей файл може синхронізуватися з хмарою вашого телефона. Квитанція залишається дійсною: хеш той самий.</string>
+    <string name="x39_exportar_mensaje_video">Відео розшифровується й передається вибраному вами застосунку. Поза сховищем цей файл може синхронізуватися з хмарою вашого телефона. Квитанція залишається дійсною: хеш той самий.</string>
+    <string name="x39_exportar_mensaje_audio">Аудіо розшифровується й передається вибраному вами застосунку. Поза сховищем цей файл може синхронізуватися з хмарою вашого телефона. Квитанція залишається дійсною: хеш той самий.</string>
+    <string name="x39_exportar_mensaje_archivo">Файл розшифровується й передається вибраному вами застосунку. Поза сховищем цей файл може синхронізуватися з хмарою вашого телефона. Квитанція залишається дійсною: хеш той самий.</string>
+    <string name="x39_elegir_destino">Вибрати місце призначення</string>
+    <string name="x39_descifrando">Розшифровуємо…</string>
+    <string name="x39_motivo_danado_no_exporta">збережене змінилося або пошкоджене; його не експортуємо</string>
+    <string name="x39_error_exportar">Не вдалося експортувати: %1$s</string>
+    <string name="x39_exportar_nombre">Експортувати %1$s</string>
+    <string name="x39_exportar_clave_publica">Експортувати публічний ключ</string>
+    <string name="x39_borrar_evidencia_titulo">Видалити доказ</string>
+    <string name="x39_borrar_evidencia_foto">Фото та його запис видаляються з цього телефона. Квитанція, якою ви вже поділилися, залишається дійсною.</string>
+    <string name="x39_borrar_evidencia_archivo">Файл та його запис видаляються з цього телефона. Квитанція, якою ви вже поділилися, залишається дійсною.</string>
+    <string name="x39_motivo_sin_identidad">спершу треба створити ідентичність</string>
+    <string name="x39_motivo_no_guardar_evidencia">доказ не вдалося зберегти</string>
+    <string name="x39_motivo_no_guardar_fichero">не вдалося зберегти %1$s</string>
+
+    <!-- Orbot -->
+    <string name="x39_orbot_no_instalado_titulo">Orbot не встановлено</string>
+    <string name="x39_orbot_no_instalado_texto">Для закріплення через Tor потрібен Orbot (Guardian Project). Встановіть його з F-Droid або з сайту Guardian Project. Доти, з увімкненим перемикачем, хеші чекають і не виходять через пряму мережу.</string>
+    <string name="x39_guardian_project">Guardian Project</string>
+    <string name="x39_f_droid">F-Droid</string>
+    <string name="x39_sin_navegador">Браузера немає. Адреса: %1$s</string>
+
+    <!-- Contactos -->
+    <string name="x39_mi_identidad">Моя ідентичність</string>
+    <string name="x39_contactos_mi_huella_nota">Це ваш відбиток. Поділіться ним із тим, з ким хочете спілкуватися; ця людина має перевірити його іншим каналом (особисто тощо).</string>
+    <string name="x39_contactos_qr_desc">QR-код вашої ідентичності</string>
+    <string name="x39_copiar_mi_huella">Копіювати мій відбиток</string>
+    <string name="x39_copiar_identidad_mensajes">Копіювати мою ідентичність для повідомлень</string>
+    <string name="x39_contactos_identidad_nota">Ідентичність для повідомлень (X39ID1:…) містить ваш ключ шифрування і ваш ключ підпису. Без неї ніхто не зможе вам написати; одного відбитка недостатньо.</string>
+    <string name="x39_error_leer_identidad">Не вдалося прочитати ідентичність.</string>
+    <string name="x39_sin_identidad">У вас ще немає ідентичності. Спершу створіть її.</string>
+    <string name="x39_anadir_contacto">Додати контакт</string>
+    <string name="x39_hint_nombre_contacto">Ім’я (як ви його бачитимете)</string>
+    <string name="x39_hint_identidad_contacto">Ідентичність контакту для повідомлень (X39ID1:…) або його відбиток (64 символи)</string>
+    <string name="x39_guardar_contacto">Зберегти контакт</string>
+    <string name="x39_contacto_sin_nombre">Дайте контакту ім’я.</string>
+    <string name="x39_contacto_guardado_mensajes">Контакт збережено. Тепер ви можете писати йому з «Повідомлень».</string>
+    <string name="x39_identidad_no_valida">Ця ідентичність недійсна: %1$s</string>
+    <string name="x39_huella_64">Відбиток має містити 64 символи (0-9, a-f).</string>
+    <string name="x39_contacto_guardado">Контакт збережено.</string>
+    <string name="x39_tus_contactos">Ваші контакти</string>
+    <string name="x39_sin_contactos">У вас ще немає контактів. Додайте контакт за його відбитком.</string>
+    <string name="x39_crea_identidad_primero">Спершу створіть свою ідентичність.</string>
+    <string name="x39_identidad_copiada">Скопійовано. Надішліть це своєму контакту; він має перевірити ваш відбиток іншим каналом.</string>
+    <string name="x39_error_copiar">Не вдалося скопіювати: %1$s</string>
+    <string name="x39_su_huella">Відбиток контакту</string>
+    <string name="x39_su_huella_nota">Перевірте його з цією людиною іншим каналом (особисто тощо), перш ніж довіряти.</string>
+    <string name="x39_contacto_sin_identidad_mensajes">Щоб писати цій людині, потрібна її ідентичність для повідомлень (текст, що починається з X39ID1:). Попросіть її і додайте контакт знову через «Додати контакт».</string>
+    <string name="x39_escribir_a">Написати контакту %1$s</string>
+    <string name="x39_borrar_contacto">Видалити контакт</string>
+    <string name="x39_mandar_mensaje">Надіслати повідомлення</string>
+    <string name="x39_ver_ficha">Переглянути деталі</string>
+
+    <!-- Seguridad -->
+    <string name="x39_seguridad_subtitulo">Що застосунок стверджує про себе, перевірено на цьому телефоні.</string>
+    <string name="x39_permisos_titulo">Дозволи з маніфесту, як вони є</string>
+    <string name="x39_error_leer_permisos">Не вдалося їх прочитати: %1$s</string>
+    <string name="x39_permisos_internet">Інтернет: так, лише щоб надсилати хеші (32 байти) до календарів OpenTimestamps і отримувати докази (напряму або, якщо ви це ввімкнете, лише через Tor). Ніколи не фото, відео чи файли. Мікрофон: лише поки ви записуєте відео або аудіо; якщо ви відмовите, відео записується без звуку, а аудіо записати не можна.</string>
+    <string name="x39_estado_capturas">Знімки екрана</string>
+    <string name="x39_estado_bloqueadas">Заблоковано</string>
+    <string name="x39_estado_galeria">Докази в галереї</string>
+    <string name="x39_estado_nunca">Ніколи</string>
+    <string name="x39_estado_copias">Резервні копії в хмарі</string>
+    <string name="x39_estado_activadas">Увімкнено</string>
+    <string name="x39_estado_desactivadas">Вимкнено</string>
+    <string name="x39_estado_ubicacion">Місцезнаходження у фото</string>
+    <string name="x39_estado_no">Ні</string>
+    <string name="x39_modo_aislado">Ізольований режим</string>
+    <string name="x39_estado_aislado_activo">Увімкнено: ніщо не залишає телефон</string>
+    <string name="x39_estado_apagado">Вимкнено</string>
+    <string name="x39_anclar_solo_tor">Закріплювати лише через Tor</string>
+    <string name="x39_tor_explicacion">Хеші виходять лише через Tor (Orbot). Це приховує вашу IP-адресу від календарів. Ваш оператор може бачити, що ви користуєтеся Tor; у деяких країнах це привертає увагу. Якщо Orbot не запущено, хеші чекають.</string>
+    <string name="x39_orbot_no_instalado_estado">Orbot не встановлено.</string>
+    <string name="x39_tor_estado_conectado_listo">Orbot встановлено · стан: підключено · проксі 127.0.0.1:8118 готовий</string>
+    <string name="x39_tor_estado_conectado_no_disponible">Orbot встановлено · стан: підключено · проксі 127.0.0.1:8118 недоступний</string>
+    <string name="x39_tor_estado_arrancando_listo">Orbot встановлено · стан: запускається · проксі 127.0.0.1:8118 готовий</string>
+    <string name="x39_tor_estado_arrancando_no_disponible">Orbot встановлено · стан: запускається · проксі 127.0.0.1:8118 недоступний</string>
+    <string name="x39_tor_estado_apagado_listo">Orbot встановлено · стан: вимкнено · проксі 127.0.0.1:8118 готовий</string>
+    <string name="x39_tor_estado_apagado_no_disponible">Orbot встановлено · стан: вимкнено · проксі 127.0.0.1:8118 недоступний</string>
+    <string name="x39_tor_estado_desconocido_listo">Orbot встановлено · стан невідомий (відкрийте Orbot, щоб він повідомив) · проксі 127.0.0.1:8118 готовий</string>
+    <string name="x39_tor_estado_desconocido_no_disponible">Orbot встановлено · стан невідомий (відкрийте Orbot, щоб він повідомив) · проксі 127.0.0.1:8118 недоступний</string>
+    <string name="x39_instalar_orbot_fdroid">Встановити Orbot з F-Droid</string>
+    <string name="x39_orbot_guardian">Або з Guardian Project</string>
+    <string name="x39_pedir_arranque_orbot">Попросити Orbot запуститися</string>
+    <string name="x39_pedido_orbot">Запит надіслано Orbot; відкрийте Orbot, якщо він не підключиться сам</string>
+    <string name="x39_seguridad_clave_medida">Публічний ключ ML-DSA-87: %1$s байтів (виміряно зараз)</string>
+    <string name="x39_ver_identidad">Переглянути ідентичність, QR і розміри</string>
+    <string name="x39_registro_red">Журнал мережі</string>
+    <string name="x39_red_sin_conexiones">Підключень ще не було.</string>
+    <string name="x39_red_via">%1$s через %2$s</string>
+    <string name="x39_red_sin_respuesta">немає відповіді</string>
+
+    <!-- Ajustes -->
+    <string name="x39_ajuste_auto">Закріплювати автоматично</string>
+    <string name="x39_ajuste_auto_desc">Надсилає хеш до календарів, щойно з’являється мережа.</string>
+    <string name="x39_ajuste_wifi">Лише Wi-Fi</string>
+    <string name="x39_ajuste_wifi_desc">Не використовує мобільні дані для закріплення.</string>
+    <string name="x39_ajuste_aislado_desc">Ніщо не залишає телефон, доки ви це не вимкнете: ні хеші, ні повідомлення.</string>
+    <string name="x39_ajuste_fondo">Отримувати із закритим застосунком</string>
+    <string name="x39_ajuste_fondo_desc">Тримає лінію чату відкритою. Залишає постійне сповіщення, яке показує, що у вас є x39 Evidencia: якщо це становить для вас ризик, вимкніть це, і ви отримуватимете повідомлення лише з відкритим застосунком.</string>
+
+    <!-- Mensajes -->
+    <string name="x39_adjuntar_titulo">Додати (запечатується перед надсиланням)</string>
+    <string name="x39_evidencia_ya_guardada">Уже збережений доказ</string>
+    <string name="x39_error_leer_evidencias">Не вдалося прочитати докази: %1$s</string>
+    <string name="x39_sin_evidencias_guardadas">У вас ще немає збережених доказів.</string>
+    <string name="x39_que_evidencia_mandas">Який доказ надіслати контакту %1$s?</string>
+    <string name="x39_error_preparar">Не вдалося підготувати: %1$s</string>
+    <string name="x39_compartir_capsula_de">Поділитися капсулою від контакту %1$s</string>
+    <string name="x39_crea_identidad_en_contactos">Спершу створіть свою ідентичність (у «Контактах»).</string>
+    <string name="x39_chat_en_linea">"●  У мережі"</string>
+    <string name="x39_chat_conectando">"○  Підключаємося до x39matrix.org…"</string>
+    <string name="x39_sin_mensajes_todavia">Повідомлень ще немає</string>
+    <string name="x39_chat_ultimo_mio">Ви: %1$s</string>
+    <string name="x39_chat_evidencia_nombre">Доказ: %1$s</string>
+    <string name="x39_chat_ultimo_mio_evidencia">Ви: Доказ: %1$s</string>
+    <string name="x39_sin_conversaciones">У вас ще немає розмов. Знайдіть людину в «Контактах» і натисніть «Надіслати повідомлення». Щоб їй писати, її має бути збережено з ідентичністю для повідомлень (текст, що починається з X39ID1:).</string>
+    <string name="x39_chat_transporte_nota">Чат — лише транспорт: доводить щось капсула, яка перевіряється поза застосунком. Тут ніщо не закінчується і не видаляється само.</string>
+    <string name="x39_chat_vacio">Те, що ви пишете, шифрується ключем контакту %1$s.</string>
+    <string name="x39_chat_trozos">частин: %1$s</string>
+    <string name="x39_chat_trozos_tam">%1$s · частин: %2$s</string>
+    <string name="x39_chat_capsula_mia">капсула: незмінений оригінал + квитанція + .ots</string>
+    <string name="x39_chat_capsula_mia_tam">%1$s · капсула: незмінений оригінал + квитанція + .ots</string>
+    <string name="x39_pie_pendiente">%1$s · ⏳ очікує, буде надіслано, щойно з’явиться зв’язок</string>
+    <string name="x39_pie_esperando_ancla">%1$s · ⏳ очікуємо доказ Bitcoin (.ots) перед надсиланням</string>
+    <string name="x39_pie_demasiado_grande">%1$s · ✗ понад 25 МБ: через чат не пройде; скористайтеся «Поділитися капсулою» в доказі</string>
+    <string name="x39_pie_enviado">%1$s · ✓ надіслано</string>
+    <string name="x39_pie_entregado">%1$s · ✓✓ доставлено</string>
+    <string name="x39_pie_evidencia_no_esta">%1$s · доказу більше немає</string>
+    <string name="x39_pie_recibiendo">%1$s · отримуємо…</string>
+    <string name="x39_adjuntar">Додати</string>
+    <string name="x39_hint_mensaje">Повідомлення</string>
+    <string name="x39_enviar">Надіслати</string>
+    <string name="x39_comp_incompleta">✗ Капсула неповна: її неможливо перевірити.</string>
+    <string name="x39_comp_original_ok">✓ Оригінал — той самий, що було запечатано</string>
+    <string name="x39_comp_original_mal">✗ Оригінал НЕ збігається з хешем квитанції</string>
+    <string name="x39_comp_firma_ok">✓ Дійсний підпис ML-DSA-87</string>
+    <string name="x39_comp_firma_mal">✗ Підпис НЕДІЙСНИЙ</string>
+    <string name="x39_comp_remitente_ok">✓ Підписано людиною, яка вам це надіслала</string>
+    <string name="x39_comp_otra_clave">⚠ Підписано іншим ключем: %1$s…</string>
+    <string name="x39_comp_sin_ots">○ Немає доказу .ots: немає якоря в Bitcoin</string>
+    <string name="x39_comp_ots_pendiente">○ Якір у Bitcoin очікується (завершується командою «ots upgrade»)</string>
+    <string name="x39_comp_ots_bloque">✓ Закріплено в блоці Bitcoin %1$s</string>
+    <string name="x39_comp_error_leer">✗ Не вдалося прочитати капсулу: %1$s</string>
+
+    <!-- Notificaciones -->
+    <string name="x39_notif_titulo">x39 Evidencia</string>
+    <string name="x39_notif_en_linea">У мережі, щоб отримувати повідомлення</string>
+    <string name="x39_notif_mensaje_nuevo">Нове повідомлення: %1$s</string>
+    <string name="x39_un_contacto">контакт</string>
+    <string name="x39_canal_linea">Лінія чату</string>
+    <string name="x39_idioma">Мова</string>
+    <string name="x39_idioma_sistema">Системна</string>
+    <!-- QR de identidad y verificación de huellas (mismos textos que x39 Llamadas) -->
+    <string name="x39_contacto_borrado">Контакт видалено</string>
+    <string name="x39_contacto_guardado_sin_verificar">Контакт збережено як НЕ перевірений. Порівняйте відбитки, щоб його перевірити.</string>
+    <string name="x39_contacto_sin_verificar">⚠ НЕ ПЕРЕВІРЕНО</string>
+    <string name="x39_contacto_verificado">✓ перевірено</string>
+    <string name="x39_escaner_alejate">Відсуньтеся трохи: ця камера не фокусується ближче ніж %1$d см.</string>
+    <string name="x39_escaner_apunta">Наведіть камеру на QR ідентичності іншої людини</string>
+    <string name="x39_escaner_mas_luz">Потрібно більше світла: збільште яскравість іншого екрана або знайдіть місце світліше.</string>
+    <string name="x39_escaner_partes">Прочитано частин: %1$d з %2$d. Продовжуйте наводити.</string>
+    <string name="x39_huellas_coinciden">Збігаються: позначити як перевірений</string>
+    <string name="x39_huellas_la_de">ВІДБИТОК: %1$s</string>
+    <string name="x39_huellas_la_tuya">ВАШ ВІДБИТОК</string>
+    <string name="x39_huellas_no_coinciden">Не збігаються</string>
+    <string name="x39_huellas_no_coinciden_texto">Можливо, ви прочитали чужу ідентичність, або хтось посередині намагається видати себе за %1$s. З міркувань безпеки цей контакт видалено. Почніть знову, за можливості особисто.</string>
+    <string name="x39_huellas_no_coinciden_titulo">Відбитки НЕ збігаються</string>
+    <string name="x39_huellas_texto">Прочитайте їх уголос, телефоном або особисто. Вони мають бути ОДНАКОВИМИ на обох пристроях. Якщо вони не збігаються, хтось посередині: не позначайте.</string>
+    <string name="x39_huellas_titulo">Перевірте відбитки разом</string>
+    <string name="x39_huellas_verificado">Контакт %1$s тепер перевірено</string>
+    <string name="x39_identidad_leida">Ідентичність зчитано · відбиток %1$s</string>
+    <string name="x39_identidad_propia">Це ваша власна ідентичність. Нічого не збережено.</string>
+    <string name="x39_qr_mezcla_texto">Прочитано QR-коди двох різних ідентичностей, або частини не складаються в одну повну ідентичність. Можливо, у кадрі інший екран або хтось намагається підсунути вам іншу ідентичність. Нічого не збережено. Почніть знову, тримаючи перед камерою лише один екран.</string>
+    <string name="x39_qr_mezcla_titulo">Сканування зупинено</string>
+    <string name="x39_qr_parte_de">Частина %1$d з %2$d · торкніться, щоб закрити</string>
+    <string name="x39_qr_por_partes">QR частинами (легше сканувати)</string>
+    <string name="x39_qr_propio">Цей QR — ваша власна ідентичність. Нічого не збережено.</string>
+    <string name="x39_comparar_huellas">Порівняти відбитки</string>
+    <string name="x39_escanear_qr_otra">Сканувати QR іншої людини</string>
+    <string name="x39_escaner_sin_camara">Камерою неможливо скористатися. Надайте дозвіл у налаштуваннях телефона й спробуйте знову.</string>
+</resources>
