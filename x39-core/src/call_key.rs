@@ -18,11 +18,19 @@ use libcrux_ml_kem::mlkem1024;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
-pub const VERSION_OFERTA: &str = "X39-CALL-KEYOFFER-v1";
+/// v2 (1.0.6): la cadena firmada cubre además el destinatario (`to`) y la sal de la
+/// llamada (`salt`); así un relevo no puede cambiar la sal ni redirigir la oferta sin
+/// invalidar la firma. El campo de versión va al principio de la cadena.
+pub const VERSION_OFERTA: &str = "X39-CALL-KEYOFFER-v2";
+/// v2 (1.0.6): el criptograma ML-KEM (`ct`) viaja firmado, atado a esta llamada, época,
+/// emisor y destinatario; sustituirlo o moverlo a otra llamada invalida la firma.
+pub const VERSION_KEM: &str = "X39-CALL-KEM-v2";
 pub const KEY_INFO: &str = "X39-CALL-KEY-v1";
 pub const SAS_INFO: &str = "X39-CALL-SAS-v1";
 /// Contexto de dominio para la firma ML-DSA de la oferta (separa de otros usos de la clave).
 pub const CALL_CTX: &[u8] = b"x39-call-v1";
+/// Contexto de dominio para la firma ML-DSA del criptograma ML-KEM (separa de la oferta).
+pub const KEM_CTX: &[u8] = b"x39-call-kem-v1";
 pub const CLAVE_LEN: usize = 32;
 
 /// Lista SAS: pública y fija. Muestra corta como en la referencia; en producción,
@@ -62,11 +70,41 @@ fn b64_std_nopad(data: &[u8]) -> String {
     out
 }
 
-/// La cadena canónica de una oferta (una sola línea, lo que se firma).
-pub fn cadena_oferta(call_hash: &str, from_bh: &str, epoch: u32, ek: &[u8], ts: &str) -> String {
+/// La cadena canónica de una oferta (una sola línea, lo que se firma). v2: cubre
+/// versión + call_hash + emisor + destinatario + época + clave efímera + sal + ts.
+/// Los valores son hex (call_hash, from, to), b64 estándar sin relleno (ek, salt) o la
+/// marca de tiempo de formato fijo: ninguno contiene `|` ni `=`, así que los separadores
+/// son inequívocos.
+#[allow(clippy::too_many_arguments)]
+pub fn cadena_oferta(
+    call_hash: &str,
+    from_bh: &str,
+    to_bh: &str,
+    epoch: u32,
+    ek: &[u8],
+    call_salt: &[u8; 32],
+    ts: &str,
+) -> String {
     format!(
-        "{VERSION_OFERTA}|call_hash={call_hash}|from={from_bh}|epoch={epoch}|ek={}|ts={ts}",
-        b64_std_nopad(ek)
+        "{VERSION_OFERTA}|call_hash={call_hash}|from={from_bh}|to={to_bh}|epoch={epoch}|ek={}|salt={}|ts={ts}",
+        b64_std_nopad(ek),
+        b64_std_nopad(call_salt)
+    )
+}
+
+/// La cadena canónica de un criptograma ML-KEM firmado (v2). Ata el `ct` a esta llamada,
+/// época, emisor y destinatario, con la misma convención de separadores inequívocos.
+pub fn cadena_kem(
+    call_hash: &str,
+    from_bh: &str,
+    to_bh: &str,
+    epoch: u32,
+    ct: &[u8],
+    ts: &str,
+) -> String {
+    format!(
+        "{VERSION_KEM}|call_hash={call_hash}|from={from_bh}|to={to_bh}|epoch={epoch}|ct={}|ts={ts}",
+        b64_std_nopad(ct)
     )
 }
 
@@ -125,10 +163,13 @@ pub struct Oferta {
 
 /// Genera par efímero ML-KEM para esta llamada, construye la oferta y la firma con
 /// ML-DSA-87. Devuelve `(Oferta, clave secreta efímera)`. La secreta NUNCA sale del aparato.
+#[allow(clippy::too_many_arguments)]
 pub fn hacer_oferta(
     call_hash: &str,
     epoch: u32,
     from_bh: &str,
+    to_bh: &str,
+    call_salt: &[u8; 32],
     mldsa_seed: &[u8; DSA_SEED_LEN],
     ts: &str,
 ) -> Result<(Oferta, Zeroizing<[u8; SK_LEN]>), Error> {
@@ -136,7 +177,7 @@ pub fn hacer_oferta(
     let kp = mlkem1024::generate_key_pair(*seed);
     let ek: [u8; PK_LEN] = *kp.public_key().as_slice();
     let dk = Zeroizing::new(*kp.private_key().as_slice());
-    let canonical = cadena_oferta(call_hash, from_bh, epoch, &ek, ts);
+    let canonical = cadena_oferta(call_hash, from_bh, to_bh, epoch, &ek, call_salt, ts);
     let sig = firma::sign(mldsa_seed, canonical.as_bytes(), CALL_CTX)?;
     Ok((
         Oferta {
@@ -149,18 +190,60 @@ pub fn hacer_oferta(
     ))
 }
 
+/// Firma el criptograma ML-KEM (`ct`) para esta llamada. La firma la hace la identidad
+/// del emisor (ML-DSA-87) sobre `cadena_kem`, de modo que el `ct` queda atado a la
+/// llamada, la época, el emisor y el destinatario. Devuelve solo la firma; el `ct` se
+/// genera aparte con `encapsular`.
+pub fn firmar_kem(
+    call_hash: &str,
+    from_bh: &str,
+    to_bh: &str,
+    epoch: u32,
+    ct: &[u8; CT_KEM_LEN],
+    mldsa_seed: &[u8; DSA_SEED_LEN],
+    ts: &str,
+) -> Result<[u8; SIG_LEN], Error> {
+    let canonical = cadena_kem(call_hash, from_bh, to_bh, epoch, ct, ts);
+    firma::sign(mldsa_seed, canonical.as_bytes(), KEM_CTX)
+}
+
+/// Verifica la firma de un `ct` recibido contra la identidad ya verificada del emisor.
+/// Rechaza si el `ct` no corresponde a ESTA llamada/época/emisor/destinatario o la firma
+/// no es válida.
+#[allow(clippy::too_many_arguments)]
+pub fn verificar_kem(
+    call_hash: &str,
+    from_bh: &str,
+    to_bh: &str,
+    epoch: u32,
+    ct: &[u8; CT_KEM_LEN],
+    ts: &str,
+    emisor_mldsa_pk: &[u8; DSA_PK_LEN],
+    sig: &[u8],
+) -> Result<(), Error> {
+    let canonical = cadena_kem(call_hash, from_bh, to_bh, epoch, ct, ts);
+    if firma::verify(emisor_mldsa_pk, canonical.as_bytes(), KEM_CTX, sig) {
+        Ok(())
+    } else {
+        Err(Error::Firma)
+    }
+}
+
 /// Verifica una oferta recibida contra la identidad YA verificada del emisor.
 /// Rechaza si la cadena no cuadra con lo declarado (atadura a esta llamada/época/emisor)
 /// o si la firma ML-DSA-87 no es válida.
+#[allow(clippy::too_many_arguments)]
 pub fn verificar_oferta(
     of: &Oferta,
     call_hash: &str,
     epoch: u32,
     emisor_bh: &str,
+    receptor_bh: &str,
+    call_salt: &[u8; 32],
     emisor_mldsa_pk: &[u8; DSA_PK_LEN],
 ) -> Result<(), Error> {
     let ts = of.canonical.rsplit("|ts=").next().unwrap_or("");
-    let esperada = cadena_oferta(call_hash, emisor_bh, epoch, &of.ek, ts);
+    let esperada = cadena_oferta(call_hash, emisor_bh, receptor_bh, epoch, &of.ek, call_salt, ts);
     if of.canonical != esperada || of.from_bh != emisor_bh {
         return Err(Error::Formato);
     }
@@ -239,14 +322,15 @@ mod tests {
         let salt = [0x5Au8; 32];
         let ts = "2026-09-19T12:00:00Z";
 
-        let (of_a, dk_a) = hacer_oferta(&ch, 0, &bh_a, &seed_a, ts).unwrap();
-        let (of_b, dk_b) = hacer_oferta(&ch, 0, &bh_b, &seed_b, ts).unwrap();
+        // A llama a B: A es emisor y B destinatario en of_a; al revés en of_b.
+        let (of_a, dk_a) = hacer_oferta(&ch, 0, &bh_a, &bh_b, &salt, &seed_a, ts).unwrap();
+        let (of_b, dk_b) = hacer_oferta(&ch, 0, &bh_b, &bh_a, &salt, &seed_b, ts).unwrap();
 
-        // Cada uno verifica la oferta del otro contra su identidad.
+        // Cada uno verifica la oferta del otro contra su identidad (emisor y destinatario).
         let pk_a = firma::public_key(&seed_a);
         let pk_b = firma::public_key(&seed_b);
-        verificar_oferta(&of_b, &ch, 0, &bh_b, &pk_b).unwrap();
-        verificar_oferta(&of_a, &ch, 0, &bh_a, &pk_a).unwrap();
+        verificar_oferta(&of_b, &ch, 0, &bh_b, &bh_a, &salt, &pk_b).unwrap();
+        verificar_oferta(&of_a, &ch, 0, &bh_a, &bh_b, &salt, &pk_a).unwrap();
 
         // Encapsulación cruzada.
         let (ct_a, ss_a) = encapsular(&of_b.ek).unwrap(); // A → ek de B
@@ -275,8 +359,61 @@ mod tests {
         let pk = firma::public_key(&seed);
         let bh = "3c".repeat(32);
         let ch = "cc".repeat(32);
-        let (mut of, _dk) = hacer_oferta(&ch, 0, &bh, &seed, "2026-09-19T12:00:00Z").unwrap();
+        let to = "4d".repeat(32);
+        let salt = [0x5Au8; 32];
+        let (mut of, _dk) = hacer_oferta(&ch, 0, &bh, &to, &salt, &seed, "2026-09-19T12:00:00Z").unwrap();
         of.ek[0] ^= 0x01; // manipular la clave efímera tras firmar
-        assert!(verificar_oferta(&of, &ch, 0, &bh, &pk).is_err());
+        assert!(verificar_oferta(&of, &ch, 0, &bh, &to, &salt, &pk).is_err());
+    }
+
+    /// v2: cambiar cualquier campo cubierto por la firma de la oferta la invalida.
+    #[test]
+    fn oferta_v2_campos_atados() {
+        let seed = firma::generate_seed().unwrap();
+        let pk = firma::public_key(&seed);
+        let bh = "3c".repeat(32);
+        let to = "4d".repeat(32);
+        let ch = "cc".repeat(32);
+        let salt = [0x5Au8; 32];
+        let ts = "2026-09-19T12:00:00Z";
+        let (of, _dk) = hacer_oferta(&ch, 0, &bh, &to, &salt, &seed, ts).unwrap();
+        // Correcta.
+        verificar_oferta(&of, &ch, 0, &bh, &to, &salt, &pk).unwrap();
+        // Destinatario distinto → rechazo (redirección).
+        let otro_to = "5e".repeat(32);
+        assert!(verificar_oferta(&of, &ch, 0, &bh, &otro_to, &salt, &pk).is_err());
+        // Sal distinta → rechazo (un relevo no puede cambiar la sal).
+        let otra_salt = [0x6Bu8; 32];
+        assert!(verificar_oferta(&of, &ch, 0, &bh, &to, &otra_salt, &pk).is_err());
+        // call_hash distinto → rechazo (reutilizar la oferta en otra llamada).
+        let otro_ch = "dd".repeat(32);
+        assert!(verificar_oferta(&of, &otro_ch, 0, &bh, &to, &salt, &pk).is_err());
+    }
+
+    /// v2: el ct firmado se ata a la llamada, emisor y destinatario; moverlo o cambiarlo falla.
+    #[test]
+    fn kem_firmado_atado_a_la_llamada() {
+        let seed = firma::generate_seed().unwrap();
+        let pk = firma::public_key(&seed);
+        let from = "1a".repeat(32);
+        let to = "2b".repeat(32);
+        let ch = "cc".repeat(32);
+        let ts = "2026-09-19T12:00:00Z";
+        // ct de pega (no hace falta encapsular de verdad para probar la atadura de la firma).
+        let mut ct = [0u8; CT_KEM_LEN];
+        ct[0] = 0x11;
+        let sig = firmar_kem(&ch, &from, &to, 0, &ct, &seed, ts).unwrap();
+        // Correcto.
+        verificar_kem(&ch, &from, &to, 0, &ct, ts, &pk, &sig).unwrap();
+        // ct sustituido → rechazo.
+        let mut ct2 = ct;
+        ct2[0] ^= 0x01;
+        assert!(verificar_kem(&ch, &from, &to, 0, &ct2, ts, &pk, &sig).is_err());
+        // Mismo ct movido a otra llamada → rechazo.
+        let otro_ch = "dd".repeat(32);
+        assert!(verificar_kem(&otro_ch, &from, &to, 0, &ct, ts, &pk, &sig).is_err());
+        // Destinatario distinto → rechazo.
+        let otro_to = "3c".repeat(32);
+        assert!(verificar_kem(&ch, &from, &otro_to, 0, &ct, ts, &pk, &sig).is_err());
     }
 }

@@ -781,17 +781,22 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_callOffer<'c>(
     _class: JClass<'c>,
     call_hash: JString<'c>,
     from_bh: JString<'c>,
+    to_bh: JString<'c>,
     epoch: jint,
+    call_salt: JByteArray<'c>,
     mldsa_seed: JByteArray<'c>,
     ts: JString<'c>,
 ) -> JByteArray<'c> {
     unowned
         .with_env(|env| -> Res<_> {
             let seed = seed_from(env, &mldsa_seed)?;
+            let salt = fijo::<32>(env, &call_salt, "call_salt con longitud incorrecta")?;
             let (of, dk) = call_key::hacer_oferta(
                 &call_hash.to_string(),
                 epoca_from(epoch)?,
                 &from_bh.to_string(),
+                &to_bh.to_string(),
+                &salt,
                 &seed,
                 &ts.to_string(),
             )?;
@@ -812,8 +817,10 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_callVerifyOffer<'c>(
     _class: JClass<'c>,
     call_hash: JString<'c>,
     from_bh: JString<'c>,
+    to_bh: JString<'c>,
     epoch: jint,
     ek: JByteArray<'c>,
+    call_salt: JByteArray<'c>,
     ts: JString<'c>,
     signature: JByteArray<'c>,
     emisor_pk: JByteArray<'c>,
@@ -821,13 +828,16 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_callVerifyOffer<'c>(
     unowned
         .with_env(|env| -> Res<_> {
             let ek = public_key_from(env, &ek)?;
+            let salt = fijo::<32>(env, &call_salt, "call_salt con longitud incorrecta")?;
             let sig = env.convert_byte_array(&signature)?;
             let pk = signing_public_key_from(env, &emisor_pk)?;
             let canonical = call_key::cadena_oferta(
                 &call_hash.to_string(),
                 &from_bh.to_string(),
+                &to_bh.to_string(),
                 epoca_from(epoch)?,
                 &ek,
+                &salt,
                 &ts.to_string(),
             );
             if firma::verify(&pk, canonical.as_bytes(), call_key::CALL_CTX, &sig) {
@@ -835,6 +845,72 @@ pub extern "system" fn Java_org_x39_bolsillo_X39Core_callVerifyOffer<'c>(
             } else {
                 Err(PuenteError::X39(x39_core::Error::Firma))
             }
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Firma el criptograma ML-KEM (`ct`) de esta llamada con la identidad del emisor.
+/// Devuelve la firma ML-DSA-87 (4627 bytes), que se envía junto al `ct`.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callKemSign<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    call_hash: JString<'c>,
+    from_bh: JString<'c>,
+    to_bh: JString<'c>,
+    epoch: jint,
+    ct: JByteArray<'c>,
+    ts: JString<'c>,
+    mldsa_seed: JByteArray<'c>,
+) -> JByteArray<'c> {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let ct = fijo::<CT_KEM_LEN>(env, &ct, "criptograma ML-KEM con longitud incorrecta")?;
+            let seed = seed_from(env, &mldsa_seed)?;
+            let sig = call_key::firmar_kem(
+                &call_hash.to_string(),
+                &from_bh.to_string(),
+                &to_bh.to_string(),
+                epoca_from(epoch)?,
+                &ct,
+                &seed,
+                &ts.to_string(),
+            )?;
+            Ok(env.byte_array_from_slice(&sig)?)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
+}
+
+/// Verifica la firma del `ct` recibido contra la identidad del emisor. Devuelve 1, o lanza.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_org_x39_bolsillo_X39Core_callKemVerify<'c>(
+    mut unowned: EnvUnowned<'c>,
+    _class: JClass<'c>,
+    call_hash: JString<'c>,
+    from_bh: JString<'c>,
+    to_bh: JString<'c>,
+    epoch: jint,
+    ct: JByteArray<'c>,
+    ts: JString<'c>,
+    signature: JByteArray<'c>,
+    emisor_pk: JByteArray<'c>,
+) -> jint {
+    unowned
+        .with_env(|env| -> Res<_> {
+            let ct = fijo::<CT_KEM_LEN>(env, &ct, "criptograma ML-KEM con longitud incorrecta")?;
+            let sig = env.convert_byte_array(&signature)?;
+            let pk = signing_public_key_from(env, &emisor_pk)?;
+            call_key::verificar_kem(
+                &call_hash.to_string(),
+                &from_bh.to_string(),
+                &to_bh.to_string(),
+                epoca_from(epoch)?,
+                &ct,
+                &ts.to_string(),
+                &pk,
+                &sig,
+            )?;
+            Ok(1)
         })
         .resolve::<ThrowRuntimeExAndDefault>()
 }
