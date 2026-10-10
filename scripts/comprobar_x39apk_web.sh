@@ -1,12 +1,24 @@
 #!/bin/bash
 # Comprueba en vivo el APK publicado en x39matrix.org/app/x39.apk: cabeceras, huella, ficheros al lado y firma.
-# Uso: bash scripts/comprobar_x39apk_web.sh [huella_esperada] [certificado_esperado]
+# Uso: bash scripts/comprobar_x39apk_web.sh [ruta_del_apk | huella_esperada] [certificado_esperado]
+#   ruta_del_apk:    el APK que se ha subido (p. ej. pruebas_ots/apks/x39-0.3.2-release.apk); su sha256 es la esperada.
+#   huella_esperada: los 64 caracteres hex, si no se tiene el APK a mano.
+#   sin argumento:   la última release de Evidencia en pruebas_ots/apks (x39-<versión>-release.apk.sha256).
 set -uo pipefail
-# Sin argumento, la huella esperada es la de la última release firmada en pruebas_ots/apks (x39-<ver>-release.apk.sha256).
-ULTIMA=$(ls -t "$HOME"/x39_mensajeria/pruebas_ots/apks/x39-*-release.apk.sha256 2>/dev/null | head -1)
-ESPERADA="${1:-$(cut -d' ' -f1 "$ULTIMA" 2>/dev/null)}"
-[ -n "$ESPERADA" ] || { echo "no hay huella esperada: pásala como argumento"; exit 2; }
-echo "huella esperada: $ESPERADA (${ULTIMA##*/})"
+if [ -n "${1:-}" ] && [ -f "$1" ]; then
+  ORIGEN="$1"
+  ESPERADA=$(sha256sum "$1" | cut -d' ' -f1)
+elif [ -n "${1:-}" ]; then
+  ORIGEN="argumento"
+  ESPERADA="$1"
+  [[ "$ESPERADA" =~ ^[0-9a-f]{64}$ ]] || { echo "«$1» no es un fichero ni una huella sha256 (64 hex)"; exit 2; }
+else
+  # x39-<número>… y no x39-*: si no, también cuenta x39-llamadas-…-release (otra app).
+  ORIGEN=$(ls -t "$HOME"/x39_mensajeria/pruebas_ots/apks/x39-[0-9]*-release.apk.sha256 2>/dev/null | head -1)
+  ESPERADA=$(cut -d' ' -f1 "$ORIGEN" 2>/dev/null)
+fi
+[ -n "$ESPERADA" ] || { echo "no hay huella esperada: pasa la ruta del APK o la huella"; exit 2; }
+echo "huella esperada: $ESPERADA (${ORIGEN##*/})"
 CERT="${2:-72f0745f993605b1b3cd30966162b6d98d84fcacbd23e2e07e24c3d15f7d8935}"
 BASE="https://x39matrix.org"
 D="$HOME/x39_mensajeria/pruebas_ots/web_x39apk"
