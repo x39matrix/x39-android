@@ -10,3 +10,7 @@ vectores/rust_sealed.json
 __pycache__/
 diseno/x39-app-movil.html
 x39-wallet/target/
+x39-core/outputs/
+privado/
+*.bak
+*.bak-*
