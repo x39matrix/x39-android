@@ -280,6 +280,11 @@
     <string name="x39_estado_aislado_activo">On: nothing leaves the phone</string>
     <string name="x39_estado_apagado">Off</string>
     <string name="x39_anclar_solo_tor">Anchor only over Tor</string>
+    <string name="x39_comunicaciones_privadas">Private communications</string>
+    <string name="x39_comunicaciones_explicacion">Calls, video calls and private messages live in X39 Communications, a separate app. This keeps this app small and verifiable, and each app has its own permissions.</string>
+    <string name="x39_abrir_comunicaciones">Open X39 Communications</string>
+    <string name="x39_comunicaciones_no_instalada">X39 Communications is not installed. It is in closed beta until November.</string>
+    <string name="x39_comunicaciones_web">More at x39matrix.org</string>
     <string name="x39_tor_explicacion">Fingerprints go out only through Tor (Orbot). It hides your IP address from the calendars. Your carrier can see that you use Tor; in some countries that draws attention. If Orbot is not running, fingerprints wait.</string>
     <string name="x39_orbot_no_instalado_estado">Orbot is not installed.</string>
     <string name="x39_tor_estado_conectado_listo">Orbot installed · status connected · proxy 127.0.0.1:8118 ready</string>

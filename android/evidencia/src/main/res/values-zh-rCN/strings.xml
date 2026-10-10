@@ -278,6 +278,11 @@
     <string name="x39_estado_aislado_activo">已开启：任何内容都不会离开手机</string>
     <string name="x39_estado_apagado">已关闭</string>
     <string name="x39_anclar_solo_tor">只通过 Tor 锚定</string>
+    <string name="x39_comunicaciones_privadas">私密通信</string>
+    <string name="x39_comunicaciones_explicacion">通话、视频通话和私密消息由独立应用 X39 Communications 提供。这样本应用保持小巧、可验证，每个应用拥有各自的权限。</string>
+    <string name="x39_abrir_comunicaciones">打开 X39 Communications</string>
+    <string name="x39_comunicaciones_no_instalada">尚未安装 X39 Communications。目前为封闭测试，持续到十一月。</string>
+    <string name="x39_comunicaciones_web">更多信息：x39matrix.org</string>
     <string name="x39_tor_explicacion">指纹只通过 Tor（Orbot）发出。这会对日历服务器隐藏你的 IP 地址。你的运营商可以看到你在使用 Tor；在某些国家，这会引人注意。如果 Orbot 未开启，指纹会等待。</string>
     <string name="x39_orbot_no_instalado_estado">未安装 Orbot。</string>
     <string name="x39_tor_estado_conectado_listo">Orbot 已安装 · 状态：已连接 · 代理 127.0.0.1:8118 可用</string>

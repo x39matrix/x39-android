@@ -278,6 +278,11 @@
     <string name="x39_estado_aislado_activo">オン：端末から何も送信されません</string>
     <string name="x39_estado_apagado">オフ</string>
     <string name="x39_anclar_solo_tor">Tor経由でのみアンカー</string>
+    <string name="x39_comunicaciones_privadas">プライベート通信</string>
+    <string name="x39_comunicaciones_explicacion">通話、ビデオ通話、プライベートメッセージは別アプリ「X39 Communications」で行います。これにより本アプリは小さく検証可能なまま保たれ、各アプリが独自の権限を持ちます。</string>
+    <string name="x39_abrir_comunicaciones">X39 Communications を開く</string>
+    <string name="x39_comunicaciones_no_instalada">X39 Communications はインストールされていません。11月までクローズドベータです。</string>
+    <string name="x39_comunicaciones_web">詳細は x39matrix.org</string>
     <string name="x39_tor_explicacion">フィンガープリントはTor（Orbot）経由でのみ送信されます。カレンダーからあなたのIPアドレスが見えなくなります。通信事業者には、あなたがTorを使っていることがわかります。国によっては、それだけで注目を集めることがあります。Orbotが動いていない場合、フィンガープリントは送信を待ちます。</string>
     <string name="x39_orbot_no_instalado_estado">Orbotがインストールされていません。</string>
     <string name="x39_tor_estado_conectado_listo">Orbotインストール済み · 状態：接続済み · プロキシ 127.0.0.1:8118 準備完了</string>

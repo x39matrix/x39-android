@@ -2211,6 +2211,23 @@ public class EvidenciaActivity extends Activity {
             }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
         }
 
+        // Comunicaciones privadas (0.3.4): X39 Comunicaciones es otra app; desde aqui solo se abre, nunca se incluye.
+        LinearLayout com = tarjeta(col, getString(R.string.x39_comunicaciones_privadas));
+        com.addView(Ui.texto(this, getString(R.string.x39_comunicaciones_explicacion), 13, Ui.TEXTO_2, false));
+        if (Comunicaciones.instalada(this)) {
+            com.addView(Ui.boton(this, getString(R.string.x39_abrir_comunicaciones), false, v -> {
+                if (!Comunicaciones.abrir(this)) {
+                    Toast.makeText(this, R.string.x39_comunicaciones_no_instalada, Toast.LENGTH_LONG).show();
+                }
+            }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
+        } else {
+            TextView ec = Ui.texto(this, getString(R.string.x39_comunicaciones_no_instalada), 13, Ui.SUAVE, false);
+            ec.setPadding(0, dp(8), 0, 0);
+            com.addView(ec);
+            com.addView(Ui.boton(this, getString(R.string.x39_comunicaciones_web), false, v -> abrirWeb(Comunicaciones.WEB)),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
+        }
+
         LinearLayout clave = tarjeta(col, getString(R.string.x39_tu_identidad));
         try {
             clave.addView(Ui.mono(this, agrupar(evidencias.huellaClave()), 13, Ui.TEXTO));

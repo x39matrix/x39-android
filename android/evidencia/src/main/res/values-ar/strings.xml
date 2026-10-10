@@ -288,6 +288,11 @@
     <string name="x39_estado_aislado_activo">مفعّل: لا شيء يغادر الهاتف</string>
     <string name="x39_estado_apagado">متوقف</string>
     <string name="x39_anclar_solo_tor">التثبيت عبر Tor فقط</string>
+    <string name="x39_comunicaciones_privadas">اتصالات خاصة</string>
+    <string name="x39_comunicaciones_explicacion">المكالمات ومكالمات الفيديو والرسائل الخاصة تتم في تطبيق منفصل هو X39 Communications. هكذا يبقى هذا التطبيق صغيراً وقابلاً للتحقق، ولكل تطبيق أذوناته الخاصة.</string>
+    <string name="x39_abrir_comunicaciones">فتح X39 Communications</string>
+    <string name="x39_comunicaciones_no_instalada">X39 Communications غير مثبّت. وهو في مرحلة تجريبية مغلقة حتى نوفمبر.</string>
+    <string name="x39_comunicaciones_web">المزيد على x39matrix.org</string>
     <string name="x39_tor_explicacion">تخرج البصمات عبر Tor (Orbot) فقط. هذا يخفي عنوان IP الخاص بك عن خوادم التقويم. يستطيع مشغّل شبكتك أن يرى أنك تستخدم Tor؛ وفي بعض البلدان يلفت ذلك الانتباه. إذا لم يكن Orbot يعمل، تنتظر البصمات.</string>
     <string name="x39_orbot_no_instalado_estado">Orbot غير مثبّت.</string>
     <string name="x39_tor_estado_conectado_listo">Orbot مثبّت · الحالة: متصل · الوكيل 127.0.0.1:8118 جاهز</string>

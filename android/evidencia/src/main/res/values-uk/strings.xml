@@ -284,6 +284,11 @@
     <string name="x39_estado_aislado_activo">Увімкнено: ніщо не залишає телефон</string>
     <string name="x39_estado_apagado">Вимкнено</string>
     <string name="x39_anclar_solo_tor">Закріплювати лише через Tor</string>
+    <string name="x39_comunicaciones_privadas">Приватне спілкування</string>
+    <string name="x39_comunicaciones_explicacion">Дзвінки, відеодзвінки та приватні повідомлення працюють в окремому застосунку X39 Communications. Так цей застосунок лишається невеликим і перевірюваним, а кожен застосунок має власні дозволи.</string>
+    <string name="x39_abrir_comunicaciones">Відкрити X39 Communications</string>
+    <string name="x39_comunicaciones_no_instalada">X39 Communications не встановлено. Закрите бета-тестування до листопада.</string>
+    <string name="x39_comunicaciones_web">Детальніше на x39matrix.org</string>
     <string name="x39_tor_explicacion">Хеші виходять лише через Tor (Orbot). Це приховує вашу IP-адресу від календарів. Ваш оператор може бачити, що ви користуєтеся Tor; у деяких країнах це привертає увагу. Якщо Orbot не запущено, хеші чекають.</string>
     <string name="x39_orbot_no_instalado_estado">Orbot не встановлено.</string>
     <string name="x39_tor_estado_conectado_listo">Orbot встановлено · стан: підключено · проксі 127.0.0.1:8118 готовий</string>
