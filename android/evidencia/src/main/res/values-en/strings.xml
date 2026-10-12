@@ -70,7 +70,7 @@
     <string name="x39_tamanos_error">✗ The test signature could not be made or does not verify: %1$s</string>
 
     <!-- Evidencias (lista) -->
-    <string name="x39_evidencias_subtitulo">What you save never leaves this phone. Only its fingerprint travels.</string>
+    <string name="x39_evidencias_subtitulo">Sealing and anchoring sends calendars a 32-byte commitment derived from the fingerprint. If you send a capsule to a paired phone, the original travels end-to-end encrypted.</string>
     <string name="x39_error_leer_almacen">Could not read the store: %1$s</string>
     <string name="x39_evidencias_vacio_titulo">No evidence yet</string>
     <string name="x39_evidencias_vacio_texto">Take a photo from here or choose any file on the phone (PDF, video, audio, anything). It is saved encrypted on this phone, signed with your key, and its fingerprint is anchored in Bitcoin without you doing anything else.</string>
@@ -266,7 +266,7 @@
     <string name="x39_seguridad_subtitulo">What the app claims about itself, checked on this phone.</string>
     <string name="x39_permisos_titulo">Manifest permissions, as they are</string>
     <string name="x39_error_leer_permisos">Could not read them: %1$s</string>
-    <string name="x39_permisos_internet">Internet: yes, only to send fingerprints (32 bytes) to the OpenTimestamps calendars and receive proofs (directly or, if you turn it on, only over Tor). Never photos, videos or files. Microphone: only while you record a video or audio; if you deny it, video is recorded without sound and audio cannot be recorded.</string>
+    <string name="x39_permisos_internet">Internet: sealing and anchoring sends calendars a 32-byte commitment derived from the fingerprint and receives proofs (directly or over Tor if enabled). Chat uses an encrypted connection. Only when you send a capsule to a paired phone does the original travel, end-to-end encrypted. Microphone: only while recording video or audio; without permission, video has no sound and audio cannot be recorded.</string>
     <string name="x39_estado_capturas">Screenshots</string>
     <string name="x39_estado_bloqueadas">Blocked</string>
     <string name="x39_estado_galeria">Evidence in the gallery</string>

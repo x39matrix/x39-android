@@ -70,7 +70,7 @@
     <string name="x39_tamanos_error">✗ La firma de prueba no se pudo hacer o no verifica: %1$s</string>
 
     <!-- Evidencias (lista) -->
-    <string name="x39_evidencias_subtitulo">Lo que guardas no sale de este móvil. Solo viaja su huella.</string>
+    <string name="x39_evidencias_subtitulo">Al sellar y anclar, se envía a los calendarios un compromiso de 32 bytes derivado de la huella. Si envías una cápsula a un móvil emparejado, el original viaja cifrado de extremo a extremo.</string>
     <string name="x39_error_leer_almacen">No se pudo leer el almacén: %1$s</string>
     <string name="x39_evidencias_vacio_titulo">Aún no hay evidencias</string>
     <string name="x39_evidencias_vacio_texto">Haz una foto desde aquí o elige cualquier archivo del móvil (PDF, vídeo, audio, lo que sea). Se guarda cifrado en este móvil, se firma con tu clave y su huella se ancla en Bitcoin sin que hagas nada más.</string>
@@ -268,7 +268,7 @@
     <string name="x39_seguridad_subtitulo">Lo que la app afirma de sí misma, comprobado en este móvil.</string>
     <string name="x39_permisos_titulo">Permisos del manifiesto, tal cual</string>
     <string name="x39_error_leer_permisos">No se pudieron leer: %1$s</string>
-    <string name="x39_permisos_internet">Internet: sí, solo para enviar huellas (32 bytes) a los calendarios de OpenTimestamps y recibir pruebas (directo o, si lo activas, solo por Tor). Nunca fotos, vídeos ni archivos. Micrófono: solo mientras grabas un vídeo o un audio; si lo niegas, el vídeo se graba sin sonido y el audio no se puede grabar.</string>
+    <string name="x39_permisos_internet">Internet: al sellar y anclar, se envía a los calendarios un compromiso de 32 bytes derivado de la huella y se reciben pruebas (directamente o por Tor si lo activas). El chat usa una conexión cifrada. Solo si tú envías una cápsula a un móvil emparejado, viaja el original cifrado de extremo a extremo. Micrófono: solo mientras grabas vídeo o audio; si lo niegas, el vídeo se graba sin sonido y no se puede grabar audio.</string>
     <string name="x39_estado_capturas">Capturas de pantalla</string>
     <string name="x39_estado_bloqueadas">Bloqueadas</string>
     <string name="x39_estado_galeria">Evidencias en la galería</string>

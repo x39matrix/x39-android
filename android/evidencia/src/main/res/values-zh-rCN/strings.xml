@@ -70,7 +70,7 @@
     <string name="x39_tamanos_error">✗ 测试签名无法完成或验证未通过：%1$s</string>
 
     <!-- 证据（列表） -->
-    <string name="x39_evidencias_subtitulo">你保存的内容不会离开这台手机。只有它的指纹会发出去。</string>
+    <string name="x39_evidencias_subtitulo">封存并锚定时，只向日历服务器发送一个由指纹派生的 32 字节承诺。若你向已配对手机发送证据包，原文件会以端到端加密方式传输。</string>
     <string name="x39_error_leer_almacen">无法读取存储：%1$s</string>
     <string name="x39_evidencias_vacio_titulo">还没有证据</string>
     <string name="x39_evidencias_vacio_texto">在这里拍照，或选择手机里的任意文件（PDF、视频、音频，什么都可以）。文件会加密保存在这台手机上，用你的密钥签名，其指纹会自动锚定到 Bitcoin，你无需再做任何操作。</string>
@@ -264,7 +264,7 @@
     <string name="x39_seguridad_subtitulo">应用对自身的说明，在这台手机上核实。</string>
     <string name="x39_permisos_titulo">清单中声明的权限，原样列出</string>
     <string name="x39_error_leer_permisos">无法读取：%1$s</string>
-    <string name="x39_permisos_internet">网络：是，只用于把指纹（32 字节）发送到 OpenTimestamps 日历服务器并接收证明（直连，或在你开启后只通过 Tor）。绝不发送照片、视频或文件。麦克风：只在你录制视频或音频时使用；如果你拒绝，视频将无声录制，音频则无法录制。</string>
+    <string name="x39_permisos_internet">网络：封存并锚定时，向日历服务器发送由指纹派生的 32 字节承诺并接收证明（直连，或启用后通过 Tor）。聊天使用加密连接。只有在你向已配对手机发送证据包时，原文件才会以端到端加密方式传输。麦克风：仅在录制视频或音频时使用；未获授权时，视频无声且无法录制音频。</string>
     <string name="x39_estado_capturas">截屏</string>
     <string name="x39_estado_bloqueadas">已阻止</string>
     <string name="x39_estado_galeria">证据出现在相册中</string>

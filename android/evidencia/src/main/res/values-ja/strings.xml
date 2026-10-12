@@ -70,7 +70,7 @@
     <string name="x39_tamanos_error">✗ テスト署名を作成できないか、検証できません：%1$s</string>
 
     <!-- 証拠（一覧） -->
-    <string name="x39_evidencias_subtitulo">保存したものはこの端末から出ません。送られるのはフィンガープリントだけです。</string>
+    <string name="x39_evidencias_subtitulo">封印・アンカー時にカレンダーへ送るのは、指紋から導出した32バイトのコミットメントです。ペアリング済みの端末へカプセルを送る場合は、元のファイルがエンドツーエンド暗号化されて送信されます。</string>
     <string name="x39_error_leer_almacen">保存領域を読み込めませんでした：%1$s</string>
     <string name="x39_evidencias_vacio_titulo">まだ証拠はありません</string>
     <string name="x39_evidencias_vacio_texto">ここから写真を撮るか、端末内の好きなファイル（PDF、動画、音声など）を選んでください。この端末に暗号化して保存され、あなたの鍵で署名され、フィンガープリントが自動でBitcoinにアンカーされます。</string>
@@ -264,7 +264,7 @@
     <string name="x39_seguridad_subtitulo">アプリが自ら表明している内容を、この端末で確認した結果です。</string>
     <string name="x39_permisos_titulo">マニフェストの権限（そのまま表示）</string>
     <string name="x39_error_leer_permisos">読み込めませんでした：%1$s</string>
-    <string name="x39_permisos_internet">インターネット：あり。OpenTimestampsのカレンダーにフィンガープリント（32バイト）を送り、証明を受け取るためだけに使います（直接、またはオンにした場合はTor経由のみ）。写真、動画、ファイルは一切送りません。マイク：動画または音声の録音中のみ。拒否すると、動画は音声なしで録画され、音声は録音できません。</string>
+    <string name="x39_permisos_internet">インターネット：封印・アンカー時に、指紋から導出した32バイトのコミットメントをカレンダーへ送り、証明を受け取ります（直接、または有効時はTor経由）。チャットには暗号化接続を使います。ペアリング済み端末へカプセルを送る場合に限り、元のファイルがエンドツーエンド暗号化されて送信されます。マイク：動画または音声の録音中のみ使用します。許可がない場合、動画は無音になり、音声は録音できません。</string>
     <string name="x39_estado_capturas">スクリーンショット</string>
     <string name="x39_estado_bloqueadas">ブロック</string>
     <string name="x39_estado_galeria">ギャラリー内の証拠</string>
