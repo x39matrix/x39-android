@@ -2,7 +2,7 @@
 <!-- x39 · Evidencia：应用文字。简体中文。 -->
 <resources>
     <!-- 应用 -->
-    <string name="x39_app_nombre">x39</string>
+    <string name="x39_app_nombre">x39 Evidencia</string>
 
     <!-- 通用 -->
     <string name="x39_volver">返回</string>

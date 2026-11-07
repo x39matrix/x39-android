@@ -36,14 +36,18 @@ final class Capsula {
     static void escribir(Evidencias evidencias, Evidencias.Ficha f, String nombreOriginal,
                          OutputStream destino) throws Exception {
         byte[] clavePk = f.firmante.equals(evidencias.huellaClave()) ? evidencias.clavePublica() : null;
-        JSONObject recibo = Evidencias.recibo(f, clavePk);
         byte[] ots = evidencias.ots(f);
+        byte[] tsr = evidencias.tsr(f);
+        if (tsr != null && "none".equals(f.tsrEstado)) {
+            f.tsrEstado = "present";
+        }
+        JSONObject recibo = Evidencias.recibo(f, clavePk);
 
         ZipOutputStream zip = new ZipOutputStream(destino);
         zip.setComment("x39 Evidencia · cápsula " + f.id);
 
         zip.putNextEntry(new ZipEntry("VERIFICAR.txt"));
-        zip.write(instrucciones(f, nombreOriginal, ots != null).getBytes(StandardCharsets.UTF_8));
+        zip.write(instrucciones(f, nombreOriginal, ots != null, tsr != null).getBytes(StandardCharsets.UTF_8));
         zip.closeEntry();
 
         zip.putNextEntry(new ZipEntry("recibo.json"));
@@ -61,6 +65,12 @@ final class Capsula {
         if (ots != null) {
             zip.putNextEntry(new ZipEntry(f.id + ".ots"));
             zip.write(ots);
+            zip.closeEntry();
+        }
+
+        if (tsr != null) {
+            zip.putNextEntry(new ZipEntry(f.id + ".tsr"));
+            zip.write(tsr);
             zip.closeEntry();
         }
 
@@ -117,6 +127,14 @@ final class Capsula {
                 + "print('firmado.txt correcto   :', 'SÍ' if ok_texto else 'NO')\n"
                 + "print('firma ML-DSA-87        :', 'VÁLIDA' if ok_firma else 'NO VÁLIDA')\n"
                 + "print('huella de la clave     :', fp, '(recibo:', 'coincide' if fp == r['signer_fp'] else 'NO coincide', ')')\n"
+                + "if r.get('ic_cert'):\n"
+                + "    c = json.loads(r['ic_cert']) if isinstance(r['ic_cert'], str) else r['ic_cert']\n"
+                + "    acc, idx = bytes.fromhex(c['leaf_hex']), int(c['leaf_index'])\n"
+                + "    for s in c.get('sibling_hashes_hex', []):\n"
+                + "        sb = bytes.fromhex(s)\n"
+                + "        acc = hashlib.sha256(b'\\x01' + (acc + sb if idx % 2 == 0 else sb + acc)).digest()\n"
+                + "        idx //= 2\n"
+                + "    print('árbol Merkle Joseph IC :', 'VÁLIDO' if acc.hex() == c.get('root_hex') else 'NO VÁLIDO')\n"
                 + "print('Contrasta esa huella fuera de esta cápsula.')\n";
     }
 
@@ -124,11 +142,11 @@ final class Capsula {
      * VERIFICAR.txt lo lee un tercero, no la app: va SIEMPRE en español y, detrás, en inglés completo.
      * No depende del idioma de la app. El español es el de siempre, sin cambiar una letra.
      */
-    private static String instrucciones(Evidencias.Ficha f, String nombre, boolean hayOts) {
-        return instruccionesEs(f, nombre, hayOts) + "\n" + instruccionesEn(f, nombre, hayOts);
+    private static String instrucciones(Evidencias.Ficha f, String nombre, boolean hayOts, boolean hayTsr) {
+        return instruccionesEs(f, nombre, hayOts, hayTsr) + "\n" + instruccionesEn(f, nombre, hayOts, hayTsr);
     }
 
-    private static String instruccionesEs(Evidencias.Ficha f, String nombre, boolean hayOts) {
+    private static String instruccionesEs(Evidencias.Ficha f, String nombre, boolean hayOts, boolean hayTsr) {
         String ruta = "original/" + nombre;
         return "x39 Evidencia · cápsula " + f.id + "\n"
                 + "==========================================\n\n"
@@ -154,6 +172,10 @@ final class Capsula {
                 + "   CONTRASTA esa huella por un canal que no sea esta cápsula (en persona, o\n"
                 + "   con quien firmó por otro medio). Una cápsula falsa puede traer su propia\n"
                 + "   clave y su propia huella, coherentes entre sí.\n\n"
+                + (hayTsr
+                    ? "4) Sello de tiempo RFC 3161 (" + f.id + ".tsr)\n"
+                    + "   openssl ts -verify -data \"" + ruta + "\" -in " + f.id + ".tsr -CAfile cadena.pem\n\n"
+                    : "")
                 + "Si el .ots dice \"pending\":  ots upgrade " + f.id + ".ots  y vuelve a verificar.\n\n"
                 + "Lo que esto NO prueba: la hora de \"captured_at_local\" la declara el móvil y no\n"
                 + "es verificable. Lo verificable es el bloque de Bitcoin del punto 2: el contenido\n"
@@ -161,7 +183,7 @@ final class Capsula {
     }
 
     /** La misma guía en inglés, para quien no lea español. */
-    private static String instruccionesEn(Evidencias.Ficha f, String nombre, boolean hayOts) {
+    private static String instruccionesEn(Evidencias.Ficha f, String nombre, boolean hayOts, boolean hayTsr) {
         String ruta = "original/" + nombre;
         return "x39 Evidencia · capsule " + f.id + " (English)\n"
                 + "==========================================\n\n"
@@ -189,6 +211,10 @@ final class Capsula {
                 + "   CHECK that fingerprint through a channel other than this capsule (in person,\n"
                 + "   or with the signer by other means). A fake capsule can bring its own key\n"
                 + "   and its own fingerprint, consistent with each other.\n\n"
+                + (hayTsr
+                    ? "4) RFC 3161 timestamp token (" + f.id + ".tsr)\n"
+                    + "   openssl ts -verify -data \"" + ruta + "\" -in " + f.id + ".tsr -CAfile chain.pem\n\n"
+                    : "")
                 + "If the .ots says \"pending\":  ots upgrade " + f.id + ".ots  and verify again.\n\n"
                 + "What this does NOT prove: the \"captured_at_local\" time is declared by the phone\n"
                 + "and cannot be verified. What can be verified is the Bitcoin block in point 2: the\n"

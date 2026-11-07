@@ -2,7 +2,7 @@
 <!-- x39 · Evidencia: アプリのテキスト。日本語。 -->
 <resources>
     <!-- アプリ -->
-    <string name="x39_app_nombre">x39</string>
+    <string name="x39_app_nombre">x39 Evidencia</string>
 
     <!-- 共通 -->
     <string name="x39_volver">戻る</string>

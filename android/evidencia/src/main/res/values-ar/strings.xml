@@ -2,7 +2,7 @@
 <!-- x39 · Evidencia: نصوص التطبيق. العربية. -->
 <resources>
     <!-- Aplicación -->
-    <string name="x39_app_nombre">x39</string>
+    <string name="x39_app_nombre">x39 Evidencia</string>
 
     <!-- Comunes -->
     <string name="x39_volver">رجوع</string>

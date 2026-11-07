@@ -102,6 +102,11 @@ final class Evidencias {
         /** pending → calendar → bitcoin. */
         String otsEstado = "pending";
         long bloque = -1;
+        String tsrEstado = "none";
+        long icSeq = -1;
+        String icTime;
+        String icCert;
+        String josephSig;
         String nonce;
         String compromiso;
         long creada;
@@ -131,7 +136,11 @@ final class Evidencias {
                     .put("id", id).put("tipo", tipo).put("nombre", nombre).put("mime", mime).put("bytes", bytes)
                     .put("archivo", archivo).put("sha256", sha256).put("capturada", capturada)
                     .put("firmante", firmante).put("firma", firma).put("ots_estado", otsEstado)
-                    .put("bloque", bloque).put("nonce", nonce).put("compromiso", compromiso).put("creada", creada);
+                    .put("bloque", bloque).put("tsr_estado", tsrEstado).put("ic_seq", icSeq)
+                    .put("ic_time", icTime != null ? icTime : JSONObject.NULL)
+                    .put("ic_cert", icCert != null ? icCert : JSONObject.NULL)
+                    .put("joseph_sig", josephSig != null ? josephSig : JSONObject.NULL)
+                    .put("nonce", nonce).put("compromiso", compromiso).put("creada", creada);
         }
 
         static Ficha deJson(JSONObject o) throws JSONException {
@@ -149,6 +158,11 @@ final class Evidencias {
             f.firma = o.getString("firma");
             f.otsEstado = o.optString("ots_estado", "pending");
             f.bloque = o.optLong("bloque", -1);
+            f.tsrEstado = o.optString("tsr_estado", "none");
+            f.icSeq = o.optLong("ic_seq", -1);
+            f.icTime = o.isNull("ic_time") ? null : o.optString("ic_time", null);
+            f.icCert = o.isNull("ic_cert") ? null : o.optString("ic_cert", null);
+            f.josephSig = o.isNull("joseph_sig") ? null : o.optString("joseph_sig", null);
             f.nonce = o.getString("nonce");
             f.compromiso = o.getString("compromiso");
             f.creada = o.optLong("creada", 0);
@@ -495,6 +509,16 @@ final class Evidencias {
         escribirAtomico(new File(dir, f.id + ".ots"), ots);
     }
 
+    byte[] tsr(Ficha f) throws IOException {
+        File a = new File(dir, f.id + ".tsr");
+        return a.exists() ? Files.readAllBytes(a.toPath()) : null;
+    }
+
+    void guardarTsr(Ficha f, byte[] tsr) throws IOException {
+        escribirAtomico(new File(dir, f.id + ".tsr"), tsr);
+        f.tsrEstado = "qualified";
+    }
+
     void actualizar(Ficha f) throws Exception {
         synchronized (CERROJO) {
             List<Ficha> l = leer();
@@ -518,6 +542,8 @@ final class Evidencias {
         new File(dir, f.archivo).delete();
         //noinspection ResultOfMethodCallIgnored
         new File(dir, f.id + ".ots").delete();
+        //noinspection ResultOfMethodCallIgnored
+        new File(dir, f.id + ".tsr").delete();
     }
 
     /**
@@ -538,14 +564,13 @@ final class Evidencias {
                 .put("ots", f.id + ".ots")
                 .put("ots_status", f.otsEstado)
                 .put("bitcoin_block", f.bloque >= 0 ? f.bloque : JSONObject.NULL)
-                .put("tsr", JSONObject.NULL)
-                .put("tsr_status", "none")
+                .put("tsr", !"none".equals(f.tsrEstado) ? f.id + ".tsr" : JSONObject.NULL)
+                .put("tsr_status", f.tsrEstado != null ? f.tsrEstado : "none")
                 .put("location_included", false)
-                // Previstos para la etapa B (registro en canister y cofirma de Joseph); vacíos en la v0.1.
-                .put("ic_seq", JSONObject.NULL)
-                .put("ic_time", JSONObject.NULL)
-                .put("ic_cert", JSONObject.NULL)
-                .put("joseph_sig", JSONObject.NULL);
+                .put("ic_seq", f.icSeq >= 0 ? f.icSeq : JSONObject.NULL)
+                .put("ic_time", f.icTime != null ? f.icTime : JSONObject.NULL)
+                .put("ic_cert", f.icCert != null ? f.icCert : JSONObject.NULL)
+                .put("joseph_sig", f.josephSig != null ? f.josephSig : JSONObject.NULL);
     }
 
     // ------------------------------------------------------------------ utilidades

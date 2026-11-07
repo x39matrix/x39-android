@@ -2220,6 +2220,8 @@ public class EvidenciaActivity extends Activity {
                     Toast.makeText(this, R.string.x39_comunicaciones_no_instalada, Toast.LENGTH_LONG).show();
                 }
             }), Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 10, 0, 0));
+            com.addView(Ui.boton(this, getString(R.string.x39_comunicaciones_web), false, v -> abrirWeb(Comunicaciones.WEB)),
+                    Ui.margen(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 8, 0, 0));
         } else {
             TextView ec = Ui.texto(this, getString(R.string.x39_comunicaciones_no_instalada), 13, Ui.SUAVE, false);
             ec.setPadding(0, dp(8), 0, 0);

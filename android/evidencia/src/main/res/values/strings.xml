@@ -2,7 +2,7 @@
 <!-- x39 · Evidencia: textos de la app. Español (idioma por defecto). -->
 <resources>
     <!-- Aplicación -->
-    <string name="x39_app_nombre">x39</string>
+    <string name="x39_app_nombre">x39 Evidencia</string>
 
     <!-- Comunes -->
     <string name="x39_volver">Volver</string>
@@ -285,8 +285,8 @@
     <string name="x39_comunicaciones_privadas">Comunicaciones privadas</string>
     <string name="x39_comunicaciones_explicacion">Las llamadas, las videollamadas y los mensajes privados van en X39 Comunicaciones, una app separada. Así esta app se queda pequeña y verificable, y cada una tiene sus propios permisos.</string>
     <string name="x39_abrir_comunicaciones">Abrir X39 Comunicaciones</string>
-    <string name="x39_comunicaciones_no_instalada">X39 Comunicaciones no está instalada. Está en beta cerrada hasta noviembre.</string>
-    <string name="x39_comunicaciones_web">Más información en x39matrix.org</string>
+    <string name="x39_comunicaciones_no_instalada">X39 Comunicaciones (videollamadas post-cuánticas y billetera Bitcoin) no está instalada en este móvil.</string>
+    <string name="x39_comunicaciones_web">Descargar X39 (Llamadas y Billetera) en F-Droid / Web</string>
     <string name="x39_tor_explicacion">Las huellas salen solo a través de Tor (Orbot). Oculta tu dirección IP a los calendarios. Tu operadora puede ver que usas Tor; en algunos países eso llama la atención. Si Orbot no está activo, las huellas esperan.</string>
     <string name="x39_orbot_no_instalado_estado">Orbot no está instalado.</string>
     <string name="x39_tor_estado_conectado_listo">Orbot instalado · estado conectado · proxy 127.0.0.1:8118 listo</string>
