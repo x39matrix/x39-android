@@ -12,8 +12,8 @@ android {
         applicationId 'org.x39matrix.evidencia'
         minSdk 28
         targetSdk 35
-        versionCode 19
-        versionName '0.3.5'
+        versionCode 20
+        versionName '0.3.6'
     }
 
     // Firma de publicación de X-39. Nada secreto en este fichero: scripts/build_evidencia_release.sh pide la
