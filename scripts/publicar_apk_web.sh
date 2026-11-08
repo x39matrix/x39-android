@@ -11,7 +11,7 @@ BT=$(ls -d "$ANDROID_HOME"/build-tools/* | tail -1)
 FIRMA=$("$BT/apksigner" verify --print-certs "$APK" 2>&1 | grep -vE '^WARNING: META-INF')
 CERT=$(echo "$FIRMA" | grep -oP 'Signer #1 certificate SHA-256 digest: \K\S+')
 DN=$(echo "$FIRMA" | grep -oP 'Signer #1 certificate DN: \K.*')
-[ "$CERT" = "72f0745f993605b1b3cd30966162b6d98d84fcacbd23e2e07e24c3d15f7d8935" ] || { echo "✗ certificado distinto del de x39: $CERT"; exit 1; }
+[ "$CERT" = "8d46f850509ebfd4778156195c14bb69719dd09f799a4fb661b940e7e2b22fbe" ] || { echo "✗ certificado distinto del de x39: $CERT"; exit 1; }
 BADGING=$("$BT/aapt2" dump badging "$APK")
 echo "$BADGING" | grep -q 'application-debuggable' && { echo "✗ depurable"; exit 1; }
 VER=$(echo "$BADGING" | grep -oP "versionName='\K[^']+")

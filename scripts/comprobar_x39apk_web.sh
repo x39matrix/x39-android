@@ -19,7 +19,7 @@ else
 fi
 [ -n "$ESPERADA" ] || { echo "no hay huella esperada: pasa la ruta del APK o la huella"; exit 2; }
 echo "huella esperada: $ESPERADA (${ORIGEN##*/})"
-CERT="${2:-72f0745f993605b1b3cd30966162b6d98d84fcacbd23e2e07e24c3d15f7d8935}"
+CERT="${2:-8d46f850509ebfd4778156195c14bb69719dd09f799a4fb661b940e7e2b22fbe}"
 BASE="https://x39matrix.org"
 D="$HOME/x39_mensajeria/pruebas_ots/web_x39apk"
 mkdir -p "$D"

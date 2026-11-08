@@ -287,8 +287,8 @@
     <string name="x39_comunicaciones_privadas">Приватная связь</string>
     <string name="x39_comunicaciones_explicacion">Звонки, видеозвонки и приватные сообщения работают в отдельном приложении X39 Communications. Так это приложение остаётся небольшим и проверяемым, а у каждого приложения свои разрешения.</string>
     <string name="x39_abrir_comunicaciones">Открыть X39 Communications</string>
-    <string name="x39_comunicaciones_no_instalada">X39 Communications не установлено. Закрытое бета-тестирование до ноября.</string>
-    <string name="x39_comunicaciones_web">Подробнее на x39matrix.org</string>
+    <string name="x39_comunicaciones_no_instalada">Приложение X39 Communications (постквантовые видеозвонки и Bitcoin-кошелёк) не установлено на этом телефоне.</string>
+    <string name="x39_comunicaciones_web">Скачать X39 (Звонки и Кошелёк) в F-Droid / на сайте</string>
     <string name="x39_tor_explicacion">Хеши уходят только через Tor (Orbot). Это скрывает ваш IP-адрес от календарей. Ваш оператор может видеть, что вы пользуетесь Tor; в некоторых странах это привлекает внимание. Если Orbot не запущен, хеши ждут.</string>
     <string name="x39_orbot_no_instalado_estado">Orbot не установлен.</string>
     <string name="x39_tor_estado_conectado_listo">Orbot установлен · состояние: подключён · прокси 127.0.0.1:8118 готов</string>
