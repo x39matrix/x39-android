@@ -2,6 +2,24 @@
 
 App de mensajería post-cuántica para Android. El diseño parte de Paris v3 y se valida contra la suite Mesopotamia.
 
+## Qué hay en este repositorio
+
+| Carpeta | Qué es |
+|---|---|
+| `android/evidencia/` | **X-39 Evidencia** (`org.x39matrix.evidencia`, versión 0.3.6): la app publicada en el repositorio F-Droid propio, en GitHub Releases y en el canister de Internet Computer. Este es su código fuente; su licencia está en `android/evidencia/LICENSE`. |
+| `android/app/` | x39 Mensajería (versión 0.13.0), la app que describe el resto de este documento. |
+| `android/comun/` | Código Android compartido por las dos apps. |
+| `x39-core/` | Núcleo Rust del protocolo de mensajería: sellado y apertura Paris v3 y firma ML-DSA-87. |
+| `x39-jni/` | Puente JNI entre Android y `x39-core`. |
+| `canister/buzon/` | Código del canister `buzon` (Internet Computer). |
+| `vectores/` | Vectores de prueba Paris v3 (Python) y su comprobación cruzada con Rust. |
+| `tools/` | `x39_verify.py`, verificador en Python. |
+| `scripts/` | Guiones de compilación y de actualización del registro. |
+| `pruebas_ots/actas/` | Pruebas OpenTimestamps de las actas publicadas. |
+| `docs/`, `diseno/` | Documento institucional y maquetas de pantallas. |
+
+La billetera Bitcoin de autocustodia **no** vive aquí: se desarrolla en su propio repositorio, `x39-wallet` (motor Rust con BDK y módulo Android), y se integra en la app de llamadas x39 (`org.x39matrix.llamadas`), que X-39 Evidencia enlaza desde su botón de comunicaciones.
+
 ## Decisión de arquitectura (2026-09-14)
 **Signal + x39. Descartados Element y Matrix.**
 - **De Signal:** servidor central mínimo que no ve contenido y reduce metadatos (sealed sender), interfaz sencilla, números de seguridad y mensajes temporales. Se toma el diseño, no su código ni su marca.
@@ -58,6 +76,8 @@ Cada mensaje va firmado con **ML-DSA-87** (FIPS 204, crate `ml-dsa` 0.1.1, la mi
 Límites honestos: no impide una foto con otro móvil ni la captura en móviles rooteados. Si el receptor no la abre, caduca a las 24 h sin mostrarse.
 
 ## Función: wallet Bitcoin non-custodial
+> Estado (09/11/2026): lo que sigue es el diseño de septiembre de 2026, no el estado del código. La billetera se construye en el repositorio `x39-wallet` y se usa desde la app de llamadas x39, no desde esta app de mensajería; lo hecho y lo pendiente están documentados allí (`PRUEBAS.md`).
+
 1. **Las claves son del usuario:** la semilla (BIP39) se genera en el móvil y se guarda cifrada con StrongBox. Nunca pasa por el servidor, el HUB ni ningún canister. x39 no puede mover fondos de nadie.
 2. **Motor:** BDK (Bitcoin Dev Kit, Rust). Sin código de firma propio.
 3. **Pagar en el chat:** «💸 Pedir 0.001 BTC» o «Enviar a este contacto». La dirección y el importe viajan cifrados dentro del mensaje, y cada pago usa una dirección nueva.
