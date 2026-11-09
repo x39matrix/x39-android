@@ -18,7 +18,7 @@ App de mensajería post-cuántica para Android. El diseño parte de Paris v3 y s
 | `pruebas_ots/actas/` | Pruebas OpenTimestamps de las actas publicadas. |
 | `docs/`, `diseno/` | Documento institucional y maquetas de pantallas. |
 
-La billetera Bitcoin de autocustodia **no** vive aquí: se desarrolla en su propio repositorio, `x39-wallet` (motor Rust con BDK y módulo Android), y se integra en la app de llamadas x39 (`org.x39matrix.llamadas`), que X-39 Evidencia enlaza desde su botón de comunicaciones.
+La billetera Bitcoin de autocustodia **no** vive aquí: se desarrolla en su propio repositorio, [`x39-wallet`](https://github.com/x39matrix/x39-wallet) (motor Rust con BDK y módulo Android), y se integra en la app de llamadas x39 (`org.x39matrix.llamadas`), que X-39 Evidencia enlaza desde su botón de comunicaciones.
 
 ## Decisión de arquitectura (2026-09-14)
 **Signal + x39. Descartados Element y Matrix.**
@@ -76,7 +76,7 @@ Cada mensaje va firmado con **ML-DSA-87** (FIPS 204, crate `ml-dsa` 0.1.1, la mi
 Límites honestos: no impide una foto con otro móvil ni la captura en móviles rooteados. Si el receptor no la abre, caduca a las 24 h sin mostrarse.
 
 ## Función: wallet Bitcoin non-custodial
-> Estado (09/11/2026): lo que sigue es el diseño de septiembre de 2026, no el estado del código. La billetera se construye en el repositorio `x39-wallet` y se usa desde la app de llamadas x39, no desde esta app de mensajería; lo hecho y lo pendiente están documentados allí (`PRUEBAS.md`).
+> Estado (09/11/2026): lo que sigue es el diseño de septiembre de 2026, no el estado del código. La billetera se construye en el repositorio [`x39-wallet`](https://github.com/x39matrix/x39-wallet) y se usa desde la app de llamadas x39, no desde esta app de mensajería; lo hecho y lo pendiente están documentados allí (`PRUEBAS.md`).
 
 1. **Las claves son del usuario:** la semilla (BIP39) se genera en el móvil y se guarda cifrada con StrongBox. Nunca pasa por el servidor, el HUB ni ningún canister. x39 no puede mover fondos de nadie.
 2. **Motor:** BDK (Bitcoin Dev Kit, Rust). Sin código de firma propio.
