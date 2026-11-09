@@ -14,3 +14,11 @@ x39-core/outputs/
 privado/
 *.bak
 *.bak-*
+
+# Copia antigua de la billetera: el motor vive en su propio repositorio
+x39-wallet/
+# Material de pruebas: solo se publican las actas
+pruebas_ots/*
+!pruebas_ots/actas/
+# Guion de compilación local: lleva rutas y direcciones de la máquina de desarrollo
+scripts/build_llamadas_lab_release.sh
