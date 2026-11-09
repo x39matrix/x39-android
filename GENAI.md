@@ -1,0 +1,1 @@
+X39Matrix es un proyecto independiente cuya arquitectura, dirección técnica y decisiones son responsabilidad de su creador. Durante su desarrollo se han utilizado herramientas de inteligencia artificial como apoyo en traducciones, corrección lingüística y documentación, y en la escritura de código bajo la dirección y revisión de su creador.
