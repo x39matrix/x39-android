@@ -4,7 +4,11 @@
 #![forbid(unsafe_code)]
 
 pub const HUB_CANISTER_ID: &str = "arn4r-lqaaa-aaaao-baxwq-cai";
+/// Identificador informativo de la subred observada; una subred puede cambiar por
+/// gobernanza sin cambiar el canister_id, por lo que no se usa como ancla criptografica.
 pub const HUB_SUBNET_ID: &str = "o3ow2-2ipam-6fcjo-3j5vt-fzbge-2g7my-5fz2m-p4o2t-dwlc4-gt2q7-5ae";
+
+pub mod ots_nodo;
 
 const HEX_CHARS: &[u8; 16] = b"0123456789abcdef";
 
