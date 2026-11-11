@@ -10,6 +10,7 @@ pub const HUB_SUBNET_ID: &str = "o3ow2-2ipam-6fcjo-3j5vt-fzbge-2g7my-5fz2m-p4o2t
 
 pub mod merkle;
 pub mod ots_nodo;
+pub mod recibos;
 
 const HEX_CHARS: &[u8; 16] = b"0123456789abcdef";
 
