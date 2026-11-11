@@ -1,8 +1,10 @@
 //! Tipos y reglas comunes de los recibos firmados.
 mod cobro;
 mod custodia;
+mod rotacion;
 pub use cobro::{RedCobro, SolicitudCobroBtc};
 pub use custodia::{Previo, ReciboCustodia};
+pub use rotacion::{DeclaracionRotacionClave, IdentidadNueva};
 
 use crate::{ErrorHub, a_hex, de_hex_exacto};
 use sha2::{Digest, Sha256};
