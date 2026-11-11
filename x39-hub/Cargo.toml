@@ -1,0 +1,18 @@
+[package]
+name = "x39-hub"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["rng"]
+# Sin rng la caja solo verifica; con rng activa su generador y la firma con aleatoriedad de x39-core.
+rng = ["dep:getrandom", "x39-core/rng"]
+
+[dependencies]
+getrandom = { version = "0.4.3", optional = true }
+sha2 = "0.11.0"
+x39-core = { path = "../x39-core", default-features = false }
+zeroize = "1.9.0"
+
+[dev-dependencies]
+hex = "0.4.3"
