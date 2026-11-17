@@ -6,7 +6,7 @@ App de mensajería post-cuántica para Android. El diseño parte de Paris v3 y s
 
 | Carpeta | Qué es |
 |---|---|
-| `android/evidencia/` | **X-39 Evidencia** (`org.x39matrix.evidencia`, versión 0.3.6): la app publicada en el repositorio F-Droid propio, en GitHub Releases y en el canister de Internet Computer. Este es su código fuente; su licencia está en `android/evidencia/LICENSE`. |
+| `android/evidencia/` | **X-39 Evidencia** (`org.x39matrix.evidencia`, versión 0.3.6): la app publicada en el repositorio F-Droid propio, en GitHub Releases (repositorio [x39matrix/x39-Evidencia](https://github.com/x39matrix/x39-Evidencia/releases/tag/evidencia-0.3.6)) y en el canister de Internet Computer. Este es su código fuente; su licencia está en `android/evidencia/LICENSE`. |
 | `android/app/` | x39 Mensajería (versión 0.13.0), la app que describe el resto de este documento. |
 | `android/comun/` | Código Android compartido por las dos apps. |
 | `x39-core/` | Núcleo Rust del protocolo de mensajería: sellado y apertura Paris v3 y firma ML-DSA-87. |
