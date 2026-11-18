@@ -51,7 +51,7 @@ App Android sin servidor: generar claves, compartir la clave pública (QR o text
 ## APK v0.4 · Plenos y modo ciudadano (2026-09-15)
 Versión para el Ayuntamiento de Sevilla. **Sin wallet** y sin ninguna mención a dinero.
 - **Portada con dos entradas:** «Ver plenos y comprobar documentos» (ciudadano: sin clave, sin cuenta, sin desbloqueo) y «Soy personal del Ayuntamiento» (crea ML-KEM-1024 + ML-DSA-87). El ciudadano puede activar el acceso de personal más tarde desde Plenos.
-- **Plenos:** las 28 áreas del portal agrupadas (gobierno y contratación, 11 distritos, organismos y servicios, empresas municipales) con sus documentos anclados. Tocar uno abre el PDF congelado en el navegador; la app sigue sin permiso de internet.
+- **Plenos:** las 28 áreas del portal agrupadas (gobierno y contratación, 11 distritos, organismos y servicios, empresas municipales) con sus documentos anclados. Tocar uno abre el PDF congelado en el navegador; la app sigue sin permiso de internet. (Esta frase describe la v0.4. La versión actual sí declara el permiso `INTERNET` en `android/app/src/main/AndroidManifest.xml`, desde la 0.8.0; en el código registrado el único cliente de red es el del buzón, `Buzon.java`: sube cápsulas ya cifradas y firmadas, recoge las dirigidas al móvil y, desde la 0.10, publica y consulta el directorio de códigos cortos.)
 - **Registro incluido en la app** (`assets/registro.json`): `scripts/actualizar_registro.sh` lo descarga de `https://api.x39matrix.org/registro/registro.json` en cada compilación. Solo incluye lo emitido y comprobado: descarta entradas con huella inválida, ruta de PDF fuera de `actas/`, PDF no publicado en el portal o PDF cuya SHA-256 no coincide. Sin conexión conserva la copia anterior.
 - **Comprobar un documento:** SHA-256 calculado en el móvil y comparado con el registro incluido. No sustituye la verificación completa de los sellos, que se hace con las herramientas del portal.
 - **Roles:** los ciudadanos solo consultan y comprueban. Chats y grupos son para el personal. Anclar actas nunca se hace desde la app ni desde la web: se prepara en el ordenador de Secretaría y la autorización la firma el móvil del responsable (pendiente).
@@ -67,6 +67,8 @@ Cada mensaje va firmado con **ML-DSA-87** (FIPS 204, crate `ml-dsa` 0.1.1, la mi
 - **Pendiente:** forward secrecy, relé, auditoría externa. Probado en el PC con tests; en móvil falta la prueba manual entre dos teléfonos.
 
 ## Función: ubicación efímera (5 / 10 / 30 s)
+> Estado (18/11/2026): lo que sigue es diseño, no el estado del código. La función aún no está implementada en este repositorio.
+
 1. El emisor elige 5, 10 o 30 s. La ubicación se toma una sola vez (nunca en segundo plano) y viaja cifrada como un mensaje más.
 2. El receptor ve «📍 Ubicación · 10 s», toca para abrirla y **la cuenta atrás empieza al abrir** (se ve una sola vez).
 3. La pantalla usa `FLAG_SECURE`: bloquea capturas, grabación de pantalla y la vista previa en «recientes».
